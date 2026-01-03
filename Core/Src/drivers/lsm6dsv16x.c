@@ -2,6 +2,8 @@
 
 #include "stm32g4xx_hal.h"
 
+#include "drivers/i2c_bus_lock.h"
+
 extern I2C_HandleTypeDef hi2c1;
 
 enum {
@@ -17,7 +19,7 @@ enum {
 
 	LSM6DSV16X_REG_OUTX_L_G = 0x22u,
 
-	LSM6DSV16X_TIMEOUT_MS = 10u,
+	LSM6DSV16X_TIMEOUT_MS = 2u,
 };
 
 static lsm6dsv16x_i2c_addr_t s_addr_7bit;
@@ -31,7 +33,12 @@ static uint16_t addr8(lsm6dsv16x_i2c_addr_t a)
 static bool i2c_write_reg(uint8_t reg, uint8_t value)
 {
 	uint8_t buf[2] = {reg, value};
-	return HAL_I2C_Master_Transmit(&hi2c1, addr8(s_addr_7bit), buf, sizeof(buf), LSM6DSV16X_TIMEOUT_MS) == HAL_OK;
+	if (!i2c_bus_take(&hi2c1, 0u)) {
+		return false;
+	}
+	const bool ok = (HAL_I2C_Master_Transmit(&hi2c1, addr8(s_addr_7bit), buf, sizeof(buf), LSM6DSV16X_TIMEOUT_MS) == HAL_OK);
+	i2c_bus_give(&hi2c1);
+	return ok;
 }
 
 static bool i2c_read_reg(uint8_t reg, uint8_t *out)
@@ -39,10 +46,18 @@ static bool i2c_read_reg(uint8_t reg, uint8_t *out)
 	if (out == NULL) {
 		return false;
 	}
-	if (HAL_I2C_Master_Transmit(&hi2c1, addr8(s_addr_7bit), &reg, 1u, LSM6DSV16X_TIMEOUT_MS) != HAL_OK) {
+	if (!i2c_bus_take(&hi2c1, 0u)) {
 		return false;
 	}
-	return HAL_I2C_Master_Receive(&hi2c1, addr8(s_addr_7bit), out, 1u, LSM6DSV16X_TIMEOUT_MS) == HAL_OK;
+	bool ok = true;
+	if (HAL_I2C_Master_Transmit(&hi2c1, addr8(s_addr_7bit), &reg, 1u, LSM6DSV16X_TIMEOUT_MS) != HAL_OK) {
+		ok = false;
+	}
+	if (ok && (HAL_I2C_Master_Receive(&hi2c1, addr8(s_addr_7bit), out, 1u, LSM6DSV16X_TIMEOUT_MS) != HAL_OK)) {
+		ok = false;
+	}
+	i2c_bus_give(&hi2c1);
+	return ok;
 }
 
 static bool i2c_read_burst(uint8_t start_reg, uint8_t *buf, uint16_t len)
@@ -50,10 +65,18 @@ static bool i2c_read_burst(uint8_t start_reg, uint8_t *buf, uint16_t len)
 	if ((buf == NULL) || (len == 0u)) {
 		return false;
 	}
-	if (HAL_I2C_Master_Transmit(&hi2c1, addr8(s_addr_7bit), &start_reg, 1u, LSM6DSV16X_TIMEOUT_MS) != HAL_OK) {
+	if (!i2c_bus_take(&hi2c1, 0u)) {
 		return false;
 	}
-	return HAL_I2C_Master_Receive(&hi2c1, addr8(s_addr_7bit), buf, len, LSM6DSV16X_TIMEOUT_MS) == HAL_OK;
+	bool ok = true;
+	if (HAL_I2C_Master_Transmit(&hi2c1, addr8(s_addr_7bit), &start_reg, 1u, LSM6DSV16X_TIMEOUT_MS) != HAL_OK) {
+		ok = false;
+	}
+	if (ok && (HAL_I2C_Master_Receive(&hi2c1, addr8(s_addr_7bit), buf, len, LSM6DSV16X_TIMEOUT_MS) != HAL_OK)) {
+		ok = false;
+	}
+	i2c_bus_give(&hi2c1);
+	return ok;
 }
 
 static bool probe_addr(lsm6dsv16x_i2c_addr_t a)

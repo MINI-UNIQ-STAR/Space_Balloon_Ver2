@@ -1,5 +1,6 @@
 #include "drivers/mlx90393.h"
 #include "stm32g4xx_hal.h"
+#include "drivers/i2c_bus_lock.h"
 #include <string.h>
 
 extern I2C_HandleTypeDef hi2c1;
@@ -34,7 +35,12 @@ static bool mlx90393_write_reg(uint8_t reg, uint16_t val) {
     buf[2] = val & 0xFF; // Data Low
     buf[3] = reg << 2;   // Address shifted left by 2
 
-    return HAL_I2C_Master_Transmit(&hi2c1, s_addr, buf, 4, 100) == HAL_OK;
+    if (!i2c_bus_take(&hi2c1, 0u)) {
+        return false;
+    }
+    const bool ok = (HAL_I2C_Master_Transmit(&hi2c1, s_addr, buf, 4, 10) == HAL_OK);
+    i2c_bus_give(&hi2c1);
+    return ok;
 }
 
 bool mlx90393_init(const mlx90393_config_t *cfg) {
@@ -44,7 +50,12 @@ bool mlx90393_init(const mlx90393_config_t *cfg) {
 
     // Exit any previous mode
     uint8_t cmd = CMD_EX;
-    if (HAL_I2C_Master_Transmit(&hi2c1, s_addr, &cmd, 1, 100) != HAL_OK) {
+    if (!i2c_bus_take(&hi2c1, 0u)) {
+        return false;
+    }
+    const bool ex_ok = (HAL_I2C_Master_Transmit(&hi2c1, s_addr, &cmd, 1, 10) == HAL_OK);
+    i2c_bus_give(&hi2c1);
+    if (!ex_ok) {
         return false;
     }
     HAL_Delay(10);
@@ -64,7 +75,12 @@ bool mlx90393_init(const mlx90393_config_t *cfg) {
     // Start Burst Mode (XYZ)
     // Command: 0x10 | 0x0E = 0x1E
     cmd = CMD_SB | ARG_XYZ; 
-    if (HAL_I2C_Master_Transmit(&hi2c1, s_addr, &cmd, 1, 100) != HAL_OK) {
+    if (!i2c_bus_take(&hi2c1, 0u)) {
+        return false;
+    }
+    const bool sb_ok = (HAL_I2C_Master_Transmit(&hi2c1, s_addr, &cmd, 1, 10) == HAL_OK);
+    i2c_bus_give(&hi2c1);
+    if (!sb_ok) {
         return false;
     }
     
@@ -74,13 +90,19 @@ bool mlx90393_init(const mlx90393_config_t *cfg) {
 bool mlx90393_read_data(float *x, float *y, float *z) {
     // Send RM command
     uint8_t cmd = CMD_RM | ARG_XYZ;
-    if (HAL_I2C_Master_Transmit(&hi2c1, s_addr, &cmd, 1, 100) != HAL_OK) {
+    if (!i2c_bus_take(&hi2c1, 0u)) {
         return false;
     }
-
-    // Read response: Status + X(2) + Y(2) + Z(2) = 7 bytes
     uint8_t buf[7];
-    if (HAL_I2C_Master_Receive(&hi2c1, s_addr, buf, 7, 100) != HAL_OK) {
+    bool ok = true;
+    if (HAL_I2C_Master_Transmit(&hi2c1, s_addr, &cmd, 1, 10) != HAL_OK) {
+        ok = false;
+    }
+    if (ok && (HAL_I2C_Master_Receive(&hi2c1, s_addr, buf, 7, 10) != HAL_OK)) {
+        ok = false;
+    }
+    i2c_bus_give(&hi2c1);
+    if (!ok) {
         return false;
     }
 

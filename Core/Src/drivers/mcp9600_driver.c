@@ -2,6 +2,8 @@
 
 #include "stm32g4xx_hal.h"
 
+#include "drivers/i2c_bus_lock.h"
+
 extern I2C_HandleTypeDef hi2c3;
 
 enum {
@@ -29,6 +31,10 @@ bool mcp9600_read_cold_junction_c_x100(int32_t *out_c_x100)
 		return false;
 	}
 
+	if (!i2c_bus_take(&hi2c3, 0u)) {
+		return false;
+	}
+
 	uint8_t buf[2] = {0};
 	const uint16_t addr = (uint16_t)(MCP9600_I2C_ADDR_7BIT << 1);
 
@@ -39,8 +45,11 @@ bool mcp9600_read_cold_junction_c_x100(int32_t *out_c_x100)
 					buf,
 					sizeof(buf),
 					50) != HAL_OK) {
+		i2c_bus_give(&hi2c3);
 		return false;
 	}
+
+	i2c_bus_give(&hi2c3);
 
 	uint16_t raw_u16 = (uint16_t)((uint16_t)buf[0] << 8) | (uint16_t)buf[1];
 	int16_t raw = (int16_t)raw_u16;
@@ -54,6 +63,10 @@ bool mcp9600_read_hot_junction_c_x100(int32_t *out_c_x100)
 		return false;
 	}
 
+	if (!i2c_bus_take(&hi2c3, 0u)) {
+		return false;
+	}
+
 	uint8_t buf[2] = {0};
 	const uint16_t addr = (uint16_t)(MCP9600_I2C_ADDR_7BIT << 1);
 
@@ -64,8 +77,11 @@ bool mcp9600_read_hot_junction_c_x100(int32_t *out_c_x100)
 					buf,
 					sizeof(buf),
 					50) != HAL_OK) {
+		i2c_bus_give(&hi2c3);
 		return false;
 	}
+
+	i2c_bus_give(&hi2c3);
 
 	uint16_t raw_u16 = (uint16_t)((uint16_t)buf[0] << 8) | (uint16_t)buf[1];
 	int16_t raw = (int16_t)raw_u16;

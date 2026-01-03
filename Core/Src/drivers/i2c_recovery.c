@@ -2,6 +2,8 @@
 
 #include "drivers/dwt_delay.h"
 
+#include "drivers/i2c_bus_lock.h"
+
 static void bus_clear(GPIO_TypeDef *scl_port,
                       uint16_t scl_pin,
                       GPIO_TypeDef *sda_port,
@@ -49,6 +51,11 @@ bool i2c_recover_bus(I2C_HandleTypeDef *hi2c,
 		return false;
 	}
 
+	// Recovery must not run concurrently with an active transaction.
+	if (!i2c_bus_take(hi2c, 0u)) {
+		return false;
+	}
+
 	(void)dwt_delay_init();
 
 	(void)HAL_I2C_DeInit(hi2c);
@@ -56,10 +63,12 @@ bool i2c_recover_bus(I2C_HandleTypeDef *hi2c,
 
 	// Re-init restores AF pin config via MSP.
 	if (HAL_I2C_Init(hi2c) != HAL_OK) {
+		i2c_bus_give(hi2c);
 		return false;
 	}
 
 	(void)HAL_I2CEx_ConfigAnalogFilter(hi2c, I2C_ANALOGFILTER_ENABLE);
 	(void)HAL_I2CEx_ConfigDigitalFilter(hi2c, 0);
+	i2c_bus_give(hi2c);
 	return true;
 }

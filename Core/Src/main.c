@@ -144,17 +144,11 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-    app_tick(HAL_GetTick());
-
-  #if defined(APP_ENABLE_IWDG) && (APP_ENABLE_IWDG != 0)
-    iwdg_simple_kick();
-  #endif
-
-    // Idle until the next interrupt (e.g., SysTick, UART, EXTI). This prevents
-    // a hot busy-loop and improves power efficiency.
-    __DSB();
-    __WFI();
-    __ISB();
+	// If we ever get here, the scheduler is not running.
+	// Keep the CPU in low-power wait.
+	__DSB();
+	__WFI();
+	__ISB();
   }
   /* USER CODE END 3 */
 }

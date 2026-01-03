@@ -2,6 +2,8 @@
 
 #include "stm32g4xx_hal.h"
 
+#include "drivers/i2c_bus_lock.h"
+
 extern I2C_HandleTypeDef hi2c3;
 
 static uint16_t addr8(void)
@@ -29,7 +31,12 @@ static uint8_t osr_to_cmd_bits(ms5611_osr_t osr)
 bool ms5611_reset(void)
 {
 	uint8_t cmd = 0x1Eu;
-	return (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) == HAL_OK);
+	if (!i2c_bus_take(&hi2c3, 1u)) {
+		return false;
+	}
+	const bool ok = (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) == HAL_OK);
+	i2c_bus_give(&hi2c3);
+	return ok;
 }
 
 bool ms5611_read_prom_word(uint8_t index, uint16_t *word)
@@ -38,11 +45,19 @@ bool ms5611_read_prom_word(uint8_t index, uint16_t *word)
 		return false;
 	}
 	uint8_t cmd = (uint8_t)(0xA0u + (uint8_t)(index * 2u));
-	if (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) != HAL_OK) {
+	if (!i2c_bus_take(&hi2c3, 2u)) {
 		return false;
 	}
 	uint8_t buf[2];
-	if (HAL_I2C_Master_Receive(&hi2c3, addr8(), buf, 2u, 10u) != HAL_OK) {
+	bool ok = true;
+	if (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) != HAL_OK) {
+		ok = false;
+	}
+	if (ok && (HAL_I2C_Master_Receive(&hi2c3, addr8(), buf, 2u, 10u) != HAL_OK)) {
+		ok = false;
+	}
+	i2c_bus_give(&hi2c3);
+	if (!ok) {
 		return false;
 	}
 	*word = (uint16_t)(((uint16_t)buf[0] << 8u) | (uint16_t)buf[1]);
@@ -52,13 +67,23 @@ bool ms5611_read_prom_word(uint8_t index, uint16_t *word)
 bool ms5611_start_d1_conversion(ms5611_osr_t osr)
 {
 	uint8_t cmd = (uint8_t)(0x40u | osr_to_cmd_bits(osr));
-	return (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) == HAL_OK);
+	if (!i2c_bus_take(&hi2c3, 1u)) {
+		return false;
+	}
+	const bool ok = (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) == HAL_OK);
+	i2c_bus_give(&hi2c3);
+	return ok;
 }
 
 bool ms5611_start_d2_conversion(ms5611_osr_t osr)
 {
 	uint8_t cmd = (uint8_t)(0x50u | osr_to_cmd_bits(osr));
-	return (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) == HAL_OK);
+	if (!i2c_bus_take(&hi2c3, 1u)) {
+		return false;
+	}
+	const bool ok = (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) == HAL_OK);
+	i2c_bus_give(&hi2c3);
+	return ok;
 }
 
 bool ms5611_read_adc(uint32_t *value)
@@ -67,11 +92,19 @@ bool ms5611_read_adc(uint32_t *value)
 		return false;
 	}
 	uint8_t cmd = 0x00u;
-	if (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) != HAL_OK) {
+	if (!i2c_bus_take(&hi2c3, 2u)) {
 		return false;
 	}
 	uint8_t buf[3];
-	if (HAL_I2C_Master_Receive(&hi2c3, addr8(), buf, 3u, 10u) != HAL_OK) {
+	bool ok = true;
+	if (HAL_I2C_Master_Transmit(&hi2c3, addr8(), &cmd, 1u, 10u) != HAL_OK) {
+		ok = false;
+	}
+	if (ok && (HAL_I2C_Master_Receive(&hi2c3, addr8(), buf, 3u, 10u) != HAL_OK)) {
+		ok = false;
+	}
+	i2c_bus_give(&hi2c3);
+	if (!ok) {
 		return false;
 	}
 	*value = ((uint32_t)buf[0] << 16u) | ((uint32_t)buf[1] << 8u) | (uint32_t)buf[2];

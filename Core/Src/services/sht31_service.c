@@ -19,6 +19,12 @@ static int16_t s_temp_c_x100;
 static uint16_t s_rh_x100;
 static uint32_t s_last_update_ms;
 
+#ifndef SHT31_SAMPLE_PERIOD_MS
+// With the current task scheduling, a 100ms period is a practical default (>=10Hz class).
+// If you need slower sampling or reduced bus usage, override at build time.
+#define SHT31_SAMPLE_PERIOD_MS 100u
+#endif
+
 void sht31_service_init(void)
 {
 	s_state = SHT31_STATE_IDLE;
@@ -38,9 +44,12 @@ void sht31_service_reset(void)
 
 void sht31_service_tick(uint32_t now_ms)
 {
-	// Sample at 1 Hz. Use a simple non-blocking state machine:
+	// Non-blocking state machine:
 	// 1) send measure command
 	// 2) after ~20ms, read 6 bytes
+	//
+	// NOTE: To achieve >=10Hz-class updates even when this tick is called at coarser periods,
+	// we pipeline by: read -> (if due) start the next measurement in the same call.
 	if (s_state == SHT31_STATE_IDLE) {
 		if ((int32_t)(now_ms - s_next_sample_ms) < 0) {
 			return;
@@ -49,6 +58,7 @@ void sht31_service_tick(uint32_t now_ms)
 		if (sht31_start_measurement()) {
 			s_state = SHT31_STATE_WAITING;
 			s_read_ready_ms = now_ms + 20u;
+			s_next_sample_ms = now_ms + SHT31_SAMPLE_PERIOD_MS;
 		} else {
 			// Backoff if bus/device not ready
 			s_valid = false;
@@ -73,8 +83,22 @@ void sht31_service_tick(uint32_t now_ms)
 			s_valid = false;
 		}
 
+		// Pipeline: if it's time for the next sample, immediately kick off the next conversion.
+		if ((int32_t)(now_ms - s_next_sample_ms) >= 0) {
+			if (sht31_start_measurement()) {
+				s_state = SHT31_STATE_WAITING;
+				s_read_ready_ms = now_ms + 20u;
+				s_next_sample_ms = now_ms + SHT31_SAMPLE_PERIOD_MS;
+				return;
+			}
+			// If we cannot start again, fall back to IDLE and backoff.
+			s_valid = false;
+			s_state = SHT31_STATE_IDLE;
+			s_next_sample_ms = now_ms + 1000u;
+			return;
+		}
+
 		s_state = SHT31_STATE_IDLE;
-		s_next_sample_ms = now_ms + 1000u;
 		return;
 	}
 }

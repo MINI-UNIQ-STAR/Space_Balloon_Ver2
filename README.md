@@ -1,6 +1,8 @@
 # stm32_spaceballoon (STM32G431 + STM32Cube HAL + PlatformIO)
 
-이 저장소는 STM32G431(PlatformIO + STM32Cube HAL)을 기반으로, 여러 센서 데이터를 수집해 **USART3**로 ESP32에 **고정 바이너리 프레임(50Hz)** 로 전송하는 프로젝트입니다.
+이 저장소는 STM32G431(PlatformIO + STM32Cube HAL + FreeRTOS)을 기반으로, 여러 센서 데이터를 수집해 **USART3**로 ESP32에 **고정 바이너리 프레임(50Hz)** 로 전송하는 프로젝트입니다.
+
+핵심 목표는 “센서 I2C 지연/리커버리 등으로 시스템이 흔들려도” **50Hz 텔레메트리 주기를 안정적으로 유지**하는 것입니다.
 
 ## 빠른 시작
 
@@ -71,6 +73,12 @@ PDF/레퍼런스 문서의 핀(PAxx/PCxx 등) 정보가 실제와 다를 수 있
 - 멀티바이트는 little-endian(구조체 memcpy 기반)
 - float 대신 정수 고정소수점(SI 기반 스케일) 사용
 
+### 전송 경로(중요)
+
+- USART3 텔레메트리 TX는 **비차단(IRQ 기반 링버퍼)** 방식으로 동작합니다.
+  - 115200bps에서 프레임 크기가 커질 경우, 블로킹 전송은 20ms 주기(50Hz)에 치명적일 수 있어 비차단으로 설계되어 있습니다.
+- “송신(50Hz)”과 “센서 읽기(느릴 수 있음)”를 분리하기 위해, 텔레메트리는 **스냅샷 payload**를 읽어 전송합니다.
+
 스냅샷 payload에는 현재 다음 값들이 포함됩니다(확장됨):
 - GPS: 위도/경도/고도, fix, 위성 카운트
 - 배터리: `bat_mv`
@@ -78,6 +86,23 @@ PDF/레퍼런스 문서의 핀(PAxx/PCxx 등) 정보가 실제와 다를 수 있
 - 공기질: PMS3003 (`pm1/pm2.5/pm10`)
 - 외기 온습도: SHT31-D (`sht31_temp_c_x100`, `sht31_rh_x100`)
 - 기압/온도/고도: MS5611 (`ms5611_press_pa`, `ms5611_temp_c_x100`, `ms5611_alt_m`)
+
+추가로 payload의 일부 예약 필드는 런타임 관측/상태 플래그 용도로 사용됩니다(프로토콜 호환성 유지 목적).
+- `reserved1`: RealTime 루프 실행시간(us, saturate)
+- `reserved2/reserved3`: health 확장 플래그(하위/상위 바이트)
+- `reserved4`: telemetry tick 실행시간(100us 단위, 0..255 => 0..25.5ms)
+
+> 위 의미는 펌웨어 디버그/튜닝을 위해 사용 중이며, ESP32 수신 측과 함께 변경/고정하는 것을 권장합니다.
+
+## FreeRTOS 태스크 구조(요약)
+
+우선순위 기반 선점형 스케줄링으로, 경로별 “최악 지연”이 50Hz를 깨지 않도록 분리합니다.
+
+- RealTime(최고 우선순위): 20ms 주기(=50Hz), 텔레메트리용 스냅샷 갱신/핵심 경로
+- Sensor: 100ms 기반(센서/서비스 폴링 및 분배)
+- System: 1000ms(상태 모니터링/하우스키핑)
+
+공유 데이터(텔레메트리 payload)는 mutex로 보호하고, RealTime 측은 **0-timeout 스냅샷 읽기(try-lock)**로 지터를 억제합니다.
 
 ## 현재 포함된 센서/서비스
 
@@ -87,6 +112,8 @@ PDF/레퍼런스 문서의 핀(PAxx/PCxx 등) 정보가 실제와 다를 수 있
 - Battery ADC (ADC1_IN2): 드라이버 + 1Hz 서비스
 - SHT31-D (I2C3): 드라이버 + 1Hz 서비스
 - MS5611 (I2C3): 드라이버 + 약 10Hz 서비스
+
+> 참고: 저장소에는 이 외에도 다양한 센서/서비스 모듈이 포함되어 있습니다. 최신 목록은 `Core/Inc/services/` / `Core/Inc/drivers/`를 기준으로 확인하세요.
 
 ### LSM6DSV16x (IMU)
 
@@ -110,11 +137,30 @@ PDF/레퍼런스 문서의 핀(PAxx/PCxx 등) 정보가 실제와 다를 수 있
 
 고도(altitude)는 표준대기 근사식으로 계산해 `ms5611_alt_m`(m)로 전송합니다. 해수면 기준압은 기본 `101325Pa`이며, 필요 시 `MS5611_P0_PA` 매크로로 변경 가능합니다.
 
+MS5611 변환 품질/속도 트레이드오프는 OSR로 조정할 수 있습니다.
+- 기본값(고품질): `MS5611_OSR_4096`
+- 더 빠른 업데이트가 필요하면 빌드 플래그로 변경:
+  - `-DMS5611_SERVICE_OSR=MS5611_OSR_2048`
+  - `-DMS5611_SERVICE_OSR=MS5611_OSR_1024`
+
 ## 개발 가이드
 
 - 새로운 센서 추가는 “드라이버 + 서비스 + 텔레메트리 필드 + (가능하면) native 유닛 테스트”를 한 세트로 추가하는 방식이 가장 안전합니다.
 - HAL 의존 부분은 `native_test`에 넣지 말고, 순수 로직(프레이밍/파서/보정/CRC)은 codec 모듈로 분리해 테스트하세요.
 - 메모리 제약: Flash/RAM이 작기 때문에 큰 버퍼/정적 데이터 추가에 주의하세요.
+
+## 오프라인 타이밍/데드라인 분석(tools)
+
+실기기 없이도 “50Hz가 깨질 위험”을 빠르게 탐색하기 위해 호스트용 스크립트를 제공합니다.
+
+- 단일 시뮬(가정한 WCET로 데드라인 미스 여부 확인)
+  - `python tools/rtos_deadline_sim.py`
+- RealTime WCET 스윕(임계값 탐색)
+  - `python tools/rtos_deadline_sim.py --sweep-rt-wcet --sim-ms 5000 --sweep-start-us 8000 --sweep-end-us 20000 --sweep-step-us 1000`
+- 그래프(PNG) 원클릭 생성(스윕→CSV/SVG→PNG)
+  - `python tools/rtos_sweep_plot_matplotlib.py --run-sweep`
+
+자세한 사용법은 `tools/README.md`를 참고하세요.
 
 ---
 

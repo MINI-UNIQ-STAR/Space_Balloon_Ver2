@@ -37,7 +37,15 @@ static uint32_t s_last_update_ms;
 #define MS5611_P0_PA 101325u
 #endif
 
-static const ms5611_osr_t k_osr = MS5611_OSR_4096;
+#ifndef MS5611_SERVICE_OSR
+// Oversampling ratio (OSR) selection controls conversion time vs noise.
+// Default to highest OSR for best quality; override at build time if you prefer faster updates:
+//   -DMS5611_SERVICE_OSR=MS5611_OSR_2048
+//   -DMS5611_SERVICE_OSR=MS5611_OSR_1024
+#define MS5611_SERVICE_OSR MS5611_OSR_4096
+#endif
+
+static const ms5611_osr_t k_osr = (ms5611_osr_t)MS5611_SERVICE_OSR;
 
 void ms5611_service_init(void)
 {
@@ -64,7 +72,10 @@ void ms5611_service_reset(void)
 
 void ms5611_service_tick(uint32_t now_ms)
 {
-	switch (s_state) {
+	// Allow multiple state transitions per call when no waiting is required.
+	// Bound the work to keep this tick from running away.
+	for (int steps = 0; steps < 8; steps++) {
+		switch (s_state) {
 	case MS5611_STATE_RESET:
 		if ((int32_t)(now_ms - s_next_cycle_ms) < 0) {
 			return;
@@ -84,7 +95,7 @@ void ms5611_service_tick(uint32_t now_ms)
 		}
 		s_prom_index = 0;
 		s_state = MS5611_STATE_READ_PROM;
-		return;
+		break;
 
 	case MS5611_STATE_READ_PROM: {
 		uint16_t w = 0;
@@ -105,7 +116,7 @@ void ms5611_service_tick(uint32_t now_ms)
 			}
 			s_state = MS5611_STATE_START_D1;
 		}
-		return;
+		break;
 	}
 
 	case MS5611_STATE_START_D1:
@@ -124,7 +135,7 @@ void ms5611_service_tick(uint32_t now_ms)
 			return;
 		}
 		s_state = MS5611_STATE_READ_D1;
-		return;
+		break;
 
 	case MS5611_STATE_READ_D1:
 		if (!ms5611_read_adc(&s_d1)) {
@@ -134,7 +145,7 @@ void ms5611_service_tick(uint32_t now_ms)
 			return;
 		}
 		s_state = MS5611_STATE_START_D2;
-		return;
+		break;
 
 	case MS5611_STATE_START_D2:
 		if (!ms5611_start_d2_conversion(k_osr)) {
@@ -152,7 +163,7 @@ void ms5611_service_tick(uint32_t now_ms)
 			return;
 		}
 		s_state = MS5611_STATE_READ_D2;
-		return;
+		break;
 
 	case MS5611_STATE_READ_D2:
 		if (!ms5611_read_adc(&s_d2)) {
@@ -162,7 +173,7 @@ void ms5611_service_tick(uint32_t now_ms)
 			return;
 		}
 		s_state = MS5611_STATE_COMPUTE;
-		return;
+		break;
 
 	case MS5611_STATE_COMPUTE: {
 		int32_t t;
@@ -176,9 +187,10 @@ void ms5611_service_tick(uint32_t now_ms)
 		} else {
 			s_valid = false;
 		}
+		// Start the next cycle as soon as the scheduler calls us again.
 		s_state = MS5611_STATE_IDLE;
-		s_next_cycle_ms = now_ms + 100u; // ~10Hz update
-		return;
+		s_next_cycle_ms = now_ms;
+		break;
 	}
 
 	case MS5611_STATE_IDLE:
@@ -186,11 +198,12 @@ void ms5611_service_tick(uint32_t now_ms)
 			return;
 		}
 		s_state = MS5611_STATE_START_D1;
-		return;
+		break;
 
 	default:
 		s_state = MS5611_STATE_RESET;
 		return;
+		}
 	}
 }
 

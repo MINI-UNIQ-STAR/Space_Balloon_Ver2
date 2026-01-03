@@ -2,6 +2,8 @@
 
 #include "stm32g4xx_hal.h"
 
+#include "drivers/i2c_bus_lock.h"
+
 extern I2C_HandleTypeDef hi2c1;
 
 static uint16_t addr8(void)
@@ -15,12 +17,19 @@ static bool read_u16_decimal(uint8_t cmd, uint16_t *out_x100)
 		return false;
 	}
 
-	if (HAL_I2C_Master_Transmit(&hi2c1, addr8(), &cmd, 1u, 10u) != HAL_OK) {
+	if (!i2c_bus_take(&hi2c1, 0u)) {
 		return false;
 	}
-
 	uint8_t buf[2];
-	if (HAL_I2C_Master_Receive(&hi2c1, addr8(), buf, sizeof(buf), 10u) != HAL_OK) {
+	bool ok = true;
+	if (HAL_I2C_Master_Transmit(&hi2c1, addr8(), &cmd, 1u, 10u) != HAL_OK) {
+		ok = false;
+	}
+	if (ok && (HAL_I2C_Master_Receive(&hi2c1, addr8(), buf, sizeof(buf), 10u) != HAL_OK)) {
+		ok = false;
+	}
+	i2c_bus_give(&hi2c1);
+	if (!ok) {
 		return false;
 	}
 
@@ -47,12 +56,19 @@ bool gdk101_read_status(uint8_t *out_status, uint8_t *out_vibration)
 	}
 
 	uint8_t cmd = (uint8_t)GDK101_CMD_STATUS_VIB;
-	if (HAL_I2C_Master_Transmit(&hi2c1, addr8(), &cmd, 1u, 10u) != HAL_OK) {
+	if (!i2c_bus_take(&hi2c1, 0u)) {
 		return false;
 	}
-
 	uint8_t buf[2];
-	if (HAL_I2C_Master_Receive(&hi2c1, addr8(), buf, sizeof(buf), 10u) != HAL_OK) {
+	bool ok = true;
+	if (HAL_I2C_Master_Transmit(&hi2c1, addr8(), &cmd, 1u, 10u) != HAL_OK) {
+		ok = false;
+	}
+	if (ok && (HAL_I2C_Master_Receive(&hi2c1, addr8(), buf, sizeof(buf), 10u) != HAL_OK)) {
+		ok = false;
+	}
+	i2c_bus_give(&hi2c1);
+	if (!ok) {
 		return false;
 	}
 

@@ -2,6 +2,8 @@
 
 #include "stm32g4xx_hal.h"
 
+#include "drivers/i2c_bus_lock.h"
+
 extern I2C_HandleTypeDef hi2c3;
 
 // From reference/MCP9600 Adafruit guide: default I2C address is 0x67.
@@ -12,5 +14,10 @@ enum {
 bool mcp9600_probe_is_ready(void)
 {
 	const uint16_t addr = (uint16_t)(MCP9600_I2C_ADDR_7BIT << 1);
-	return (HAL_I2C_IsDeviceReady(&hi2c3, addr, 1, 50) == HAL_OK);
+	if (!i2c_bus_take(&hi2c3, 0u)) {
+		return false;
+	}
+	const bool ok = (HAL_I2C_IsDeviceReady(&hi2c3, addr, 1, 50) == HAL_OK);
+	i2c_bus_give(&hi2c3);
+	return ok;
 }
