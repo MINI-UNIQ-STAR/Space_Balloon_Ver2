@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pio run:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.platformio.org)",
+      "Bash(wc:*)"
+    ]
+  }
+}

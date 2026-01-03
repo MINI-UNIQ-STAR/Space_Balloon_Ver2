@@ -32,12 +32,9 @@
 #define RESET_CO2_RST_GPIO_PORT GPIOB
 #define RESET_CO2_RST_GPIO_PIN  GPIO_PIN_0
 
-// #define RESET_SEN_RST_GPIO_PORT GPIOA
-// #define RESET_SEN_RST_GPIO_PIN  GPIO_PIN_5
-
-// Sensor board reset line
-#define RESET_SEN_RST_GPIO_PORT GPIOB
-#define RESET_SEN_RST_GPIO_PIN  GPIO_PIN_1
+// NOTE: PB1 is configured as TIM3_CH4 (board heater PWM) in CubeMX.
+// Do NOT map SEN_RST onto PB1 unless the .ioc is updated accordingly.
+// Leave SEN_RST unmapped until the hardware net/pin is confirmed.
 
 // MS5611 reset line
 #define RESET_MS_RST_GPIO_PORT GPIOA

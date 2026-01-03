@@ -49,8 +49,6 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -59,6 +57,39 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BAT_measure_Pin GPIO_PIN_1
+#define BAT_measure_GPIO_Port GPIOA
+#define MCP_RST_Pin GPIO_PIN_4
+#define MCP_RST_GPIO_Port GPIOA
+#define MS_RST_Pin GPIO_PIN_5
+#define MS_RST_GPIO_Port GPIOA
+#define Kapton_PWM_Pin GPIO_PIN_6
+#define Kapton_PWM_GPIO_Port GPIOA
+#define GPS_Wake_Pin GPIO_PIN_7
+#define GPS_Wake_GPIO_Port GPIOA
+#define CO2_RST_Pin GPIO_PIN_0
+#define CO2_RST_GPIO_Port GPIOB
+#define SEN_RST_Pin GPIO_PIN_1
+#define SEN_RST_GPIO_Port GPIOB
+#define PMS_SET_Pin GPIO_PIN_10
+#define PMS_SET_GPIO_Port GPIOB
+#define MLX_RST_Pin GPIO_PIN_14
+#define MLX_RST_GPIO_Port GPIOB
+#define DS18B20_Pin GPIO_PIN_15
+#define DS18B20_GPIO_Port GPIOB
+#define Minibulb_PWM_Pin GPIO_PIN_6
+#define Minibulb_PWM_GPIO_Port GPIOC
+#define GPS_RST_Pin GPIO_PIN_9
+#define GPS_RST_GPIO_Port GPIOA
+#define GPS_PPS_Pin GPIO_PIN_4
+#define GPS_PPS_GPIO_Port GPIOB
+#define GPS_PPS_EXTI_IRQn EXTI4_IRQn
+#define LSM_INT_Pin GPIO_PIN_6
+#define LSM_INT_GPIO_Port GPIOB
+#define LSM_INT_EXTI_IRQn EXTI9_5_IRQn
+#define LSM_INTB7_Pin GPIO_PIN_7
+#define LSM_INTB7_GPIO_Port GPIOB
+#define LSM_INTB7_EXTI_IRQn EXTI9_5_IRQn
 
 /* USER CODE BEGIN Private defines */
 

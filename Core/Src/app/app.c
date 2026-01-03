@@ -42,22 +42,27 @@ void app_init(void)
 
 void app_tick(uint32_t now_ms)
 {
+	// Prioritize latency-sensitive paths first (UART RX/poll, fast attitude, telemetry framing),
+	// then run slower/blocking sensors. This reduces jitter when an I2C transaction stalls.
 	gps_service_tick(now_ms);
-	aux_sensors_service_tick(now_ms);
-	air_quality_service_tick(now_ms);
-	co2_service_tick(now_ms);
-	heater_service_tick(now_ms);
-	ozone_service_tick(now_ms);
-	gdk101_service_tick(now_ms);
-	sht31_service_tick(now_ms);
-	ms5611_service_tick(now_ms);
 	imu_service_tick(now_ms);
-	mag_service_tick(now_ms);
-	mcp9600_service_tick(now_ms);
-	alt_kf_service_tick(now_ms);
 	uart4_debug_log_tick(now_ms);
 	swd_debug_probe_tick(now_ms);
-
-	health_monitor_service_tick(now_ms);
 	telemetry_service_tick(now_ms);
+
+	// Sensors / slower services (some may block on I2C/UART timeouts)
+	aux_sensors_service_tick(now_ms);
+	ms5611_service_tick(now_ms);
+	sht31_service_tick(now_ms);
+	mcp9600_service_tick(now_ms);
+	mag_service_tick(now_ms);
+	gdk101_service_tick(now_ms);
+	co2_service_tick(now_ms);
+	ozone_service_tick(now_ms);
+	air_quality_service_tick(now_ms);
+	heater_service_tick(now_ms);
+	alt_kf_service_tick(now_ms);
+
+	// Health monitor last so it observes the latest update timestamps.
+	health_monitor_service_tick(now_ms);
 }
