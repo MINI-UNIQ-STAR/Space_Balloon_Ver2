@@ -18,6 +18,10 @@ bool mcp9600_service_get_last_update_ms(uint32_t *out_ms);
 // Returns false if no valid reading is available.
 bool mcp9600_service_get_cold_junction_c_x100(int32_t *out_c_x100);
 
+// Returns MCP9600 hot junction (thermocouple/external) temperature in °C*100.
+// Returns false if no valid reading is available.
+bool mcp9600_service_get_hot_junction_c_x100(int32_t *out_c_x100);
+
 #ifdef __cplusplus
 }
 #endif

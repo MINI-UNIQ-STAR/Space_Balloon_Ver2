@@ -11,8 +11,10 @@ extern "C" {
 
 void mag_service_init(void);
 void mag_service_tick(uint32_t now_ms);
+void mag_service_reset(void);
 
 bool mag_service_get_data(float *x, float *y, float *z);
+bool mag_service_get_last_update_ms(uint32_t *out_ms);
 
 #ifdef __cplusplus
 }

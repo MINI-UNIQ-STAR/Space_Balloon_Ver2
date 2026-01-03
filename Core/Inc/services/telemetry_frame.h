@@ -52,8 +52,10 @@ typedef struct {
 	int32_t accel_mps2_x1000[3];
 	int32_t gyro_rads_x1000[3];
 	float mag_uT[3];
-	int16_t indoor_2nd_temp_c_x100;
+	int16_t indoor_2nd_temp_c_x100;    // MCP9600 cold junction (내부온도)
+	int16_t external_temp_c_x100;      // MCP9600 hot junction (외부온도 - 열전대)
 	int16_t sht31_temp_c_x100;
+	int16_t reserved1;  // padding for alignment
 	int32_t gps_lat_deg_e7;
 	int32_t gps_lon_deg_e7;
 	float gps_alt_m;
@@ -66,6 +68,7 @@ typedef struct {
 	uint8_t gps_sats_in_view_beidou;
 	uint8_t reserved2;
 	uint8_t reserved3;
+	uint8_t reserved4;
 	uint16_t bat_mv;
 	uint16_t pm1_ugm3;
 	uint16_t pm25_ugm3;

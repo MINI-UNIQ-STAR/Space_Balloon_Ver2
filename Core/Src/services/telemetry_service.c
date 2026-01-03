@@ -130,6 +130,10 @@ void telemetry_service_tick(uint32_t now_ms)
 	if (mcp9600_service_get_cold_junction_c_x100(&t_mcp)) {
 		payload.indoor_2nd_temp_c_x100 = (int16_t)t_mcp;
 	}
+	int32_t t_mcp_hot;
+	if (mcp9600_service_get_hot_junction_c_x100(&t_mcp_hot)) {
+		payload.external_temp_c_x100 = (int16_t)t_mcp_hot;
+	}
 	int16_t t_int;
 	if (aux_sensors_get_bat_temp_c_x100(&t_int)) {
 		payload.bat_temp_c_x100 = t_int;
@@ -173,6 +177,18 @@ void telemetry_service_tick(uint32_t now_ms)
 		payload.gps_sats_in_view_glonass = gps.sats_in_view_glonass;
 		payload.gps_sats_in_view_galileo = gps.sats_in_view_galileo;
 		payload.gps_sats_in_view_beidou = gps.sats_in_view_beidou;
+	} else {
+		// GPS stale or unavailable - send all zeros
+		payload.gps_fix = 0u;
+		payload.gps_lat_deg_e7 = 0;
+		payload.gps_lon_deg_e7 = 0;
+		payload.gps_alt_m = 0.0f;
+		payload.gps_sats_used = 0u;
+		payload.gps_sats_in_view_total = 0u;
+		payload.gps_sats_in_view_gps = 0u;
+		payload.gps_sats_in_view_glonass = 0u;
+		payload.gps_sats_in_view_galileo = 0u;
+		payload.gps_sats_in_view_beidou = 0u;
 	}
 
 	int16_t t_ext;

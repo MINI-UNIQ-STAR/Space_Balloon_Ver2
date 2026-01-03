@@ -8,8 +8,10 @@
 #include "services/gps_service.h"
 #include "services/gdk101_service.h"
 #include "services/imu_service.h"
+#include "services/mag_service.h"
 #include "services/mcp9600_service.h"
 #include "services/ms5611_service.h"
+#include "services/ozone_service.h"
 #include "services/pms3003_service.h"
 #include "services/sht31_service.h"
 
@@ -53,6 +55,8 @@ static health_state_t s_gdk101_state;
 static health_state_t s_imu_state;
 static health_state_t s_co2_state;
 static health_state_t s_mcp9600_state;
+static health_state_t s_mag_state;
+static health_state_t s_ozone_state;
 
 static bool is_stale(uint32_t now_ms, uint32_t last_ms, uint32_t threshold_ms)
 {
@@ -101,6 +105,8 @@ void health_monitor_service_init(void)
 	s_imu_state = (health_state_t){0};
 	s_co2_state = (health_state_t){0};
 	s_mcp9600_state = (health_state_t){0};
+	s_mag_state = (health_state_t){0};
+	s_ozone_state = (health_state_t){0};
 }
 
 void health_monitor_service_tick(uint32_t now_ms)
@@ -184,9 +190,15 @@ void health_monitor_service_tick(uint32_t now_ms)
 		}
 		if (s_sht31_state.permfail) {
 			flags |= HEALTH_FLAG_PERMFAIL_SHT31;
+			// Power off sensor on permanent failure (P-MOS: HIGH = OFF)
+			(void)reset_line_set(RESET_LINE_SHT_RST, true);
 		} else if (s_sht31_state.ever_updated && is_stale(now_ms, last_ms, HEALTH_STALE_THRESHOLD_MS)) {
 			flags |= HEALTH_FLAG_SHT31_STALE;
 			(void)recover_i2c3_bus();
+			(void)reset_line_pulse(RESET_LINE_SHT_RST,
+							HEALTH_RESET_PULSE_LOW_MS,
+							HEALTH_RESET_PULSE_HIGH_MS,
+							HEALTH_RESET_PULSE_LOW2_MS);
 			sht31_service_reset();
 			bump_attempt_or_permfail(&s_sht31_state);
 		}
@@ -200,6 +212,8 @@ void health_monitor_service_tick(uint32_t now_ms)
 		}
 		if (s_ms5611_state.permfail) {
 			flags |= HEALTH_FLAG_PERMFAIL_MS5611;
+			// Power off sensor on permanent failure (P-MOS: HIGH = OFF)
+			(void)reset_line_set(RESET_LINE_MS_RST, true);
 		} else if (s_ms5611_state.ever_updated && is_stale(now_ms, last_ms, HEALTH_STALE_THRESHOLD_MS)) {
 			flags |= HEALTH_FLAG_MS5611_STALE;
 			(void)recover_i2c3_bus();
@@ -225,6 +239,8 @@ void health_monitor_service_tick(uint32_t now_ms)
 		}
 		if (s_co2_state.permfail) {
 			ext_flags |= HEALTH_EXT_FLAG_PERMFAIL_CO2;
+			// Power off sensor on permanent failure (P-MOS: HIGH = OFF)
+			(void)reset_line_set(RESET_LINE_CO2_RST, true);
 		} else if (s_co2_state.ever_updated && is_stale(now_ms, last_ms, HEALTH_STALE_THRESHOLD_MS)) {
 			ext_flags |= HEALTH_EXT_FLAG_CO2_STALE;
 			(void)recover_i2c3_bus();
@@ -245,6 +261,8 @@ void health_monitor_service_tick(uint32_t now_ms)
 		}
 		if (s_mcp9600_state.permfail) {
 			ext_flags |= HEALTH_EXT_FLAG_PERMFAIL_MCP9600;
+			// Power off sensor on permanent failure (P-MOS: HIGH = OFF)
+			(void)reset_line_set(RESET_LINE_MCP_RST, true);
 		} else if (s_mcp9600_state.ever_updated && is_stale(now_ms, last_ms, HEALTH_STALE_THRESHOLD_MS)) {
 			ext_flags |= HEALTH_EXT_FLAG_MCP9600_STALE;
 			(void)recover_i2c3_bus();
@@ -278,6 +296,8 @@ void health_monitor_service_tick(uint32_t now_ms)
 		}
 		if (s_gdk101_state.permfail) {
 			flags |= HEALTH_FLAG_PERMFAIL_GDK101;
+			// Power off sensor on permanent failure (P-MOS: HIGH = OFF)
+			(void)reset_line_set(RESET_LINE_SEN_RST, true);
 		} else if (s_gdk101_state.ever_updated && is_stale(now_ms, last_ms, HEALTH_STALE_THRESHOLD_MS)) {
 			flags |= HEALTH_FLAG_GDK101_STALE;
 			(void)recover_i2c1_bus();
@@ -298,6 +318,8 @@ void health_monitor_service_tick(uint32_t now_ms)
 		}
 		if (s_imu_state.permfail) {
 			flags |= HEALTH_FLAG_PERMFAIL_IMU;
+			// Power off sensor on permanent failure (P-MOS: HIGH = OFF)
+			(void)reset_line_set(RESET_LINE_LSM_RST, true);
 		} else if (s_imu_state.ever_updated && is_stale(now_ms, last_ms, HEALTH_STALE_THRESHOLD_MS)) {
 			flags |= HEALTH_FLAG_IMU_STALE;
 			(void)recover_i2c1_bus();
@@ -307,6 +329,50 @@ void health_monitor_service_tick(uint32_t now_ms)
 							HEALTH_RESET_PULSE_LOW2_MS);
 			imu_service_reset();
 			bump_attempt_or_permfail(&s_imu_state);
+		}
+	}
+
+	// MLX90393 Magnetometer (I2C1)
+	{
+		uint32_t last_ms = 0;
+		if (mag_service_get_last_update_ms(&last_ms)) {
+			s_mag_state.ever_updated = true;
+		}
+		if (s_mag_state.permfail) {
+			ext_flags |= HEALTH_EXT_FLAG_PERMFAIL_MAG;
+			// Power off sensor on permanent failure (P-MOS: HIGH = OFF)
+			(void)reset_line_set(RESET_LINE_MLX_RST, true);
+		} else if (s_mag_state.ever_updated && is_stale(now_ms, last_ms, HEALTH_STALE_THRESHOLD_MS)) {
+			ext_flags |= HEALTH_EXT_FLAG_MAG_STALE;
+			(void)recover_i2c1_bus();
+			(void)reset_line_pulse(RESET_LINE_MLX_RST,
+							HEALTH_RESET_PULSE_LOW_MS,
+							HEALTH_RESET_PULSE_HIGH_MS,
+							HEALTH_RESET_PULSE_LOW2_MS);
+			mag_service_reset();
+			bump_attempt_or_permfail(&s_mag_state);
+		}
+	}
+
+	// Ozone Sensor SEN0321 (I2C3)
+	{
+		uint32_t last_ms = 0;
+		if (ozone_service_get_last_update_ms(&last_ms)) {
+			s_ozone_state.ever_updated = true;
+		}
+		if (s_ozone_state.permfail) {
+			ext_flags |= HEALTH_EXT_FLAG_PERMFAIL_OZONE;
+			// Power off sensor on permanent failure (P-MOS: HIGH = OFF)
+			(void)reset_line_set(RESET_LINE_SEN_RST, true);
+		} else if (s_ozone_state.ever_updated && is_stale(now_ms, last_ms, HEALTH_STALE_THRESHOLD_MS)) {
+			ext_flags |= HEALTH_EXT_FLAG_OZONE_STALE;
+			(void)recover_i2c3_bus();
+			(void)reset_line_pulse(RESET_LINE_SEN_RST,
+							HEALTH_RESET_PULSE_LOW_MS,
+							HEALTH_RESET_PULSE_HIGH_MS,
+							HEALTH_RESET_PULSE_LOW2_MS);
+			ozone_service_reset();
+			bump_attempt_or_permfail(&s_ozone_state);
 		}
 	}
 

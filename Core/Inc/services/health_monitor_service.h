@@ -33,11 +33,15 @@ typedef enum {
 
 // Extended health flags (packed into telemetry reserved bytes; layout stays 80B).
 typedef enum {
-	HEALTH_EXT_FLAG_CO2_STALE      = (1u << 0),
-	HEALTH_EXT_FLAG_PERMFAIL_CO2   = (1u << 1),
+	HEALTH_EXT_FLAG_CO2_STALE        = (1u << 0),
+	HEALTH_EXT_FLAG_PERMFAIL_CO2     = (1u << 1),
 	HEALTH_EXT_FLAG_MCP9600_STALE    = (1u << 2),
 	HEALTH_EXT_FLAG_PERMFAIL_MCP9600 = (1u << 3),
 	HEALTH_EXT_FLAG_GPS_INT_RECENT   = (1u << 4),
+	HEALTH_EXT_FLAG_MAG_STALE        = (1u << 5),
+	HEALTH_EXT_FLAG_PERMFAIL_MAG     = (1u << 6),
+	HEALTH_EXT_FLAG_OZONE_STALE      = (1u << 7),
+	HEALTH_EXT_FLAG_PERMFAIL_OZONE   = (1u << 8),
 } health_ext_flags_t;
 
 void health_monitor_service_init(void);

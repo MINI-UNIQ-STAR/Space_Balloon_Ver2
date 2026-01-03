@@ -14,6 +14,12 @@ extern "C" {
 // Returns false on I2C error.
 bool mcp9600_read_cold_junction_c_x100(int32_t *out_c_x100);
 
+// Reads MCP9600 hot junction (thermocouple/external) temperature.
+//
+// Output unit: centi-degrees Celsius (°C * 100).
+// Returns false on I2C error.
+bool mcp9600_read_hot_junction_c_x100(int32_t *out_c_x100);
+
 #ifdef __cplusplus
 }
 #endif

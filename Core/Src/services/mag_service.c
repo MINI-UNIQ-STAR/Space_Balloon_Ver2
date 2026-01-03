@@ -1,5 +1,6 @@
 #include "services/mag_service.h"
 #include "drivers/mlx90393.h"
+#include <stddef.h>
 
 static float s_mag_x, s_mag_y, s_mag_z;
 static bool s_valid = false;
@@ -29,4 +30,17 @@ bool mag_service_get_data(float *x, float *y, float *z) {
     if (y) *y = s_mag_y;
     if (z) *z = s_mag_z;
     return true;
+}
+
+bool mag_service_get_last_update_ms(uint32_t *out_ms) {
+    if (!s_valid || out_ms == NULL) return false;
+    *out_ms = s_last_read_ms;
+    return true;
+}
+
+void mag_service_reset(void) {
+    s_valid = false;
+    s_last_read_ms = 0;
+    mlx90393_config_t cfg = { .i2c_addr = MLX90393_I2C_ADDR_DEFAULT };
+    mlx90393_init(&cfg);
 }
