@@ -6,6 +6,8 @@
 #include "services/aux_sensors_service.h"
 #include "services/air_quality_service.h"
 #include "services/co2_service.h"
+#include "services/ozone_service.h"
+#include "services/heater_service.h"
 #include "services/sht31_service.h"
 #include "services/ms5611_service.h"
 #include "services/gdk101_service.h"
@@ -22,6 +24,8 @@ void app_init(void)
 	aux_sensors_service_init();
 	air_quality_service_init();
 	co2_service_init();
+	ozone_service_init();
+	heater_service_init();
 	gdk101_service_init();
 	sht31_service_init();
 	ms5611_service_init();
@@ -42,6 +46,8 @@ void app_tick(uint32_t now_ms)
 	aux_sensors_service_tick(now_ms);
 	air_quality_service_tick(now_ms);
 	co2_service_tick(now_ms);
+	heater_service_tick(now_ms);
+	ozone_service_tick(now_ms);
 	gdk101_service_tick(now_ms);
 	sht31_service_tick(now_ms);
 	ms5611_service_tick(now_ms);

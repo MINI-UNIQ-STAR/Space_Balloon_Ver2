@@ -1,6 +1,7 @@
 #include "services/pms3003_service.h"
 
 #include "drivers/uart_rx_poll.h"
+#include "drivers/reset_lines.h"
 
 #include <string.h>
 
@@ -11,6 +12,9 @@ static uint32_t s_last_update_ms = 0;
 
 void pms3003_service_init(void)
 {
+	// Ensure SET pin is HIGH (Normal Operation)
+	reset_line_set(RESET_LINE_PMS_SET, true);
+
 	pms_parser_init(&s_parser);
 	s_valid = false;
 	memset(&s_last, 0, sizeof(s_last));

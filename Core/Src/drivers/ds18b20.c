@@ -107,13 +107,96 @@ static uint8_t ds18_crc8(const uint8_t *data, size_t len)
 	return crc;
 }
 
+#define MAX_DEVICES 2
+static uint8_t s_roms[MAX_DEVICES][8];
+static int s_device_count = 0;
+
+// Forward declaration
+bool ds18b20_scan(void);
+
 void ds18b20_init(void)
 {
 	(void)dwt_delay_init();
 	ow_release_input_pullup();
+	ds18b20_scan();
 }
 
-bool ds18b20_start_conversion(void)
+// OneWire Search Algorithm (simplified)
+bool ds18b20_scan(void)
+{
+	s_device_count = 0;
+	memset(s_roms, 0, sizeof(s_roms));
+
+	uint8_t last_discrepancy = 0;
+	bool last_device_flag = false;
+	
+	while (!last_device_flag && s_device_count < MAX_DEVICES) {
+		if (!ow_reset_pulse()) {
+			return false; // No devices
+		}
+		ow_write_byte(0xF0); // Search ROM
+
+		uint8_t discrepancy_marker = 0;
+		uint8_t rom_byte_number = 0;
+		uint8_t rom_byte_mask = 1;
+		
+		for (int bit_pos = 1; bit_pos <= 64; bit_pos++) {
+			int id_bit = ow_read_bit();
+			int cmp_id_bit = ow_read_bit();
+
+			if (id_bit == 1 && cmp_id_bit == 1) {
+				return false; // Error
+			}
+
+			int search_direction;
+			if (id_bit != cmp_id_bit) {
+				search_direction = id_bit;
+			} else {
+				if (bit_pos < last_discrepancy) {
+					search_direction = ((s_roms[s_device_count][rom_byte_number] & rom_byte_mask) > 0);
+				} else {
+					search_direction = (bit_pos == last_discrepancy);
+				}
+
+				if (search_direction == 0) {
+					discrepancy_marker = bit_pos;
+				}
+			}
+
+			if (search_direction == 1) {
+				s_roms[s_device_count][rom_byte_number] |= rom_byte_mask;
+			} else {
+				s_roms[s_device_count][rom_byte_number] &= ~rom_byte_mask;
+			}
+
+			ow_write_bit(search_direction);
+
+			rom_byte_mask <<= 1;
+			if (rom_byte_mask == 0) {
+				rom_byte_number++;
+				rom_byte_mask = 1;
+			}
+		}
+
+		last_discrepancy = discrepancy_marker;
+		if (last_discrepancy == 0) {
+			last_device_flag = true;
+		}
+		
+		// Check CRC
+		if (ds18_crc8(s_roms[s_device_count], 8) == 0) {
+			s_device_count++;
+		}
+	}
+	return (s_device_count > 0);
+}
+
+int ds18b20_get_device_count(void)
+{
+	return s_device_count;
+}
+
+bool ds18b20_start_conversion_all(void)
 {
 	(void)dwt_delay_init();
 	if (!ow_reset_pulse()) {
@@ -126,9 +209,9 @@ bool ds18b20_start_conversion(void)
 	return true;
 }
 
-bool ds18b20_read_temperature(ds18b20_reading_t *out)
+bool ds18b20_read_temperature(int index, ds18b20_reading_t *out)
 {
-	if (out == NULL) {
+	if (out == NULL || index < 0 || index >= s_device_count) {
 		return false;
 	}
 	memset(out, 0, sizeof(*out));
@@ -138,8 +221,13 @@ bool ds18b20_read_temperature(ds18b20_reading_t *out)
 		return false;
 	}
 
-	// Skip ROM, Read Scratchpad
-	ow_write_byte(0xCC);
+	// Match ROM
+	ow_write_byte(0x55);
+	for (int i = 0; i < 8; i++) {
+		ow_write_byte(s_roms[index][i]);
+	}
+
+	// Read Scratchpad
 	ow_write_byte(0xBE);
 
 	uint8_t scratch[9] = {0};

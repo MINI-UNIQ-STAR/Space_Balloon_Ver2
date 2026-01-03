@@ -52,7 +52,7 @@ typedef struct {
 	int32_t accel_mps2_x1000[3];
 	int32_t gyro_rads_x1000[3];
 	float mag_uT[3];
-	int16_t temp_c_x100;
+	int16_t indoor_2nd_temp_c_x100;
 	int16_t sht31_temp_c_x100;
 	int32_t gps_lat_deg_e7;
 	int32_t gps_lon_deg_e7;
@@ -74,6 +74,11 @@ typedef struct {
 	uint32_t ms5611_press_pa;
 	int16_t ms5611_temp_c_x100;
 	uint16_t gdk101_usvh_x100;
+	int16_t ozone_ppb;
+	int16_t bat_temp_c_x100;
+	int16_t board_temp_c_x100;
+	uint8_t heater_bat_duty_percent;
+	uint8_t heater_board_duty_percent;
 	float press_alt_m;
 	float kf_alt_m;
 	float kf_roll_deg;

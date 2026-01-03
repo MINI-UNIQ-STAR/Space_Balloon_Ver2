@@ -10,6 +10,9 @@
 #include "services/health_monitor_service.h"
 #include "services/imu_service.h"
 #include "services/mag_service.h"
+#include "services/mcp9600_service.h"
+#include "services/heater_service.h"
+#include "services/ozone_service.h"
 #include "services/alt_kf_service.h"
 #include "services/ms5611_service.h"
 #include "services/sht31_service.h"
@@ -85,13 +88,18 @@ void telemetry_service_tick(uint32_t now_ms)
 		payload.reserved2 = (uint8_t)(ext & 0xFFu);
 		payload.reserved3 = (uint8_t)((ext >> 8) & 0xFFu);
 	}
-	payload.temp_c_x100 = 0;
+	payload.indoor_2nd_temp_c_x100 = 0;
 	payload.sht31_temp_c_x100 = 0;
 	payload.sht31_rh_x100 = 0;
 	payload.ms5611_press_pa = 0;
 	payload.ms5611_temp_c_x100 = 0;
 	payload.press_alt_m = 0.0f;
 	payload.co2_ppm = 0;
+	payload.ozone_ppb = 0;
+	payload.bat_temp_c_x100 = 0;
+	payload.board_temp_c_x100 = 0;
+	payload.heater_bat_duty_percent = 0;
+	payload.heater_board_duty_percent = 0;
 	payload.gdk101_usvh_x100 = 0;
 	for (int i = 0; i < 3; i++) {
 		payload.accel_mps2_x1000[i] = 0;
@@ -118,10 +126,19 @@ void telemetry_service_tick(uint32_t now_ms)
 		payload.mag_uT[2] = mag[2];
 	}
 
-	int16_t t_int;
-	if (aux_sensors_get_temp_int_c_x100(&t_int)) {
-		payload.temp_c_x100 = t_int;
+	int32_t t_mcp;
+	if (mcp9600_service_get_cold_junction_c_x100(&t_mcp)) {
+		payload.indoor_2nd_temp_c_x100 = (int16_t)t_mcp;
 	}
+	int16_t t_int;
+	if (aux_sensors_get_bat_temp_c_x100(&t_int)) {
+		payload.bat_temp_c_x100 = t_int;
+	}
+	if (aux_sensors_get_board_temp_c_x100(&t_int)) {
+		payload.board_temp_c_x100 = t_int;
+	}
+	payload.heater_bat_duty_percent = (uint8_t)(heater_bat_get_duty() * 100.0f);
+	payload.heater_board_duty_percent = (uint8_t)(heater_board_get_duty() * 100.0f);
 	uint16_t bat_mv;
 	if (aux_sensors_get_bat_mv(&bat_mv)) {
 		payload.bat_mv = bat_mv;

@@ -10,7 +10,8 @@ extern "C" {
 void aux_sensors_service_init(void);
 void aux_sensors_service_tick(uint32_t now_ms);
 
-bool aux_sensors_get_temp_int_c_x100(int16_t *out);
+bool aux_sensors_get_bat_temp_c_x100(int16_t *out);
+bool aux_sensors_get_board_temp_c_x100(int16_t *out);
 bool aux_sensors_get_bat_mv(uint16_t *out);
 
 // Health monitoring helpers
