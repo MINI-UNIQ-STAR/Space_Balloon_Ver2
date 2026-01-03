@@ -31,14 +31,15 @@ void test_build_frame_header_and_crc(void)
 	memset(&payload, 0, sizeof(payload));
 	payload.uptime_ms = 0x89ABCDEFu;
 	payload.status_flags = 0x1234u;
-	payload.temp_c_x100 = (int16_t)2500;
+	payload.indoor_2nd_temp_c_x100 = (int16_t)2500;
+	payload.external_temp_c_x100 = (int16_t)2600;
 	uint8_t out[96];
 
 	const uint8_t msg_type = (uint8_t)TELEM_MSG_SENSOR_SNAPSHOT;
 	const uint16_t seq = 0x1234u;
 	const uint32_t ts = 0x89ABCDEFu;
 
-		TEST_ASSERT_EQUAL_UINT32(80u, sizeof(telemetry_payload_sensor_snapshot_t));
+		TEST_ASSERT_EQUAL_UINT32((uint32_t)sizeof(telemetry_payload_sensor_snapshot_t), (uint32_t)sizeof(payload));
 
 	const size_t n = telemetry_build_frame(msg_type, (const uint8_t *)&payload, sizeof(payload), seq, ts, out, sizeof(out));
 	TEST_ASSERT_EQUAL_UINT32((uint32_t)(12u + sizeof(payload) + 2u), (uint32_t)n);
