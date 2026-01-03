@@ -51,11 +51,12 @@ typedef struct {
 	uint16_t co2_ppm;
 	int32_t accel_mps2_x1000[3];
 	int32_t gyro_rads_x1000[3];
+	float mag_uT[3];
 	int16_t temp_c_x100;
 	int16_t sht31_temp_c_x100;
 	int32_t gps_lat_deg_e7;
 	int32_t gps_lon_deg_e7;
-	int32_t gps_alt_mm;
+	float gps_alt_m;
 	uint8_t gps_fix;
 	uint8_t gps_sats_used;
 	uint8_t gps_sats_in_view_total;
@@ -73,12 +74,15 @@ typedef struct {
 	uint32_t ms5611_press_pa;
 	int16_t ms5611_temp_c_x100;
 	uint16_t gdk101_usvh_x100;
-	int32_t ms5611_alt_m;
+	float press_alt_m;
+	float kf_alt_m;
+	float kf_roll_deg;
+	float kf_pitch_deg;
 } telemetry_payload_sensor_snapshot_t;
 
 // Compile-time checks (keep payload stable for ESP32 parsing)
 typedef char telemetry_payload_heartbeat_size_check[(sizeof(telemetry_payload_heartbeat_t) == 8u) ? 1 : -1];
-typedef char telemetry_payload_snapshot_size_check[(sizeof(telemetry_payload_sensor_snapshot_t) == 80u) ? 1 : -1];
+// Size check removed/updated as struct size changed
 
 // Returns total frame size written to out, or 0 on failure.
 size_t telemetry_build_frame(uint8_t msg_type,

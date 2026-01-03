@@ -21,6 +21,14 @@ bool imu_service_get_accel_mps2_x1000(int32_t out_xyz[3]);
 // Latest gyro in rad/s * 1000 (XYZ).
 bool imu_service_get_gyro_rads_x1000(int32_t out_xyz[3]);
 
+// Latest attitude (Roll, Pitch) in degrees.
+bool imu_service_get_attitude(float *out_roll_deg, float *out_pitch_deg);
+
+bool imu_service_get_last_update_ms(uint32_t *out_ms);
+
+// Latest gyro in rad/s * 1000 (XYZ).
+bool imu_service_get_gyro_rads_x1000(int32_t out_xyz[3]);
+
 bool imu_service_get_last_update_ms(uint32_t *out_ms);
 
 #ifdef __cplusplus

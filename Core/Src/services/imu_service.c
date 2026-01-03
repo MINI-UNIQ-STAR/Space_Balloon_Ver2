@@ -3,6 +3,86 @@
 #include "drivers/lsm6dsv16x.h"
 
 #include "stm32g4xx_hal.h"
+#include <math.h>
+
+// Kalman Filter constants derived from LSM6DSV16x Datasheet
+// 1. Gyro Noise Density (High Performance): ~3.8 mdps/sqrt(Hz)
+//    Bandwidth ~50Hz -> Noise sigma = 3.8 * sqrt(50) = 26.8 mdps = 0.027 dps
+//    Integrated over dt=0.02s -> 0.00054 deg error per step.
+//    Variance ~ 3e-7. We use a larger Q_ANGLE to account for integration errors.
+#define KF_Q_ANGLE  0.0001f 
+
+// 2. Gyro Bias Instability is very low, but we allow some adaptation.
+#define KF_Q_BIAS   0.001f
+
+// 3. Accel Noise Density (High Performance): ~60 ug/sqrt(Hz)
+//    Bandwidth ~50Hz -> Noise sigma = 60 * sqrt(50) = 424 ug = 0.000424 g
+//    Angle Noise sigma = atan(0.000424) ~= 0.024 deg
+//    Variance R = (0.024)^2 ~= 0.000576
+//    We use a slightly larger value to account for mechanical vibration (not just sensor noise).
+#define KF_R_MEASURE 0.002f 
+
+typedef struct {
+    float angle; // The angle calculated by the Kalman filter - part of the 2x1 state vector
+    float bias;  // The gyro bias calculated by the Kalman filter - part of the 2x1 state vector
+    float P[2][2]; // Error covariance matrix - 2x2 matrix
+} KalmanState;
+
+static KalmanState s_kf_roll;
+static KalmanState s_kf_pitch;
+
+static void kf_init(KalmanState *kf) {
+    kf->angle = 0.0f;
+    kf->bias = 0.0f;
+    kf->P[0][0] = 0.0f;
+    kf->P[0][1] = 0.0f;
+    kf->P[1][0] = 0.0f;
+    kf->P[1][1] = 0.0f;
+}
+
+static float kf_get_angle(KalmanState *kf, float newAngle, float newRate, float dt) {
+    // Discrete Kalman filter time update equations - Time Update ("Predict")
+    // Update xhat - Project the state ahead
+    /* Step 1 */
+    float rate = newRate - kf->bias;
+    kf->angle += dt * rate;
+
+    // Update estimation error covariance - Project the error covariance ahead
+    /* Step 2 */
+    kf->P[0][0] += dt * (dt*kf->P[1][1] - kf->P[0][1] - kf->P[1][0] + KF_Q_ANGLE);
+    kf->P[0][1] -= dt * kf->P[1][1];
+    kf->P[1][0] -= dt * kf->P[1][1];
+    kf->P[1][1] += KF_Q_BIAS * dt;
+
+    // Discrete Kalman filter measurement update equations - Measurement Update ("Correct")
+    // Calculate Kalman gain - Compute the Kalman gain
+    /* Step 4 */
+    float S = kf->P[0][0] + KF_R_MEASURE; // Estimate error
+    /* Step 5 */
+    float K[2]; // Kalman gain - This is a 2x1 vector
+    K[0] = kf->P[0][0] / S;
+    K[1] = kf->P[1][0] / S;
+
+    // Calculate angle and bias - Update estimate with measurement zk (newAngle)
+    /* Step 3 */
+    float y = newAngle - kf->angle; // Angle difference
+    /* Step 6 */
+    kf->angle += K[0] * y;
+    kf->bias += K[1] * y;
+
+    // Calculate estimation error covariance - Update the error covariance
+    /* Step 7 */
+    float P00_temp = kf->P[0][0];
+    float P01_temp = kf->P[0][1];
+
+    kf->P[0][0] -= K[0] * P00_temp;
+    kf->P[0][1] -= K[0] * P01_temp;
+    kf->P[1][0] -= K[1] * P00_temp;
+    kf->P[1][1] -= K[1] * P01_temp;
+
+    return kf->angle;
+}
+
 
 enum {
 	IMU_SAMPLE_PERIOD_MS = 20u, // 50 Hz, aligned with telemetry
@@ -97,6 +177,9 @@ void imu_service_init(void)
 	}
 	s_last_update_ms = 0;
 
+	kf_init(&s_kf_roll);
+	kf_init(&s_kf_pitch);
+
 	// Configure IMU for stable telemetry sampling.
 	// - ODR: 120 Hz (UI chain), sampled down to 50 Hz in this service
 	// - FS: accel ±8g, gyro ±2000 dps
@@ -139,6 +222,34 @@ void imu_service_tick(uint32_t now_ms)
 		s_gyro_rads_x1000[i] = gyro_raw_to_rads_x1000(g_raw[i], g_mdps_per_lsb);
 	}
 
+	// Kalman Filter Update
+	float dt;
+	if (s_last_update_ms == 0) {
+		dt = (float)IMU_SAMPLE_PERIOD_MS / 1000.0f;
+	} else {
+		dt = (float)(now_ms - s_last_update_ms) / 1000.0f;
+	}
+
+	// Convert Accel to Gs for atan2 (scaling doesn't matter for atan2 as long as it's consistent)
+	float ax = (float)s_accel_mps2_x1000[0];
+	float ay = (float)s_accel_mps2_x1000[1];
+	float az = (float)s_accel_mps2_x1000[2];
+
+	// Calculate Accel Angles (deg)
+	// Roll: Rotation around X-axis
+	float accel_roll = atan2f(ay, az) * 180.0f / 3.14159265f;
+	// Pitch: Rotation around Y-axis
+	float accel_pitch = atan2f(-ax, sqrtf(ay*ay + az*az)) * 180.0f / 3.14159265f;
+
+	// Convert Gyro to deg/s
+	// s_gyro_rads_x1000 is rad/s * 1000
+	float gx_deg = (float)s_gyro_rads_x1000[0] / 1000.0f * 180.0f / 3.14159265f;
+	float gy_deg = (float)s_gyro_rads_x1000[1] / 1000.0f * 180.0f / 3.14159265f;
+
+	// Update KF
+	kf_get_angle(&s_kf_roll, accel_roll, gx_deg, dt);
+	kf_get_angle(&s_kf_pitch, accel_pitch, gy_deg, dt);
+
 	s_last_update_ms = now_ms;
 	s_valid = true;
 }
@@ -171,5 +282,15 @@ bool imu_service_get_last_update_ms(uint32_t *out_ms)
 		return false;
 	}
 	*out_ms = s_last_update_ms;
+	return true;
+}
+
+bool imu_service_get_attitude(float *out_roll_deg, float *out_pitch_deg)
+{
+	if ((out_roll_deg == NULL) || (out_pitch_deg == NULL) || !s_valid) {
+		return false;
+	}
+	*out_roll_deg = s_kf_roll.angle;
+	*out_pitch_deg = s_kf_pitch.angle;
 	return true;
 }

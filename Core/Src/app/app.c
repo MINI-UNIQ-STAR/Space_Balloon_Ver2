@@ -12,6 +12,7 @@
 #include "services/imu_service.h"
 #include "services/alt_kf_service.h"
 #include "services/mcp9600_service.h"
+#include "services/mag_service.h"
 #include "services/uart4_debug_log.h"
 #include "services/swd_debug_probe.h"
 
@@ -25,6 +26,7 @@ void app_init(void)
 	sht31_service_init();
 	ms5611_service_init();
 	imu_service_init();
+	mag_service_init();
 	mcp9600_service_init();
 	alt_kf_service_init();
 	uart4_debug_log_init();
@@ -44,6 +46,7 @@ void app_tick(uint32_t now_ms)
 	sht31_service_tick(now_ms);
 	ms5611_service_tick(now_ms);
 	imu_service_tick(now_ms);
+	mag_service_tick(now_ms);
 	mcp9600_service_tick(now_ms);
 	alt_kf_service_tick(now_ms);
 	uart4_debug_log_tick(now_ms);

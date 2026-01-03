@@ -71,6 +71,9 @@ bool lsm6dsv16x_init(const lsm6dsv16x_config_t *cfg);
 // Outputs are signed raw counts (little-endian registers).
 bool lsm6dsv16x_read_accel_gyro_raw(int16_t out_accel_xyz[3], int16_t out_gyro_xyz[3]);
 
+// Callback for EXTI interrupt.
+void lsm6dsv16x_exti_callback(uint16_t pin);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,6 +1,7 @@
 #include "services/alt_kf_service.h"
 
 #include "services/ms5611_service.h"
+#include "services/gps_service.h"
 
 #include "stm32g4xx_hal.h"
 
@@ -42,6 +43,7 @@ static kf_state_t s_kf;
 static uint32_t s_next_tick_ms;
 static uint32_t s_last_predict_ms;
 static uint32_t s_last_meas_update_ms;
+static uint32_t s_last_gps_update_ms;
 static uint8_t s_outlier_streak;
 static bool s_baro_fault_active;
 
@@ -169,12 +171,66 @@ static bool kf_update_baro(float z)
 	return true;
 }
 
+static bool kf_update_gps(float z, float sigma_z)
+{
+	// Measurement: z = h + noise
+	const float R = sigma_z * sigma_z;
+
+	const float r = z - s_kf.h;
+	const float S = s_kf.P00 + R;
+	if (S <= 1e-9f) {
+		return false;
+	}
+
+	const float nis = (r * r) / S;
+	if (nis > (float)ALT_KF_NIS_THRESHOLD) {
+		return false; // outlier
+	}
+
+	// Kalman gain K = P H^T S^-1, with H = [1,0]
+	const float K0 = s_kf.P00 / S;
+	const float K1 = s_kf.P10 / S;
+
+	// State update
+	s_kf.h = s_kf.h + K0 * r;
+	s_kf.v = s_kf.v + K1 * r;
+
+	// Joseph form
+	const float I_KH00 = 1.0f - K0;
+	const float I_KH01 = 0.0f;
+	const float I_KH10 = -K1;
+	const float I_KH11 = 1.0f;
+
+	const float P00 = s_kf.P00;
+	const float P01 = s_kf.P01;
+	const float P10 = s_kf.P10;
+	const float P11 = s_kf.P11;
+
+	const float A00 = I_KH00 * P00 + I_KH01 * P10;
+	const float A01 = I_KH00 * P01 + I_KH01 * P11;
+	const float A10 = I_KH10 * P00 + I_KH11 * P10;
+	const float A11 = I_KH10 * P01 + I_KH11 * P11;
+
+	const float Pn00 = A00 * I_KH00 + A01 * I_KH01;
+	const float Pn01 = A00 * I_KH10 + A01 * I_KH11;
+	const float Pn10 = A10 * I_KH00 + A11 * I_KH01;
+	const float Pn11 = A10 * I_KH10 + A11 * I_KH11;
+
+	s_kf.P00 = Pn00 + (K0 * R * K0);
+	s_kf.P01 = Pn01 + (K0 * R * K1);
+	s_kf.P10 = Pn10 + (K1 * R * K0);
+	s_kf.P11 = Pn11 + (K1 * R * K1);
+
+	return true;
+}
+
 void alt_kf_service_init(void)
 {
 	s_kf = (kf_state_t){0};
 	s_next_tick_ms = HAL_GetTick();
 	s_last_predict_ms = 0;
 	s_last_meas_update_ms = 0;
+	s_last_gps_update_ms = 0;
 	s_outlier_streak = 0;
 	s_baro_fault_active = false;
 }
@@ -202,43 +258,67 @@ void alt_kf_service_tick(uint32_t now_ms)
 		}
 	}
 
-	// Measurement update (only if MS5611 produced a new sample)
-	uint32_t meas_ms = 0;
-	if (!ms5611_service_get_last_update_ms(&meas_ms)) {
-		return;
-	}
-	if (meas_ms == s_last_meas_update_ms) {
-		return;
-	}
-	s_last_meas_update_ms = meas_ms;
+	// Measurement update (Barometer)
+	uint32_t baro_ms = 0;
+	if (ms5611_service_get_last_update_ms(&baro_ms) && (baro_ms != s_last_meas_update_ms)) {
+		s_last_meas_update_ms = baro_ms;
 
-	int32_t t_c_x100 = 0;
-	uint32_t press_pa = 0;
-	int32_t alt_m = 0;
-	if (!ms5611_service_get_last(&t_c_x100, &press_pa, &alt_m)) {
-		return;
-	}
+		int32_t t_c_x100 = 0;
+		uint32_t press_pa = 0;
+		int32_t alt_m = 0;
+		if (ms5611_service_get_last(&t_c_x100, &press_pa, &alt_m)) {
+			const float z = (float)alt_m;
+			if (!s_kf.initialized) {
+				kf_init(z);
+				s_outlier_streak = 0;
+				s_baro_fault_active = false;
+				// If we just initialized, we can also check GPS, but let's wait for next tick.
+				return;
+			}
 
-	const float z = (float)alt_m;
-	if (!s_kf.initialized) {
-		kf_init(z);
-		s_outlier_streak = 0;
-		s_baro_fault_active = false;
-		return;
-	}
-
-	// Gating + debounce
-	if (kf_update_baro(z)) {
-		s_outlier_streak = 0;
-		s_baro_fault_active = false;
-	} else {
-		if (s_outlier_streak < 0xFFu) {
-			s_outlier_streak++;
+			// Gating + debounce
+			if (kf_update_baro(z)) {
+				s_outlier_streak = 0;
+				s_baro_fault_active = false;
+			} else {
+				if (s_outlier_streak < 0xFFu) {
+					s_outlier_streak++;
+				}
+				if (s_outlier_streak >= (uint8_t)ALT_KF_OUTLIER_CONSECUTIVE) {
+					s_baro_fault_active = true;
+				}
+			}
 		}
-		if (s_outlier_streak >= (uint8_t)ALT_KF_OUTLIER_CONSECUTIVE) {
-			s_baro_fault_active = true;
+	}
+
+	// Measurement update (GPS)
+	uint32_t gps_ms = 0;
+	if (gps_service_get_last_update_ms(&gps_ms) && (gps_ms != s_last_gps_update_ms)) {
+		s_last_gps_update_ms = gps_ms;
+
+		nmea_gps_state_t gps_state;
+		if (gps_service_get_state(&gps_state) && gps_state.has_fix) {
+			// GPS Altitude is in mm, convert to m
+			float z_gps = (float)gps_state.alt_mm / 1000.0f;
+			
+			// Calculate Sigma based on HDOP
+			// UERE (User Equivalent Range Error) ~ 5.0m
+			// Sigma = HDOP * UERE
+			float sigma = 10.0f; // Default conservative
+			if (gps_state.hdop_x100 > 0) {
+				sigma = ((float)gps_state.hdop_x100 / 100.0f) * 5.0f;
+			}
+			
+			// If filter not initialized (e.g. Baro failed), init with GPS
+			if (!s_kf.initialized) {
+				kf_init(z_gps);
+				return;
+			}
+
+			// Update KF with GPS
+			// We don't track GPS outliers strictly here, but kf_update_gps has gating.
+			kf_update_gps(z_gps, sigma);
 		}
-		// Skip applying this outlier measurement.
 	}
 }
 

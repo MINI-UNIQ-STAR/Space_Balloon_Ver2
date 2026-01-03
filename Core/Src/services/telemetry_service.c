@@ -9,6 +9,8 @@
 #include "services/gdk101_service.h"
 #include "services/health_monitor_service.h"
 #include "services/imu_service.h"
+#include "services/mag_service.h"
+#include "services/alt_kf_service.h"
 #include "services/ms5611_service.h"
 #include "services/sht31_service.h"
 #include "services/telemetry_frame.h"
@@ -88,7 +90,7 @@ void telemetry_service_tick(uint32_t now_ms)
 	payload.sht31_rh_x100 = 0;
 	payload.ms5611_press_pa = 0;
 	payload.ms5611_temp_c_x100 = 0;
-	payload.ms5611_alt_m = 0;
+	payload.press_alt_m = 0.0f;
 	payload.co2_ppm = 0;
 	payload.gdk101_usvh_x100 = 0;
 	for (int i = 0; i < 3; i++) {
@@ -107,6 +109,13 @@ void telemetry_service_tick(uint32_t now_ms)
 		for (int i = 0; i < 3; i++) {
 			payload.gyro_rads_x1000[i] = gyro[i];
 		}
+	}
+
+	float mag[3];
+	if (mag_service_get_data(&mag[0], &mag[1], &mag[2])) {
+		payload.mag_uT[0] = mag[0];
+		payload.mag_uT[1] = mag[1];
+		payload.mag_uT[2] = mag[2];
 	}
 
 	int16_t t_int;
@@ -140,7 +149,7 @@ void telemetry_service_tick(uint32_t now_ms)
 		payload.gps_fix = gps.has_fix ? 1u : 0u;
 		payload.gps_lat_deg_e7 = gps.lat_deg_e7;
 		payload.gps_lon_deg_e7 = gps.lon_deg_e7;
-		payload.gps_alt_mm = gps.alt_mm;
+		payload.gps_alt_m = (float)gps.alt_mm / 1000.0f;
 		payload.gps_sats_used = gps.sats_used;
 		payload.gps_sats_in_view_total = gps.sats_in_view_total;
 		payload.gps_sats_in_view_gps = gps.sats_in_view_gps;
@@ -162,10 +171,21 @@ void telemetry_service_tick(uint32_t now_ms)
 	if (ms5611_service_get_last(&t_baro, &p_baro, &alt_m)) {
 		payload.ms5611_temp_c_x100 = (int16_t)t_baro;
 		payload.ms5611_press_pa = p_baro;
-		payload.ms5611_alt_m = alt_m;
+		payload.press_alt_m = (float)alt_m;
 	}
 
-	uint8_t frame[96];
+	float kf_alt;
+	if (alt_kf_service_get_alt_m(&kf_alt)) {
+		payload.kf_alt_m = kf_alt;
+	}
+
+	float roll, pitch;
+	if (imu_service_get_attitude(&roll, &pitch)) {
+		payload.kf_roll_deg = roll;
+		payload.kf_pitch_deg = pitch;
+	}
+
+	uint8_t frame[128];
 
 	const size_t n = telemetry_build_frame(
 			(uint8_t)TELEM_MSG_SENSOR_SNAPSHOT,

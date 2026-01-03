@@ -14,6 +14,7 @@ typedef struct {
 	int32_t lon_deg_e7; // degrees * 1e7
 	int32_t alt_mm;     // meters * 1000
 	uint8_t sats_used;
+	uint16_t hdop_x100; // HDOP * 100 (e.g. 1.23 -> 123)
 
 	// Satellites in view (from GSV). Not all constellations may be provided.
 	uint8_t sats_in_view_total;

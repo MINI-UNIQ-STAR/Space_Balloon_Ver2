@@ -305,11 +305,17 @@ static void parse_sentence(nmea_parser_t *p, char *line)
 		int32_t lat_e7 = 0;
 		int32_t lon_e7 = 0;
 		int32_t alt_mm = 0;
+		int32_t hdop_x100 = 0;
 
 		bool ok = true;
 		ok = ok && parse_lat_lon_deg_e7(fields[2], fields[3], true, &lat_e7);
 		ok = ok && parse_lat_lon_deg_e7(fields[4], fields[5], false, &lon_e7);
 		ok = ok && parse_decimal_scaled_i32(fields[9], 1000, &alt_mm);
+		// HDOP is optional in some receivers but usually present.
+		if (fields[8][0] != '\0') {
+			(void)parse_decimal_scaled_i32(fields[8], 100, &hdop_x100);
+		}
+
 		if (!ok) {
 			return;
 		}
@@ -318,6 +324,7 @@ static void parse_sentence(nmea_parser_t *p, char *line)
 		p->state.lat_deg_e7 = lat_e7;
 		p->state.lon_deg_e7 = lon_e7;
 		p->state.alt_mm = alt_mm;
+		p->state.hdop_x100 = (uint16_t)((hdop_x100 > 65535) ? 65535 : hdop_x100);
 		p->state.sats_used = (uint8_t)((sats < 0) ? 0 : (sats > 255 ? 255 : sats));
 		return;
 	}

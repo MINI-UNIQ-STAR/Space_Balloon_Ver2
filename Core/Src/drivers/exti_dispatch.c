@@ -3,6 +3,8 @@
 
 #include "drivers/gps_int_capture.h"
 #include "drivers/pps_capture.h"
+#include "drivers/lsm6dsv16x.h"
+#include "drivers/mlx90393.h"
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -12,8 +14,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	} else if (GPIO_Pin == GPS_INT_GPIO_PIN) {
 		gps_int_capture_exti_callback(GPIO_Pin);
 	} else if (GPIO_Pin == LSM_INT_GPIO_PIN) {
-		// TODO: Call LSM6DSV16x interrupt handler
+		lsm6dsv16x_exti_callback(GPIO_Pin);
 	} else if (GPIO_Pin == MLX_INT_GPIO_PIN) {
-		// TODO: Call MLX90393 interrupt handler
+		mlx90393_exti_callback(GPIO_Pin);
 	}
 }

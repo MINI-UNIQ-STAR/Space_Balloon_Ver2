@@ -11,6 +11,7 @@ enum {
 	LSM6DSV16X_REG_CTRL1 = 0x10u,
 	LSM6DSV16X_REG_CTRL2 = 0x11u,
 	LSM6DSV16X_REG_CTRL3 = 0x12u,
+	LSM6DSV16X_REG_INT1_CTRL = 0x0Du,
 	LSM6DSV16X_REG_CTRL6 = 0x15u,
 	LSM6DSV16X_REG_CTRL8 = 0x17u,
 
@@ -144,6 +145,12 @@ bool lsm6dsv16x_init(const lsm6dsv16x_config_t *cfg)
 		return false;
 	}
 
+	// Interrupt configuration: Enable DRDY for Accel and Gyro on INT1.
+	// INT1_CTRL (0x0D): INT1_DRDY_XL(0), INT1_DRDY_G(1)
+	if (!i2c_write_reg(LSM6DSV16X_REG_INT1_CTRL, 0x03u)) {
+		return false;
+	}
+
 	// ODR/mode configuration (enables sensors).
 	if (!i2c_write_reg(LSM6DSV16X_REG_CTRL1, build_ctrl1(cfg))) {
 		return false;
@@ -178,4 +185,9 @@ bool lsm6dsv16x_read_accel_gyro_raw(int16_t out_accel_xyz[3], int16_t out_gyro_x
 	out_accel_xyz[2] = (int16_t)((uint16_t)buf[10] | ((uint16_t)buf[11] << 8));
 
 	return true;
+}
+void lsm6dsv16x_exti_callback(uint16_t pin)
+{
+	// Placeholder for interrupt handling
+	(void)pin;
 }
