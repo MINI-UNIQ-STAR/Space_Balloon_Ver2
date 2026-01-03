@@ -98,3 +98,20 @@ matplotlib을 사용해 `tools/out/rtos_wcet_vs_isr.csv`를 읽고 PNG 이미지
 
 - `tools/out/` 폴더는 스크립트 실행 결과(CSV/SVG/PNG)를 저장합니다.
   - 커밋 정책은 프로젝트 컨벤션에 맞춰서 결정하세요(필요 시 `.gitignore`로 제외).
+
+---
+
+## (추가) ESP32 수신 로그 분석
+
+실기기에서 ESP32가 수신한 텔레메트리 프레임 간격(지터/드롭)을 빠르게 확인하기 위한 분석 도구입니다.
+
+### `telemetry_rx_log_analyze.py`
+
+- 입력: ESP32 수신 측에서 찍은 CSV(헤더 포함)
+- 출력: 프레임 간격(dt) 통계(평균/최댓값/p99 등), 시퀀스 갭 기반 드롭 추정, 간단 히스토그램
+
+실행 예시:
+- `python tools/telemetry_rx_log_analyze.py --csv your_log.csv --expected-period-ms 20 --only-ok`
+
+Arduino(ESP32) 수신/CSV 로깅 예제 스케치:
+- `docs/telemetry_rx_arduino_example.ino`
