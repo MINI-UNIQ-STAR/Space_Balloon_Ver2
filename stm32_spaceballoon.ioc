@@ -424,3 +424,4 @@ VP_TIM8_VS_ClockSourceITR.Signal=TIM8_VS_ClockSourceITR
 VP_TIM8_VS_NoETR.Mode=ETR_as_clearing_source_through_remap_TIM8
 VP_TIM8_VS_NoETR.Signal=TIM8_VS_NoETR
 board=custom
+rtos.0.ip=FREERTOS

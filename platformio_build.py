@@ -30,7 +30,7 @@ def _strip_framework_startup_object(build_env):
     build_dir = build_env.subst("$BUILD_DIR")
     lib_path = os.path.join(build_dir, "libFrameworkCMSISDevice.a")
     ar = build_env.subst("$AR")
-    cmd = f'"{ar}" d "{lib_path}" startup_stm32g431xx.o'
+    cmd = f'{ar} d {lib_path} startup_stm32g431xx.o'
 
     build_env.AddPostAction(
         lib_path,
