@@ -1,58 +1,31 @@
-# stm32_spaceballoon (STM32G431 + STM32Cube HAL + PlatformIO)
+# stm32_spaceballoon (STM32G431 + CubeMX/HAL + FreeRTOS + PlatformIO)
 
-## Big picture / source of truth
-- STM32CubeMX is the source of truth: `stm32_spaceballoon.ioc` generates `Core/`.
-- PlatformIO builds directly from CubeMX output (`platformio.ini`: `src_dir = Core/Src`, `include_dir = Core/Inc`).
+## Source of truth / 편집 규칙
+- CubeMX가 source of truth: `stm32_spaceballoon.ioc` → `Core/` 생성. 핀/AF/NVIC/baud 등은 `.ioc` + 생성 코드(`Core/Src/*`)를 기준으로 확인.
+- 시스템 요구사항/설계 의도(spec)는 `docs/STM32_SpaceBalloon_Specification.md`(Rev 3.0)를 기준으로 하되, **구현 세부(핀/AF/NVIC/baud/핸들 연결)가 충돌하면** `.ioc` + 생성 코드가 최종 기준.
+- `Core/` 내 생성 파일은 `/* USER CODE BEGIN/END */` 블록만 수정. 새 기능은 가능하면 새 모듈로 `Core/Src/{app,services,drivers}/` + `Core/Inc/...`에 추가.
+- 실제 소스/헤더: `Core/Src/`, `Core/Inc/` (`src/`는 문서용, `archive/`는 건드리지 않음).
 
-## Where code lives (important)
-- **Actual application sources:** `Core/Src/`
-- **Actual application headers:** `Core/Inc/`
-- `src/` is documentation only; prior duplicate sources were moved to `archive/duplicate_src_YYYY-MM-DD/` (do not edit `archive/`).
+## Big picture (왜 이렇게 설계됐나)
+- 목표: 센서 지연/리커버리가 있어도 **USART3로 50Hz 텔레메트리 프레임**을 안정적으로 송신.
+- “센서 읽기(느림)”와 “송신(20ms 주기)”를 분리: 텔레메트리는 스냅샷 payload를 읽어 프레임 전송.
+- 텔레메트리 프레이밍/CRC: `Core/Inc/services/telemetry_frame.h`, 구현/송신 경로는 `Core/Src/services/telemetry_service.c` 중심.
 
-## Safe editing rules (CubeMX regeneration)
-- Many files in `Core/` are generated; preserve `/* USER CODE BEGIN ... */` / `/* USER CODE END ... */` blocks.
-- Put custom logic only inside USER CODE blocks (e.g. init in `Core/Src/main.c` `USER CODE BEGIN 2`, main loop in `USER CODE BEGIN 3`).
-- Add new custom modules as new files under `Core/Src/` + `Core/Inc/` to minimize merge pain on regeneration.
-- If pin/peripheral config changes are needed, edit `stm32_spaceballoon.ioc` and re-generate instead of hand-editing `MX_*_Init()` bodies.
+## 레이어/의존성 규칙
+- 단방향: `app` → `services` → `drivers` → `HAL` (상위에서 HAL 직접 호출은 피하고 driver로 감싸기).
+- 순수 로직(파서/CRC/보정수식)은 `*_codec.*`로 분리해 호스트 테스트 가능하게 유지.
 
-## Build / upload / debug (PlatformIO)
-- Env: `genericSTM32G431CB`.
-- Commands: `pio run` (build), `pio run -t upload` (upload), `pio run -t clean` (clean), `pio device monitor` (monitor).
-- Debug: use VS Code “PIO Debug” (`.vscode/launch.json` is auto-generated).
+## 빌드/디버그/테스트 (PlatformIO)
+- 기본 빌드: `pio run` (env: `genericSTM32G431CB`), 업로드: `pio run -t upload`, 모니터: `pio device monitor`.
+- 지상 디버그용 env: `genericSTM32G431CB_debug` (SWD probe용 플래그 활성).
+- 호스트 유닛테스트(Unity): `pio test -e native_test` (`platformio.ini`의 `build_src_filter`에 포함된 codec/프레임/파서 위주).
 
-## Hardware integration points
-- Peripheral init is split across:
-  - `Core/Src/main.c`: `MX_*_Init()` calls and app entry loop
-  - `Core/Src/stm32g4xx_hal_msp.c`: GPIO clocks/alternate functions/NVIC setup per peripheral
-  - `Core/Src/stm32g4xx_it.c`: IRQ handlers (add code in `USER CODE BEGIN 1`)
+## 버스/포트 매핑은 “코드 기준”
+- 문서가 상충할 수 있어(예: 사양서 vs README), 실제 사용 버스는 드라이버에서 확인: `extern I2C_HandleTypeDef hi2c*;`.
+- 예: `Core/Src/drivers/sht31.c`, `Core/Src/drivers/ms5611.c`는 `hi2c3` 사용.
+- UART 설정/baud는 `Core/Src/usart.c`를 기준으로 확인(역할: USART1=GPS, USART2=PMS, USART3=Telemetry).
 
-## Layered architecture (AUTOSAR-like convention)
-- Keep dependencies one-way: **app → services → drivers → HAL/BSP**.
-- Avoid calling STM32 HAL directly from high-level app logic; wrap HAL access in a driver module.
-- Suggested folder layout for new code: `Core/Src/{app,services,drivers}/` + `Core/Inc/{app,services,drivers}/`.
-
-## Sensor bus / port mapping (project convention)
-- Reference docs live under `reference/` (per-sensor folders).
-- Some PDFs/specs in `reference/` may have outdated pin/port (PAxx/PCxx) details. Treat **bus selection** (I2C1/I2C3/USARTx) as the stable convention here, but treat **pin mapping** as defined by `stm32_spaceballoon.ioc` + generated `Core/` code.
-- When you need the exact pins/AF/NVIC, check `stm32_spaceballoon.ioc` first, then confirm in `Core/Src/stm32g4xx_hal_msp.c`.
-- I2C3: `CM1107N`, `MCP9600`
-- I2C1: `GDK101`, `LSM6DSV16x`, `MLX90393`
-- USART1: `XA1110` (GPS)
-- USART2: `PMS3003`
-- USART3: reserved for sensor data output/telemetry
-- Note: this project uses **I2C3** (not I2C2). If a reference mentions I2C2, translate that to I2C3 for this codebase.
-- Default CubeMX UART config (see `Core/Src/main.c`): USART1/2/3 are initialized as 115200 8N1 (adjust via `.ioc` if a sensor requires a different baud).
-- Telemetry (USART3) is a project-defined output stream; the on-wire framing/protocol is not specified in this repo yet—define it once (service-level), keep it stable, and document it under `reference/`.
-
-## printf / serial I/O
-- `Core/Src/syscalls.c` routes `_write()` to weak `__io_putchar()`.
-- If enabling `printf`, implement `int __io_putchar(int ch)` in a USER CODE block or a new file under `Core/Src/`.
-- UART roles are reserved (USART1 GPS, USART2 PMS3003, USART3 telemetry). Avoid `printf` on these UARTs unless you explicitly disable the corresponding feature.
-
-## Linker / memory assumptions
-- Linker script: `STM32G431CBUX_FLASH.ld` (Flash 112KB, RAM 32KB). Be cautious adding large buffers/static data.
-
-## Do not modify
-- `Drivers/` (vendored STM32 HAL/CMSIS)
-- `.vscode/launch.json` and `.vscode/c_cpp_properties.json` (auto-generated by PlatformIO)
-- `archive/` (historical snapshots)
+## 기타 주의
+- `Core/Src/syscalls.c`의 `_write()` → `__io_putchar()` 라우팅 때문에 `printf` 출력 UART를 신중히 선택(역할 충돌 주의).
+- 링크/메모리: `STM32G431CBUX_FLASH.ld` (소형 RAM/Flash이므로 큰 static 버퍼 주의).
+- 수정 금지: `Drivers/`, 자동 생성 `.vscode/*`, `archive/`.
