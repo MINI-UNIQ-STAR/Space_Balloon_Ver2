@@ -19,8 +19,7 @@
 //   CO2_RST -> B0  (PB0)
 //   MS_RST  -> A5  (PA5)
 //   MCP_RST -> A4  (PA4)
-// NOTE: SEN_RST appears as B1 (PB1) in the schematic mapping, but PB1 is
-// currently configured as TIM3_CH4 in .ioc; leave it unmapped until confirmed.
+// SEN_RST is mapped to PB1 in the schematic and is configured as GPIO_Output in .ioc.
 
 #define RESET_LSM_RST_GPIO_PORT GPIOB
 #define RESET_LSM_RST_GPIO_PIN  GPIO_PIN_11
@@ -32,9 +31,13 @@
 #define RESET_CO2_RST_GPIO_PORT GPIOB
 #define RESET_CO2_RST_GPIO_PIN  GPIO_PIN_0
 
-// NOTE: PB1 is configured as TIM3_CH4 (board heater PWM) in CubeMX.
-// Do NOT map SEN_RST onto PB1 unless the .ioc is updated accordingly.
-// Leave SEN_RST unmapped until the hardware net/pin is confirmed.
+// GDK101 power control (P-MOS). HIGH = OFF
+#define RESET_GDK101_PWR_GPIO_PORT GPIOB
+#define RESET_GDK101_PWR_GPIO_PIN  GPIO_PIN_2
+
+// Sensor reset/power control line
+#define RESET_SEN_RST_GPIO_PORT GPIOB
+#define RESET_SEN_RST_GPIO_PIN  GPIO_PIN_1
 
 // MS5611 reset line
 #define RESET_MS_RST_GPIO_PORT GPIOA

@@ -37,6 +37,17 @@ static bool reset_line_get_gpio(reset_line_t line, GPIO_TypeDef **port, uint16_t
 			return false;
 			#endif
 
+		case RESET_LINE_GDK101_PWR:
+			#ifdef RESET_GDK101_PWR_GPIO_PORT
+			*port = RESET_GDK101_PWR_GPIO_PORT;
+			*pin = RESET_GDK101_PWR_GPIO_PIN;
+			return true;
+			#else
+			(void)port;
+			(void)pin;
+			return false;
+			#endif
+
 		case RESET_LINE_SEN_RST:
 			#ifdef RESET_SEN_RST_GPIO_PORT
 			*port = RESET_SEN_RST_GPIO_PORT;

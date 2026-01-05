@@ -1,11 +1,11 @@
 #include "services/heater_service.h"
 #include "services/aux_sensors_service.h"
-#include "main.h" // For TIM16, TIM3 handles
+#include "main.h" // For TIM handles
 
 #include <math.h>
 
 extern TIM_HandleTypeDef htim16; // Battery Heater (PA6)
-extern TIM_HandleTypeDef htim3;  // Board Heater (PB1)
+extern TIM_HandleTypeDef htim8;  // Board Heater (PC6)
 
 // PID Constants (Tuning required!)
 // Battery Heater (Kapton)
@@ -19,8 +19,6 @@ extern TIM_HandleTypeDef htim3;  // Board Heater (PB1)
 #define BOARD_HEATER_KI 5.0f
 #define BOARD_HEATER_KD 0.0f
 #define BOARD_HEATER_INTEGRAL_MAX 15000.0f
-
-#define HEATER_PWM_PERIOD 65535.0f
 
 typedef struct {
     float target_temp_c;
@@ -40,6 +38,16 @@ static heater_ctrl_t s_bat_heater;
 static heater_ctrl_t s_board_heater;
 static uint32_t s_last_tick_ms = 0;
 
+static float heater_pwm_period(const heater_ctrl_t *h)
+{
+    if ((h == NULL) || (h->htim == NULL)) {
+        return 1.0f;
+    }
+    // PWM period is ARR+1 for up-counting timers.
+    const uint32_t arr = __HAL_TIM_GET_AUTORELOAD(h->htim);
+    return (float)(arr + 1u);
+}
+
 static void heater_ctrl_init(heater_ctrl_t *h, TIM_HandleTypeDef *htim, uint32_t channel, float default_target,
                              float kp, float ki, float kd, float integral_max) {
     h->htim = htim;
@@ -58,6 +66,7 @@ static void heater_ctrl_init(heater_ctrl_t *h, TIM_HandleTypeDef *htim, uint32_t
 }
 
 static void heater_ctrl_update(heater_ctrl_t *h, float current_temp_c, float dt) {
+	const float pwm_period = heater_pwm_period(h);
     float error = h->target_temp_c - current_temp_c;
 
     // Proportional
@@ -78,12 +87,12 @@ static void heater_ctrl_update(heater_ctrl_t *h, float current_temp_c, float dt)
     float output = p_term + i_term + d_term;
 
     // Clamp output to PWM range
-    if (output > HEATER_PWM_PERIOD) output = HEATER_PWM_PERIOD;
+    if (output > pwm_period) output = pwm_period;
     if (output < 0.0f) output = 0.0f;
 
     // Apply to PWM
     __HAL_TIM_SET_COMPARE(h->htim, h->channel, (uint32_t)output);
-    h->current_duty = output / HEATER_PWM_PERIOD;
+    h->current_duty = (pwm_period > 0.0f) ? (output / pwm_period) : 0.0f;
 }
 
 static void heater_ctrl_off(heater_ctrl_t *h) {
@@ -97,7 +106,7 @@ void heater_service_init(void)
     heater_ctrl_init(&s_bat_heater, &htim16, TIM_CHANNEL_1, 10.0f, 
                      BAT_HEATER_KP, BAT_HEATER_KI, BAT_HEATER_KD, BAT_HEATER_INTEGRAL_MAX);
     
-    heater_ctrl_init(&s_board_heater, &htim3, TIM_CHANNEL_4, 5.0f,
+    heater_ctrl_init(&s_board_heater, &htim8, TIM_CHANNEL_1, 5.0f,
                      BOARD_HEATER_KP, BOARD_HEATER_KI, BOARD_HEATER_KD, BOARD_HEATER_INTEGRAL_MAX);
     
     s_last_tick_ms = HAL_GetTick();

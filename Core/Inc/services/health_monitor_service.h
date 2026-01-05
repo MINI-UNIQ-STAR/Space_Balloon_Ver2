@@ -7,8 +7,8 @@
 extern "C" {
 #endif
 
-// Spec-driven health check:
-// - checks every 100ms
+// Health check:
+// - checks every 1000ms
 // - if no update for >=2000ms -> mark ERROR and attempt recovery
 // - if recovery fails 5 times -> permanent fail until reboot
 

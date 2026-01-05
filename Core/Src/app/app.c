@@ -22,14 +22,109 @@
 #include "drivers/i2c_bus_lock.h"
 #include "drivers/dwt_delay.h"
 
+#include "i2c.h"
+#include "main.h"
+
 #include "FreeRTOS.h"
 #include "task.h"
 
 #include "stm32g4xx_hal.h"
 
+static void app_fix_i2c1_addressing_mode_7bit(void)
+{
+	// CubeMX generated init currently sets I2C1 to 10-bit addressing.
+	// We re-init here to enforce 7-bit until the project is regenerated from .ioc.
+	if (hi2c1.Init.AddressingMode == I2C_ADDRESSINGMODE_7BIT) {
+		return;
+	}
+
+	(void)HAL_I2C_DeInit(&hi2c1);
+	hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+	if (HAL_I2C_Init(&hi2c1) != HAL_OK) {
+		Error_Handler();
+	}
+	if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK) {
+		Error_Handler();
+	}
+	if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK) {
+		Error_Handler();
+	}
+	HAL_I2CEx_EnableFastModePlus(I2C_FASTMODEPLUS_I2C1);
+}
+
+static void app_init_gdk101_power_gpio_pb2(void)
+{
+	// PB2 is used as GDK101 power control (P-MOS). HIGH = OFF, LOW = ON.
+	GPIO_InitTypeDef init = {0};
+	init.Pin = GPIO_PIN_2;
+	init.Mode = GPIO_MODE_OUTPUT_PP;
+	init.Pull = GPIO_NOPULL;
+	init.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(GPIOB, &init);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
+}
+
+static uint16_t app_status_flags_from_health(uint16_t health_flags, uint16_t health_ext_flags)
+{
+	// reference/사양서.txt 7.1 Status Flags (Bitwise)
+	// Bit 0: DS18B20 Error
+	// Bit 1: I2C1 Error (Downside)
+	// Bit 2: I2C3 Error (Upside)
+	// Bit 3: GPS Error
+	// Bit 4: PMS3003 Timeout
+	// Bit 5-7: Permanent Failure Flags
+
+	uint16_t out = 0;
+
+	const bool ds18_err = ((health_flags & (HEALTH_FLAG_TEMP_INT_STALE | HEALTH_FLAG_PERMFAIL_TEMP_INT)) != 0u);
+	const bool gps_err = ((health_flags & (HEALTH_FLAG_GPS_STALE | HEALTH_FLAG_PERMFAIL_GPS)) != 0u);
+	const bool pms_err = ((health_flags & (HEALTH_FLAG_PMS_STALE | HEALTH_FLAG_PERMFAIL_PMS)) != 0u);
+
+	const bool i2c1_err =
+		((health_flags & (HEALTH_FLAG_GDK101_STALE | HEALTH_FLAG_IMU_STALE | HEALTH_FLAG_PERMFAIL_GDK101 | HEALTH_FLAG_PERMFAIL_IMU)) != 0u) ||
+		((health_ext_flags & (HEALTH_EXT_FLAG_MAG_STALE | HEALTH_EXT_FLAG_PERMFAIL_MAG | HEALTH_EXT_FLAG_OZONE_STALE | HEALTH_EXT_FLAG_PERMFAIL_OZONE)) != 0u);
+
+	const bool i2c3_err =
+		((health_flags & (HEALTH_FLAG_SHT31_STALE | HEALTH_FLAG_MS5611_STALE | HEALTH_FLAG_PERMFAIL_SHT31 | HEALTH_FLAG_PERMFAIL_MS5611)) != 0u) ||
+		((health_ext_flags & (HEALTH_EXT_FLAG_CO2_STALE | HEALTH_EXT_FLAG_PERMFAIL_CO2 | HEALTH_EXT_FLAG_MCP9600_STALE | HEALTH_EXT_FLAG_PERMFAIL_MCP9600)) != 0u);
+
+	if (ds18_err) {
+		out |= (1u << 0);
+	}
+	if (i2c1_err) {
+		out |= (1u << 1);
+	}
+	if (i2c3_err) {
+		out |= (1u << 2);
+	}
+	if (gps_err) {
+		out |= (1u << 3);
+	}
+	if (pms_err) {
+		out |= (1u << 4);
+	}
+
+	// Permanent failure summary bits (5..7)
+	if ((health_flags & HEALTH_FLAG_PERMFAIL_TEMP_INT) != 0u) {
+		out |= (1u << 5);
+	}
+	if (((health_flags & (HEALTH_FLAG_PERMFAIL_GDK101 | HEALTH_FLAG_PERMFAIL_IMU)) != 0u) ||
+		((health_ext_flags & (HEALTH_EXT_FLAG_PERMFAIL_MAG | HEALTH_EXT_FLAG_PERMFAIL_OZONE)) != 0u)) {
+		out |= (1u << 6);
+	}
+	if (((health_flags & (HEALTH_FLAG_PERMFAIL_SHT31 | HEALTH_FLAG_PERMFAIL_MS5611)) != 0u) ||
+		((health_ext_flags & (HEALTH_EXT_FLAG_PERMFAIL_CO2 | HEALTH_EXT_FLAG_PERMFAIL_MCP9600)) != 0u)) {
+		out |= (1u << 7);
+	}
+
+	return out;
+}
+
 void app_init(void)
 {
 	i2c_bus_lock_init();
+	app_init_gdk101_power_gpio_pb2();
+	app_fix_i2c1_addressing_mode_7bit();
 	(void)dwt_delay_init();
 	telemetry_payload_store_init();
 
@@ -65,7 +160,7 @@ void app_tick(uint32_t now_ms)
 void app_realtime_tick(uint32_t now_ms)
 {
 	// Measure realtime loop execution time (for offline analysis without hardware).
-	// Uses DWT cycle counter; reported in payload.reserved1 as microseconds (capped).
+	// Uses DWT cycle counter; previously reported in payload.reserved1.
 	const uint32_t cycles_per_us = (uint32_t)(SystemCoreClock / 1000000u);
 	const uint32_t start_cycles = DWT->CYCCNT;
 
@@ -75,25 +170,24 @@ void app_realtime_tick(uint32_t now_ms)
 	swd_debug_probe_tick(now_ms);
 	uart4_debug_log_tick(now_ms);
 
-	uint32_t exec_us = 0u;
-	if (cycles_per_us != 0u) {
-		exec_us = (DWT->CYCCNT - start_cycles) / cycles_per_us;
-	}
-	if (exec_us > 32767u) {
-		exec_us = 32767u;
-	}
+	(void)cycles_per_us;
+	(void)start_cycles;
 
 	// Update the shared telemetry payload with realtime fields.
 	// IMPORTANT: never block this task for long.
 	if (telemetry_payload_store_write_lock(0u)) {
 		telemetry_payload_sensor_snapshot_t *p = telemetry_payload_store_write_ptr_unsafe();
 		p->uptime_ms = now_ms;
-		p->status_flags = health_monitor_get_flags();
-		p->reserved1 = (int16_t)exec_us;
 		{
+			const uint16_t health = health_monitor_get_flags();
 			const uint16_t ext = health_monitor_get_ext_flags();
-			p->reserved2 = (uint8_t)(ext & 0xFFu);
-			p->reserved3 = (uint8_t)((ext >> 8) & 0xFFu);
+			p->status_flags = app_status_flags_from_health(health, ext);
+			// Protocol-stable detail fields:
+			// - reserved1: ext health flags (16-bit)
+			// - reserved2/3: internal health flags (16-bit)
+			p->reserved1 = (int16_t)ext;
+			p->reserved2 = (uint8_t)(health & 0xFFu);
+			p->reserved3 = (uint8_t)((health >> 8) & 0xFFu);
 		}
 
 		int32_t accel[3];

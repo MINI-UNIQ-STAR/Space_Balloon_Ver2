@@ -26,7 +26,7 @@ extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
 
 enum {
-	HEALTH_CHECK_PERIOD_MS = 100u,
+	HEALTH_CHECK_PERIOD_MS = 1000u,
 	HEALTH_STALE_THRESHOLD_MS = 2000u,
 	HEALTH_PMS_STALE_THRESHOLD_MS = 3000u,
 	HEALTH_MAX_RECOVERY_ATTEMPTS = 5u,
@@ -86,8 +86,8 @@ static bool recover_i2c3_bus(void)
 static bool recover_i2c1_bus(void)
 {
 	// I2C1 pins from .ioc:
-	// SCL: PA15, SDA: PA14
-	return i2c_recover_bus(&hi2c1, GPIOA, GPIO_PIN_15, GPIOA, GPIO_PIN_14);
+	// SCL: PA15, SDA: PB9
+	return i2c_recover_bus(&hi2c1, GPIOA, GPIO_PIN_15, GPIOB, GPIO_PIN_9);
 }
 
 void health_monitor_service_init(void)
@@ -297,11 +297,11 @@ void health_monitor_service_tick(uint32_t now_ms)
 		if (s_gdk101_state.permfail) {
 			flags |= HEALTH_FLAG_PERMFAIL_GDK101;
 			// Power off sensor on permanent failure (P-MOS: HIGH = OFF)
-			(void)reset_line_set(RESET_LINE_SEN_RST, true);
+			(void)reset_line_set(RESET_LINE_GDK101_PWR, true);
 		} else if (s_gdk101_state.ever_updated && is_stale(now_ms, last_ms, HEALTH_STALE_THRESHOLD_MS)) {
 			flags |= HEALTH_FLAG_GDK101_STALE;
 			(void)recover_i2c1_bus();
-			(void)reset_line_pulse(RESET_LINE_SEN_RST,
+			(void)reset_line_pulse(RESET_LINE_GDK101_PWR,
 							HEALTH_RESET_PULSE_LOW_MS,
 							HEALTH_RESET_PULSE_HIGH_MS,
 							HEALTH_RESET_PULSE_LOW2_MS);
