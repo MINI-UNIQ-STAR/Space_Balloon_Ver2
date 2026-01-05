@@ -27,15 +27,49 @@ def _strip_framework_startup_object(build_env):
     multiple-definition errors when the project supplies its own startup.
     """
 
+    def _resolve_ar_executable() -> str | None:
+        """Best-effort resolve a usable 'ar' executable on Windows/PlatformIO."""
+
+        # 1) SCons/PlatformIO-provided AR (may be a bare 'ar')
+        ar = (build_env.subst("$AR") or "").strip()
+        if ar and os.path.isabs(ar) and os.path.exists(ar):
+            return ar
+
+        # 2) Prefer GCC's wrapper tools in the toolchain bin dir
+        cc = (build_env.subst("$CC") or "").strip()
+        if cc and os.path.isabs(cc):
+            toolchain_bin = os.path.dirname(cc)
+            for candidate in (
+                os.path.join(toolchain_bin, "arm-none-eabi-gcc-ar.exe"),
+                os.path.join(toolchain_bin, "arm-none-eabi-ar.exe"),
+                os.path.join(toolchain_bin, "arm-none-eabi-gcc-ar"),
+                os.path.join(toolchain_bin, "arm-none-eabi-ar"),
+            ):
+                if os.path.exists(candidate):
+                    return candidate
+
+        # 3) Fall back to PATH lookup
+        for candidate in ("arm-none-eabi-gcc-ar", "arm-none-eabi-ar", "ar"):
+            resolved = build_env.WhereIs(candidate)
+            if resolved:
+                return resolved
+
+        return None
+
     build_dir = build_env.subst("$BUILD_DIR")
     lib_path = os.path.join(build_dir, "libFrameworkCMSISDevice.a")
-    ar = build_env.subst("$AR")
-    cmd = f'"{ar}" d "{lib_path}" startup_stm32g431xx.o'
+    ar_exe = _resolve_ar_executable()
+    if not ar_exe:
+        print(
+            "Custom build script: WARNING: could not resolve 'ar' executable; "
+            "skipping startup object strip (may cause duplicate symbol errors if the framework startup is linked)."
+        )
+        return
 
     build_env.AddPostAction(
         lib_path,
         Action(
-            cmd,
+            [ar_exe, "d", lib_path, "startup_stm32g431xx.o"],
             cmdstr="Custom build script: Stripping startup_stm32g431xx.o from libFrameworkCMSISDevice.a",
         ),
     )
