@@ -39,7 +39,7 @@ float AltitudeToPressure(float alt_m) {
 }
 
 void setUp(void) {
-    MockI2C_ClearStats();
+    MockSensors_ClearStats();
 }
 
 void tearDown(void) {

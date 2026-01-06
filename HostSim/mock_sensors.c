@@ -152,15 +152,15 @@ SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
     }
     
     // Report success to FDIR for all sensors (since this is mock healthy data)
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_GPS);
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_BARO);
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_IMU);
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_MAG);
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_SHT);
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_EXT_TEMP);
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_PMS);
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_CO2);
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_RAD);
+    FDIR_ReportSuccess(SENSOR_ID_GPS);
+    FDIR_ReportSuccess(SENSOR_ID_BARO);
+    FDIR_ReportSuccess(SENSOR_ID_IMU);
+    FDIR_ReportSuccess(SENSOR_ID_MAG);
+    FDIR_ReportSuccess(SENSOR_ID_SHT);
+    FDIR_ReportSuccess(SENSOR_ID_EXT_TEMP);
+    FDIR_ReportSuccess(SENSOR_ID_PMS);
+    FDIR_ReportSuccess(SENSOR_ID_CO2);
+    FDIR_ReportSuccess(SENSOR_ID_RAD);
 
     return SENSOR_OK;
 }
@@ -236,7 +236,9 @@ void Sensors_Read_External(int16_t *temp_c_x100) {
 void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
                       uint8_t *sats, uint8_t *sats_view,
                       uint8_t *sats_gps, uint8_t *sats_glonass,
-                      uint8_t *sats_galileo, uint8_t *sats_beidou) {
+                      uint8_t *sats_galileo, uint8_t *sats_beidou,
+                      uint8_t *utc_hour, uint8_t *utc_min, uint8_t *utc_sec,
+                      uint8_t *utc_day, uint8_t *utc_month, uint16_t *utc_year) {
     const flight_data_point_t *cur = &flight_data[current_frame];
     *lat = cur->lat_e7;
     *lon = cur->lon_e7;
@@ -248,4 +250,8 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     *sats_glonass = 2;
     *sats_galileo = 1;
     *sats_beidou = 0;
+    
+    // Mock UTC Time
+    *utc_hour = 12; *utc_min = 0; *utc_sec = 0;
+    *utc_day = 1; *utc_month = 1; *utc_year = 2026;
 }

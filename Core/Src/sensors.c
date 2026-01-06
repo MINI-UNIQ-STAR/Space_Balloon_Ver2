@@ -166,10 +166,13 @@ void Sensors_Init(void) {
 
 
 void Sensors_Init_1Wire(void) {
+#ifndef HOST_TEST_MODE
     DS18B20_Init_Driver();
+#endif
 }
 
 void Sensors_Init_I2C1(void) {
+#ifndef HOST_TEST_MODE
     // MLX90393 Init
     mlx_ctx.write = mlx_write;
     mlx_ctx.read = mlx_read;
@@ -193,7 +196,6 @@ void Sensors_Init_I2C1(void) {
     }
     
     // Restore default config
-    // Restore default config
     lsm6dsv16x_sw_reset(&lsm_ctx);
     
     // Config: ODR 480Hz
@@ -205,12 +207,13 @@ void Sensors_Init_I2C1(void) {
     lsm6dsv16x_gy_mode_set(&lsm_ctx, LSM6DSV16X_GY_HIGH_PERFORMANCE_MD);
     
     // Enable SFLP (Sensor Fusion Low Power) internal Kalman Filter
-    // This provides hardware-accelerated Game Rotation Vector (6DOF)
     lsm6dsv16x_sflp_game_rotation_set(&lsm_ctx, 1);
     lsm6dsv16x_sflp_data_rate_set(&lsm_ctx, LSM6DSV16X_SFLP_120Hz);
+#endif
 }
 
 void Sensors_Init_I2C3(void) {
+#ifndef HOST_TEST_MODE
     // SEN0321 Init
     sen_ctx.write_reg = platform_write; // Re-using platform_write (I2C Mem Write)
     sen_ctx.read_reg = platform_read;   // Re-using platform_read
@@ -234,25 +237,22 @@ void Sensors_Init_I2C3(void) {
     sht_ctx.read_reg = platform_read;
     sht_ctx.address = SHT31_I2C_ADDR_DEFAULT;
     SHT31_Init(&sht_ctx);
+#endif
 }
 
 void Sensors_Init_UART(void) {
-    // HAL_UART_Init(&huart1); // GPS
-    // HAL_UART_Init(&huart3); // PMS
-    // HAL_UART_Init(&huart2); // CM1107N (Assume internal or other UART)
-    
+#ifndef HOST_TEST_MODE
     pms_ctx.write = pms_write;
-    // pms_ctx.handle = &huart3; 
     PMS_Init(&pms_ctx);
     PMS_ActiveMode(&pms_ctx);
     
-    cm_ctx.write = pms_write; // Reuse mock write
+    cm_ctx.write = pms_write;
     cm_ctx.read = uart_read_mock;
     CM1107N_Init(&cm_ctx);
     
-    // XA1110 Init
-    xa_ctx.write = pms_write; // Mock write (printf/UART)
+    xa_ctx.write = pms_write;
     XA1110_Init(&xa_ctx);
+#endif
 }
 
 void Sensors_Reset(SensorID_t id) {
@@ -303,6 +303,7 @@ SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
 }
 
 void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
+#ifndef HOST_TEST_MODE
     int16_t data_raw[3];
     uint8_t idx;
     
@@ -322,18 +323,25 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
           * result = mdps * 0.01745 */
          gyro[idx] = (int32_t)(mdps * 0.01745f);
     }
+#else
+    accel[0] = 0; accel[1] = 0; accel[2] = 9810;
+    gyro[0] = 0; gyro[1] = 0; gyro[2] = 0;
+#endif
 }
 
 void Sensors_Read_Mag(float mag[3]) {
-    // MLX90393 Read
-    // Must start single measurement or ensure continuous mode. 
+#ifndef HOST_TEST_MODE
     // Driver `StartMeasurement` does SM.
     MLX90393_StartMeasurement(&mlx_ctx);
     // Delay needed? Mock instant.
     MLX90393_ReadMeasurement(&mlx_ctx, &mag[0], &mag[1], &mag[2]);
+#else
+    mag[0] = 0.0f; mag[1] = 0.0f; mag[2] = 0.0f;
+#endif
 }
 
 void Sensors_Read_Rad(uint16_t *uSvh) {
+#ifndef HOST_TEST_MODE
     float val_uSvh;
     // 10-min avg for stability
     if (GDK101_Read_10Min_Avg(&gdk_ctx, &val_uSvh) == 0) {
@@ -341,6 +349,9 @@ void Sensors_Read_Rad(uint16_t *uSvh) {
     } else {
         *uSvh = 0; // Error
     }
+#else
+    *uSvh = 0;
+#endif
 }
 
 void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
@@ -360,6 +371,7 @@ void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
 }
 
 void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
+#ifndef HOST_TEST_MODE
     float t, rh;
     if (SHT31_ReadTempHum(&sht_ctx, &t, &rh) == 0) {
         *temp_c_x100 = (int16_t)(t * 100);
@@ -368,9 +380,14 @@ void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
         *temp_c_x100 = 0;
         *rh_x100 = 0;
     }
+#else
+    *temp_c_x100 = 2500;
+    *rh_x100 = 5000;
+#endif
 }
 
 void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uint16_t *pm2_5) {
+#ifndef HOST_TEST_MODE
     // Read CO2
     CM1107N_ReadCO2(&cm_ctx, co2);
     // if (*co2 == 0) *co2 = 400; // Minimal default
@@ -387,6 +404,12 @@ void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uin
     
     // Auto-increment mock if zero (since no ISR feeding it)
     if (*pm2_5 == 0) *pm2_5 = 15;
+#else
+    *co2 = 400;
+    *ozone = 20;
+    *pm1_0 = 5;
+    *pm2_5 = 10;
+#endif
 }
 
 void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
@@ -434,22 +457,17 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
 }
 
 void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {
+#ifndef HOST_TEST_MODE
     // 1Hz Limit for slow sensors
     static uint32_t last_bat = 0;
     if (HAL_GetTick() - last_bat > 1000) {
         
 #ifndef UNIT_TEST
         // Real Hardware ADC
-        // Assuming hadc1 and Rank 1/Channel configured
         extern ADC_HandleTypeDef hadc1;
         HAL_ADC_Start(&hadc1);
         if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
             uint32_t raw = HAL_ADC_GetValue(&hadc1);
-            // V_in = V_adc * (R1+R2)/R2
-            // 3.3V Ref, 12-bit (4095)
-            // Assuming "10k series" means appropriate divider for 4S (approx 16.8V max)
-            // Example Ratio 6.0: 3.3V * 6.0 = 19.8V Max
-            // V = (raw * 3300 / 4096) * 6.0
             float voltage_mv = (raw * 3300.0f / 4096.0f) * 6.0f;
             *mv = (uint16_t)voltage_mv;
         }
@@ -461,14 +479,23 @@ void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {
         *temp_c_x100 = DS18B20_ReadTemp_x100(0); // Battery Temp
         last_bat = HAL_GetTick();
     }
+#else
+    *mv = 16000;
+    *temp_c_x100 = 2000;
+#endif
 }
 
 // ...
 void Sensors_Read_BoardTemp(int16_t *temp_c_x100) {
+#ifndef HOST_TEST_MODE
     *temp_c_x100 = DS18B20_ReadTemp_x100(1); // Board Temp
+#else
+    *temp_c_x100 = 2500;
+#endif
 }
 
 void Sensors_Read_External(int16_t *temp_c_x100) {
+#ifndef HOST_TEST_MODE
     // Reading Thermocouple from MCP9600
     float val;
     if (MCP9600_ReadThermocouple(&mcp_ctx, &val) == 0) {
@@ -476,9 +503,13 @@ void Sensors_Read_External(int16_t *temp_c_x100) {
     } else {
         *temp_c_x100 = 0; // Error
     }
+#else
+    *temp_c_x100 = -5000;
+#endif
 }
 
 void Sensors_Read_SFLP(float quaternion[4]) {
+#ifndef HOST_TEST_MODE
     // 1. Check FIFO Status
     lsm6dsv16x_fifo_status_t fifo_status;
     if (lsm6dsv16x_fifo_status_get(&lsm_ctx, &fifo_status) != 0) return;
@@ -486,7 +517,7 @@ void Sensors_Read_SFLP(float quaternion[4]) {
     uint16_t samples = fifo_status.fifo_level;
     if (samples == 0) return;
     
-    // Limit loop to avoid blocking too long (SFLP rate 120Hz -> max 10-20 samples likely)
+    // Limit loop to avoid blocking too long
     if (samples > 20) samples = 20;
 
     lsm6dsv16x_fifo_out_raw_t fifo_data;
@@ -497,8 +528,6 @@ void Sensors_Read_SFLP(float quaternion[4]) {
         
         // 3. Parse Tag
         if (fifo_data.tag == LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG) {
-            // 4. Convert half-precision float to float
-            // Bytes: [X_L, X_H, Y_L, Y_H, Z_L, Z_H]
             uint16_t raw_x = (uint16_t)fifo_data.data[0] | ((uint16_t)fifo_data.data[1] << 8);
             uint16_t raw_y = (uint16_t)fifo_data.data[2] | ((uint16_t)fifo_data.data[3] << 8);
             uint16_t raw_z = (uint16_t)fifo_data.data[4] | ((uint16_t)fifo_data.data[5] << 8);
@@ -507,26 +536,26 @@ void Sensors_Read_SFLP(float quaternion[4]) {
             float y = half_to_float(raw_y);
             float z = half_to_float(raw_z);
             
-            // Calculate W component: w = sqrt(1 - x^2 - y^2 - z^2)
             float sum_sq = x*x + y*y + z*z;
             float w = 1.0f;
             
             if (sum_sq < 1.0f) {
                 w = sqrtf(1.0f - sum_sq);
             } else {
-                // Formatting error or singular, normalize
                 float norm = sqrtf(sum_sq);
                 if (norm > 0.0f) {
-                    x /= norm; y /= norm; z /= norm;
+                     x /= norm; y /= norm; z /= norm;
                 }
                 w = 0.0f;
             }
             
-            // Update output quaternion with latest sample
             quaternion[0] = x;
             quaternion[1] = y;
             quaternion[2] = z;
             quaternion[3] = w;
         }
     }
+#else
+    quaternion[0] = 0.0f; quaternion[1] = 0.0f; quaternion[2] = 0.0f; quaternion[3] = 1.0f;
+#endif
 }

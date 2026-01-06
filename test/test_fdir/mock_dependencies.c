@@ -39,10 +39,12 @@ int MockGPIO_GetPMSSetState(void) {
 static int sensors_reset_call_count = 0;
 static SensorID_t last_reset_sensor = -1;
 
+#ifndef INTEGRATION_TEST
 void Sensors_Reset(SensorID_t id) {
     sensors_reset_call_count++;
     last_reset_sensor = id;
 }
+#endif
 
 void MockSensors_ClearStats(void) {
     sensors_reset_call_count = 0;
@@ -57,4 +59,21 @@ int MockSensors_GetResetCount(void) {
 
 int MockSensors_GetLastResetSensor(void) {
     return (int)last_reset_sensor;
+}
+
+// --- Mock HAL I2C ---
+int HAL_I2C_Mem_Read(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+    return 0; // HAL_OK
+}
+
+int HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+    return 0; // HAL_OK
+}
+
+int HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+    return 0; // HAL_OK
+}
+
+int HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+    return 0; // HAL_OK
 }

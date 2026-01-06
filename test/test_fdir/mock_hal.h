@@ -49,5 +49,22 @@ typedef struct {
 
 void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState);
 void HAL_Delay(uint32_t Delay);
+void MockHAL_AdvanceTick(uint32_t delta);
+
+typedef struct { uint32_t Instance; } I2C_HandleTypeDef;
+typedef struct { uint32_t Instance; } UART_HandleTypeDef;
+typedef struct { uint32_t Instance; } SPI_HandleTypeDef;
+
+// HAL I2C
+int HAL_I2C_Mem_Read(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+int HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+int HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+int HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+
+// Mock Utils
+void MockSensors_ClearStats(void);
+
+#define I2C_MEMADD_SIZE_8BIT 0x00000001U
+#define I2C_MEMADD_SIZE_16BIT 0x00000002U
 
 #endif /* MOCK_HAL_H */

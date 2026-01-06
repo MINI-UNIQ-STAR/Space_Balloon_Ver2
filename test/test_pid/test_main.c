@@ -6,6 +6,12 @@
 // void PID_Init(PID_HandleTypeDef *hpid, float Kp, float Ki, float Kd, float MaxOutput);
 // float PID_Update(PID_HandleTypeDef *hpid, float measurement, float dt);
 
+void setUp(void) {
+}
+
+void tearDown(void) {
+}
+
 void test_pid_init(void) {
     PID_HandleTypeDef hpid;
     PID_Init(&hpid, 1.0f, 2.0f, 3.0f, 100.0f);
