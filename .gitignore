@@ -1,0 +1,26 @@
+# Build Headers
+build/
+HostSim/build/
+*.o
+*.obj
+*.d
+*.su
+
+# Binary Files
+*.elf
+*.bin
+*.hex
+*.map
+
+# IDE / Editor
+.vscode/
+.idea/
+.settings/
+.project
+.cproject
+.mxproject
+*.launch
+
+# OS
+Thumbs.db
+Desktop.ini

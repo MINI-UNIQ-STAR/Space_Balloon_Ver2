@@ -1,0 +1,4 @@
+C:/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/15.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\hyuns\AppData\Local\Temp\ccjyoIrq.o:app.c:(.text+0xe1): undefined reference to `Actuators_Init'
+C:/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/15.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\hyuns\AppData\Local\Temp\ccjyoIrq.o:app.c:(.text+0x32d): undefined reference to `Actuators_SetHeater_Battery'
+C:/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/15.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\hyuns\AppData\Local\Temp\ccjyoIrq.o:app.c:(.text+0x33c): undefined reference to `Actuators_SetHeater_Board'
+collect2.exe: error: ld returned 1 exit status

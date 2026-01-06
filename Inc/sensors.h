@@ -1,0 +1,70 @@
+#ifndef __SENSORS_H
+#define __SENSORS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "telemetry.h"
+#include "main.h" // For HAL includes if available
+
+// Simple status return for sensor ops
+typedef enum {
+    SENSOR_OK = 0,
+    SENSOR_ERROR = 1,
+    SENSOR_TIMEOUT = 2
+} SensorStatus_t;
+
+// Sensor IDs for FDIR
+typedef enum {
+    SENSOR_ID_IMU = 0,
+    SENSOR_ID_MAG,
+    SENSOR_ID_BARO,
+    SENSOR_ID_GPS,
+    SENSOR_ID_PMS,
+    SENSOR_ID_CO2,
+    SENSOR_ID_SHT,
+    SENSOR_ID_RAD,
+    SENSOR_ID_EXT_TEMP,
+    SENSOR_ID_COUNT
+} SensorID_t;
+
+// Initialization & Recovery
+void Sensors_Init(void);
+void Sensors_Reset(SensorID_t id); // FDIR Recovery
+void Sensors_Init_I2C1(void); // Downside
+void Sensors_Init_I2C3(void); // Upside
+void Sensors_Init_UART(void); // GPS, LoRa, PM
+
+// Data Acquisition
+SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data);
+
+// Individual Read Wrappers (Mock/Real)
+// Downside
+void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]);
+void Sensors_Read_Mag(float mag[3]);
+void Sensors_Read_Rad(uint16_t *uSvh);
+
+// Upside
+void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100);
+void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100);
+void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uint16_t *pm2_5);
+
+// ADC/OneWire/Thermocouple
+void Sensors_Init_1Wire(void); // DS18B20 initialization
+void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100);
+void Sensors_Read_BoardTemp(int16_t *temp_c_x100);
+void Sensors_Read_External(int16_t *temp_c_x100);
+
+// GPS
+// Passing pointers to fill telemetry fields directly is easiest, or struct
+void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
+                      uint8_t *sats, uint8_t *sats_view,
+                      uint8_t *sats_gps, uint8_t *sats_glonass,
+                      uint8_t *sats_galileo, uint8_t *sats_beidou);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __SENSORS_H */

@@ -1,0 +1,42 @@
+In file included from ..\Src\test_host.c:5:
+..\Core\Inc/app.h:7:8: error: unknown type name 'PID_HandleTypeDef'
+    7 | extern PID_HandleTypeDef hpid_bat;
+      |        ^~~~~~~~~~~~~~~~~
+..\Core\Inc/app.h:8:8: error: unknown type name 'PID_HandleTypeDef'
+    8 | extern PID_HandleTypeDef hpid_brd;
+      |        ^~~~~~~~~~~~~~~~~
+..\Core\Inc/app.h:9:8: error: unknown type name 'KF_Handle_t'
+    9 | extern KF_Handle_t hkf;
+      |        ^~~~~~~~~~~
+..\Core\Inc/app.h:10:8: error: unknown type name 'telemetry_frame_t'
+   10 | extern telemetry_frame_t telem_frame;
+      |        ^~~~~~~~~~~~~~~~~
+..\Src\test_host.c: In function 'main':
+..\Src\test_host.c:43:31: error: request for member 'seq' in something not a structure or union
+   43 |                    telem_frame.seq,
+      |                               ^
+..\Src\test_host.c:44:31: error: request for member 'payload' in something not a structure or union
+   44 |                    telem_frame.payload.gps_fix,
+      |                               ^
+..\Src\test_host.c:45:31: error: request for member 'payload' in something not a structure or union
+   45 |                    telem_frame.payload.bat_mv);
+      |                               ^
+In file included from ..\Core\Inc/app.h:4,
+                 from ..\Core\Src\app.c:1:
+..\Core\Inc/main.h:20:10: fatal error: stm32g4xx_hal.h: No such file or directory
+   20 | #include "stm32g4xx_hal.h"
+      |          ^~~~~~~~~~~~~~~~~
+compilation terminated.
+In file included from ..\Core\Inc/sensors.h:9,
+                 from ..\Core\Inc/fdir.h:6,
+                 from ..\Core\Src\fdir.c:1:
+..\Core\Inc/main.h:20:10: fatal error: stm32g4xx_hal.h: No such file or directory
+   20 | #include "stm32g4xx_hal.h"
+      |          ^~~~~~~~~~~~~~~~~
+compilation terminated.
+In file included from ..\Core\Inc/sensors.h:9,
+                 from mock_sensors.c:1:
+..\Core\Inc/main.h:20:10: fatal error: stm32g4xx_hal.h: No such file or directory
+   20 | #include "stm32g4xx_hal.h"
+      |          ^~~~~~~~~~~~~~~~~
+compilation terminated.

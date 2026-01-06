@@ -1,0 +1,509 @@
+#include "sensors.h"
+#include "main.h" // HAL_GetTick
+#include <stdio.h> // for printf
+#include <string.h> // for memset
+#include <math.h> // for sqrtf, powf, ldexpf
+#include "lsm6dsv16x_reg.h"
+#include "mlx90393_driver.h"
+#include "sen0321_driver.h"
+#include "pms3003_driver.h"
+#include "gdk101_driver.h"
+#include "mcp9600_driver.h"
+#include "sht31_driver.h"
+#include "ms5611_driver.h"
+#include "cm1107n_driver.h"
+#include "xa1110_driver.h"
+#include "ds18b20_driver.h"
+#include "fdir.h"
+
+// --- Sensor Hardware Definitions ---
+// Downside Bus (I2C1)
+#define LSM6DSV16X_ADDR     0x6B // SDO/SA0 pulled high usually, or 0x6A
+#define MLX90393_ADDR       0x0C 
+#define GDK101_ADDR         0x18 
+
+// Upside Bus (I2C3)
+#define SHT31_ADDR          0x44 
+#define MS5611_ADDR         0x77 
+#define CM1107N_ADDR        0x31 
+#define MCP9600_ADDR        0x60 
+
+// --- Driver Handles ---
+static stmdev_ctx_t lsm_ctx;
+static mlx90393_ctx_t mlx_ctx;
+static sen0321_ctx_t sen_ctx;
+static pms_ctx_t pms_ctx;
+static gdk101_ctx_t gdk_ctx;
+static mcp9600_ctx_t mcp_ctx;
+static sht31_ctx_t sht_ctx;
+static ms5611_ctx_t ms_ctx;
+static ms5611_ctx_t ms_ctx;
+static cm1107n_ctx_t cm_ctx;
+static xa1110_ctx_t xa_ctx;
+
+// --- Mock State ---
+static float mock_altitude = 100.0f;
+static float mock_temp = 15.0f;
+
+// --- Helper Functions ---
+static float half_to_float(uint16_t h) {
+    uint16_t s = (h >> 15) & 0x0001;
+    uint16_t e = (h >> 10) & 0x001F;
+    uint16_t m = h & 0x03FF;
+    
+    if (e == 0) {
+        if (m == 0) return (s ? -0.0f : 0.0f);
+        // Denormalized number support
+        return (s ? -1.0f : 1.0f) * ldexpf((float)m, -24); 
+    } else if (e == 31) {
+        return 0.0f; // Treat Inf/NaN as 0 for safety in control loop
+    }
+    
+    // Normalized
+    // Float32: S(1) | E(8) | M(23)
+    // E32 = E16 - 15 + 127 = E16 + 112
+    uint32_t s32 = (uint32_t)s << 31;
+    uint32_t e32 = (uint32_t)(e + 112) << 23;
+    uint32_t m32 = (uint32_t)m << 13;
+    
+    union { uint32_t i; float f; } u;
+    u.i = s32 | e32 | m32;
+    return u.f;
+}
+
+// --- Platform Functions ---
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
+    // HAL_I2C_Mem_Write(handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
+    return 0;
+}
+
+// Wrapper for MLX (Standard I2C Write)
+static int32_t mlx_write(void *handle, uint8_t *buf, uint16_t len) {
+    // HAL_I2C_Master_Transmit(handle, MLX90393_DEFAULT_ADDR << 1, buf, len, 1000);
+    return 0;
+}
+
+static int32_t mlx_read(void *handle, uint8_t *buf, uint16_t len) {
+    // HAL_I2C_Master_Receive(handle, MLX90393_DEFAULT_ADDR << 1, buf, len, 1000);
+    // Mock for host test
+    memset(buf, 0, len);
+    return 0;
+}
+
+static int32_t pms_write(void *handle, uint8_t *buf, uint16_t len) {
+#ifndef UNIT_TEST
+    // HAL_UART_Transmit(handle, buf, len, 100);
+#else
+    char tmp[128];
+    if (len < 128) {
+        memcpy(tmp, buf, len);
+        tmp[len] = 0;
+        // Check if it looks like a PMTK command to print cleanly
+        if (tmp[0] == '$') printf("UART TX: %s", tmp);
+        else printf("UART TX: [Binary %d bytes]\n", len);
+    }
+#endif
+    return 0;
+}
+
+static int32_t uart_read_mock(void *handle, uint8_t *buf, uint16_t len) {
+    // Mock UART Receive for CM1107N
+    // Return a valid response frame: 16 05 01 [DF1] [DF2] [DF3] [DF4] [CS]
+    // 0x16 0x05 0x01 0x01 0xF4 0x00 0x00 [CS] -> 500 ppm
+    if (len >= 8) {
+        buf[0] = 0x16;
+        buf[1] = 0x05;
+        buf[2] = 0x01;
+        buf[3] = 0x01; // High byte 500
+        buf[4] = 0xF4; // Low byte 500
+        buf[5] = 0x00;
+        buf[6] = 0x00;
+        // Calc CS
+        uint16_t sum = 0;
+        for(int i=0; i<7; i++) sum += buf[i];
+        buf[7] = (256 - (sum % 256)) % 256;
+    }
+    return 0;
+}
+
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
+    // Real Hardware:
+    // HAL_I2C_Mem_Read(handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
+    
+    // Mock Logic for Host Test
+    memset(bufp, 0, len);
+    if (reg == LSM6DSV16X_WHO_AM_I) {
+        bufp[0] = LSM6DSV16X_ID;
+    } 
+    // Mock Z-Accel 1G (approx 16384 LSB for +/- 2g maybe, depends on sensitivity)
+    // Default 2g sensitivity -> 0.061 mg/LSB. 1000mg / 0.061 = ~16393.
+    else if (reg == LSM6DSV16X_OUTZ_L_A) {
+        // Assuming len >= 2 for low/high read
+        int16_t val = 16384; 
+        bufp[0] = (uint8_t)(val & 0xFF);
+        if (len > 1) bufp[1] = (uint8_t)((val >> 8) & 0xFF);
+    }
+    return 0;
+}
+
+void Sensors_Init(void) {
+    // 1. GPIO Power Sequence (Release Resets)
+#ifndef UNIT_TEST
+    // Assumes CubeMX generated labels
+    HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(XA1110_Wake_GPIO_Port, XA1110_Wake_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SEN_RST_GPIO_Port, SEN_RST_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_SET);
+    HAL_Delay(100); 
+#endif
+    
+    Sensors_Init_I2C1();
+    Sensors_Init_I2C3();
+    Sensors_Init_UART();
+    Sensors_Init_1Wire();
+}
+
+
+
+void Sensors_Init_1Wire(void) {
+    DS18B20_Init_Driver();
+}
+
+void Sensors_Init_I2C1(void) {
+    // MLX90393 Init
+    mlx_ctx.write = mlx_write;
+    mlx_ctx.read = mlx_read;
+    MLX90393_Init(&mlx_ctx);
+
+    // GDK101 Init
+    gdk_ctx.write_reg = platform_write;
+    gdk_ctx.read_reg = platform_read;
+    gdk_ctx.address = GDK101_I2C_ADDR; // 0x18
+    GDK101_Init(&gdk_ctx);
+
+    // LSM6DSV16X Init
+    lsm_ctx.write_reg = platform_write;
+    lsm_ctx.read_reg = platform_read;
+    // lsm_ctx.handle = &hi2c1; // In real HW
+    
+    uint8_t whoamI = 0;
+    lsm6dsv16x_device_id_get(&lsm_ctx, &whoamI);
+    if (whoamI != LSM6DSV16X_ID) {
+        // Error handling
+    }
+    
+    // Restore default config
+    // Restore default config
+    lsm6dsv16x_sw_reset(&lsm_ctx);
+    
+    // Config: ODR 480Hz
+    lsm6dsv16x_xl_data_rate_set(&lsm_ctx, LSM6DSV16X_ODR_AT_480Hz);
+    lsm6dsv16x_gy_data_rate_set(&lsm_ctx, LSM6DSV16X_ODR_AT_480Hz);
+    
+    // Config: Mode
+    lsm6dsv16x_xl_mode_set(&lsm_ctx, LSM6DSV16X_XL_HIGH_PERFORMANCE_MD);
+    lsm6dsv16x_gy_mode_set(&lsm_ctx, LSM6DSV16X_GY_HIGH_PERFORMANCE_MD);
+    
+    // Enable SFLP (Sensor Fusion Low Power) internal Kalman Filter
+    // This provides hardware-accelerated Game Rotation Vector (6DOF)
+    lsm6dsv16x_sflp_game_rotation_set(&lsm_ctx, 1);
+    lsm6dsv16x_sflp_data_rate_set(&lsm_ctx, LSM6DSV16X_SFLP_120Hz);
+}
+
+void Sensors_Init_I2C3(void) {
+    // SEN0321 Init
+    sen_ctx.write_reg = platform_write; // Re-using platform_write (I2C Mem Write)
+    sen_ctx.read_reg = platform_read;   // Re-using platform_read
+    sen_ctx.address = SEN0321_I2C_ADDR_0; 
+    SEN0321_Init(&sen_ctx);
+
+    // MCP9600 Init
+    mcp_ctx.write_reg = platform_write;
+    mcp_ctx.read_reg = platform_read; 
+    mcp_ctx.address = MCP9600_I2C_ADDR_DEFAULT; // 0x67
+    MCP9600_Init(&mcp_ctx);
+
+    // MS5611 Init
+    ms_ctx.write_reg = platform_write;
+    ms_ctx.read_reg = platform_read;
+    ms_ctx.address = MS5611_I2C_ADDR_HIGH;
+    MS5611_Init(&ms_ctx);
+
+    // SHT31 Init
+    sht_ctx.write_reg = platform_write;
+    sht_ctx.read_reg = platform_read;
+    sht_ctx.address = SHT31_I2C_ADDR_DEFAULT;
+    SHT31_Init(&sht_ctx);
+}
+
+void Sensors_Init_UART(void) {
+    // HAL_UART_Init(&huart1); // GPS
+    // HAL_UART_Init(&huart3); // PMS
+    // HAL_UART_Init(&huart2); // CM1107N (Assume internal or other UART)
+    
+    pms_ctx.write = pms_write;
+    // pms_ctx.handle = &huart3; 
+    PMS_Init(&pms_ctx);
+    PMS_ActiveMode(&pms_ctx);
+    
+    cm_ctx.write = pms_write; // Reuse mock write
+    cm_ctx.read = uart_read_mock;
+    CM1107N_Init(&cm_ctx);
+    
+    // XA1110 Init
+    xa_ctx.write = pms_write; // Mock write (printf/UART)
+    XA1110_Init(&xa_ctx);
+}
+
+void Sensors_Reset(SensorID_t id) {
+#ifdef UNIT_TEST
+    printf("FDIR: Resetting Sensor ID %d\n", id);
+#endif
+    // Implementation for HW:
+    // 1. DeInit / ReInit Driver
+    // 2. Power Cycle if GPIO attached
+    // if (id == SENSOR_ID_PMS) PMS_Init(&pms_ctx); ...
+}
+
+SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
+    // 1. IMU (Fast 50Hz)
+    Sensors_Read_IMU(data->accel_mps2_x1000, data->gyro_rads_x1000);
+    
+    // 2. Mag
+    Sensors_Read_Mag(data->mag_uT);
+    
+    // 3. Baro (Decimated 5Hz)
+    static uint32_t last_baro = 0;
+    if (HAL_GetTick() - last_baro > 200) {
+        Sensors_Read_Baro(&data->ms5611_press_pa, &data->ms5611_temp_c_x100);
+        last_baro = HAL_GetTick();
+    }
+    
+    // 4. Humidity/Temp (Decimated 1Hz)
+    static uint32_t last_env = 0;
+    if (HAL_GetTick() - last_env > 1000) {
+        Sensors_Read_Humid(&data->sht31_temp_c_x100, &data->sht31_rh_x100);
+        last_env = HAL_GetTick();
+    }
+    
+    // GPS, Battery handled in App_Loop
+    
+    // 6. Battery
+    Sensors_Read_Battery(&data->bat_mv, &data->bat_temp_c_x100);
+    
+    // 7. Others
+    Sensors_Read_BoardTemp(&data->board_temp_c_x100);
+    
+    // Update Mock physics
+    mock_altitude += 0.5f; // Climbing 0.5m per call (25m/s if 50Hz.. fast but ok for test)
+    if (mock_altitude > 30000.0f) mock_altitude = 100.0f; // Reset
+    
+    return SENSOR_OK;
+}
+
+void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
+    int16_t data_raw[3];
+    
+    // Read Accel
+    lsm6dsv16x_acceleration_raw_get(&lsm_ctx, data_raw);
+    // Convert to m/s^2 * 1000
+    for(int i=0; i<3; i++) {
+        float mg = lsm6dsv16x_from_fs2_to_mg(data_raw[i]);
+        accel[i] = (int32_t)(mg * 9.8f); 
+    }
+    
+    // Read Gyro
+    lsm6dsv16x_angular_rate_raw_get(&lsm_ctx, data_raw);
+    for(int i=0; i<3; i++) {
+         float mdps = lsm6dsv16x_from_fs2000_to_mdps(data_raw[i]);
+         // rad/s * 1000. 1 mdps = 0.00001745 rad/s.
+         // result = mdps * 0.01745
+         gyro[i] = (int32_t)(mdps * 0.01745f);
+    }
+}
+
+void Sensors_Read_Mag(float mag[3]) {
+    // MLX90393 Read
+    // Must start single measurement or ensure continuous mode. 
+    // Driver `StartMeasurement` does SM.
+    MLX90393_StartMeasurement(&mlx_ctx);
+    // Delay needed? Mock instant.
+    MLX90393_ReadMeasurement(&mlx_ctx, &mag[0], &mag[1], &mag[2]);
+}
+
+void Sensors_Read_Rad(uint16_t *uSvh) {
+    float val_uSvh;
+    // 10-min avg for stability
+    if (GDK101_Read_10Min_Avg(&gdk_ctx, &val_uSvh) == 0) {
+        *uSvh = (uint16_t)(val_uSvh * 100); // Scale x100
+    } else {
+        *uSvh = 0; // Error
+    }
+}
+
+void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
+    int32_t p, t;
+    if (MS5611_Read_PT(&ms_ctx, &p, &t) == 0) {
+        *press_pa = (uint32_t)p;
+        *temp_c_x100 = (int16_t)t;
+    } else {
+        *press_pa = 101325; 
+        *temp_c_x100 = 2500;
+    }
+}
+
+void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
+    float t, rh;
+    if (SHT31_ReadTempHum(&sht_ctx, &t, &rh) == 0) {
+        *temp_c_x100 = (int16_t)(t * 100);
+        *rh_x100 = (uint16_t)(rh * 100);
+    } else {
+        *temp_c_x100 = 0;
+        *rh_x100 = 0;
+    }
+}
+
+void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uint16_t *pm2_5) {
+    // Read CO2
+    CM1107N_ReadCO2(&cm_ctx, co2);
+    // if (*co2 == 0) *co2 = 400; // Minimal default
+    
+    // Read Ozone
+    SEN0321_ReadOzone(&sen_ctx, ozone);
+    
+    // Read PMS (Mock ingest)
+    // In real system, UART ISR calls PMS_ProcessByte(&pms_ctx, byte);
+    // Here we just read latest valid data from ctx
+    // Mocking some data arrival
+    *pm1_0 = pms_ctx.data.PM_AE_UG_1_0;
+    *pm2_5 = pms_ctx.data.PM_AE_UG_2_5;
+    
+    // Auto-increment mock if zero (since no ISR feeding it)
+    if (*pm2_5 == 0) *pm2_5 = 15;
+}
+
+void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
+                      uint8_t *sats, uint8_t *sats_view,
+                      uint8_t *sats_gps, uint8_t *sats_glonass,
+                      uint8_t *sats_galileo, uint8_t *sats_beidou) {
+    // Mock: Feed NMEA data if fix is 0 (just to verify parsing on host)
+    if (xa_ctx.data.fix_type == 0) {
+        const char *sim_gga = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+        for (int i=0; sim_gga[i]; i++) XA1110_ProcessByte(&xa_ctx, (uint8_t)sim_gga[i]);
+    }
+
+    *lat = xa_ctx.data.lat_deg_e7;
+    *lon = xa_ctx.data.lon_deg_e7;
+    *alt = xa_ctx.data.alt_m;
+    *fix = xa_ctx.data.fix_type;
+    *sats = xa_ctx.data.sats_used;
+    *sats_view = xa_ctx.data.sats_view_total;
+    // Parsing per-system sats logic not implemented in driver wrapper yet, mocking:
+    *sats_gps = *sats;
+    // ...
+    
+    // Check Health: if fix is valid or data coming
+    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_GPS);
+}
+
+void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {
+    // 1Hz Limit for slow sensors
+    static uint32_t last_bat = 0;
+    if (HAL_GetTick() - last_bat > 1000) {
+        
+#ifndef UNIT_TEST
+        // Real Hardware ADC
+        // Assuming hadc1 and Rank 1/Channel configured
+        extern ADC_HandleTypeDef hadc1;
+        HAL_ADC_Start(&hadc1);
+        if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
+            uint32_t raw = HAL_ADC_GetValue(&hadc1);
+            // V_in = V_adc * (R1+R2)/R2
+            // 3.3V Ref, 12-bit (4095)
+            // Assuming "10k series" means appropriate divider for 4S (approx 16.8V max)
+            // Example Ratio 6.0: 3.3V * 6.0 = 19.8V Max
+            // V = (raw * 3300 / 4096) * 6.0
+            float voltage_mv = (raw * 3300.0f / 4096.0f) * 6.0f;
+            *mv = (uint16_t)voltage_mv;
+        }
+        HAL_ADC_Stop(&hadc1);
+#else
+        *mv = 15500; // Mock 15.5V (4S Battery)
+#endif
+        
+        *temp_c_x100 = DS18B20_ReadTemp_x100(0); // Battery Temp
+        last_bat = HAL_GetTick();
+    }
+}
+
+// ...
+void Sensors_Read_BoardTemp(int16_t *temp_c_x100) {
+    *temp_c_x100 = DS18B20_ReadTemp_x100(1); // Board Temp
+}
+
+void Sensors_Read_External(int16_t *temp_c_x100) {
+    // Reading Thermocouple from MCP9600
+    float val;
+    if (MCP9600_ReadThermocouple(&mcp_ctx, &val) == 0) {
+        *temp_c_x100 = (int16_t)(val * 100);
+    } else {
+        *temp_c_x100 = 0; // Error
+    }
+}
+
+void Sensors_Read_SFLP(float quaternion[4]) {
+    // 1. Check FIFO Status
+    lsm6dsv16x_fifo_status_t fifo_status;
+    if (lsm6dsv16x_fifo_status_get(&lsm_ctx, &fifo_status) != 0) return;
+    
+    uint16_t samples = fifo_status.fifo_level;
+    if (samples == 0) return;
+    
+    // Limit loop to avoid blocking too long (SFLP rate 120Hz -> max 10-20 samples likely)
+    if (samples > 20) samples = 20;
+
+    lsm6dsv16x_fifo_out_raw_t fifo_data;
+    
+    for (int i=0; i<samples; i++) {
+        // 2. Read FIFO Data
+        if (lsm6dsv16x_fifo_out_raw_get(&lsm_ctx, &fifo_data) != 0) break;
+        
+        // 3. Parse Tag
+        if (fifo_data.tag == LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG) {
+            // 4. Convert half-precision float to float
+            // Bytes: [X_L, X_H, Y_L, Y_H, Z_L, Z_H]
+            uint16_t raw_x = (uint16_t)fifo_data.data[0] | ((uint16_t)fifo_data.data[1] << 8);
+            uint16_t raw_y = (uint16_t)fifo_data.data[2] | ((uint16_t)fifo_data.data[3] << 8);
+            uint16_t raw_z = (uint16_t)fifo_data.data[4] | ((uint16_t)fifo_data.data[5] << 8);
+            
+            float x = half_to_float(raw_x);
+            float y = half_to_float(raw_y);
+            float z = half_to_float(raw_z);
+            
+            // Calculate W component: w = sqrt(1 - x^2 - y^2 - z^2)
+            float sum_sq = x*x + y*y + z*z;
+            float w = 1.0f;
+            
+            if (sum_sq < 1.0f) {
+                w = sqrtf(1.0f - sum_sq);
+            } else {
+                // Formatting error or singular, normalize
+                float norm = sqrtf(sum_sq);
+                if (norm > 0.0f) {
+                    x /= norm; y /= norm; z /= norm;
+                }
+                w = 0.0f;
+            }
+            
+            // Update output quaternion with latest sample
+            quaternion[0] = x;
+            quaternion[1] = y;
+            quaternion[2] = z;
+            quaternion[3] = w;
+        }
+    }
+}
