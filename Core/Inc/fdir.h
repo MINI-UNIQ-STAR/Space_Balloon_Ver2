@@ -32,9 +32,9 @@ typedef struct {
 } SystemHealth_t;
 
 void FDIR_Init(void);
-void FDIR_Update(void); // Call at 1Hz or similar
-void FDIR_ReportSuccess(void *sensor_id); // Called by sensors when valid data read
-void FDIR_ReportFailure(void *sensor_id, int error_code);
+void FDIR_Update(void); /* Call at 1Hz or similar */
+void FDIR_ReportSuccess(SensorID_t sensor_id); /* Called by sensors when valid data read */
+void FDIR_ReportFailure(SensorID_t sensor_id, int32_t error_code);
 
 // Status query functions
 FdirState_t FDIR_GetSensorState(SensorID_t id);

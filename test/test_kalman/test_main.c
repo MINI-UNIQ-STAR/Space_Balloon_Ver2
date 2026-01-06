@@ -7,6 +7,12 @@ extern void KF_Init(KF_Handle_t *hkf, float dt, float process_noise, float meas_
 extern void KF_Predict(KF_Handle_t *hkf);
 extern void KF_Update_Altitude(KF_Handle_t *hkf, float measurement);
 
+void setUp(void) {
+}
+
+void tearDown(void) {
+}
+
 void test_kf_init(void) {
     KF_Handle_t hkf;
     float dt = 0.02f; // 50Hz
@@ -52,7 +58,9 @@ void test_kf_update_convergence(void) {
     
     // Measurements say 10m. Filter should move towards 10m.
     // Loop 50 times (5 seconds)
+    /* Loop 50 times (5 seconds) */
     for(int i=0; i<50; i++) {
+        KF_Predict(&hkf);
         KF_Update_Altitude(&hkf, 10.0f);
     }
     
@@ -75,8 +83,9 @@ void test_kf_ascent_profile(void) {
     
     for(int i=0; i<100; i++) {
         true_alt += vel * dt;
-        float noisy_meas = true_alt; // Perfect sensor for this simple test check lag
+        float noisy_meas = true_alt; /* Perfect sensor for this simple test check lag */
         
+        KF_Predict(&hkf);
         KF_Update_Altitude(&hkf, noisy_meas);
     }
     

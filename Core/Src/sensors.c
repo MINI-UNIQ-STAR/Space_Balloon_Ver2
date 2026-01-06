@@ -1,8 +1,8 @@
 #include "sensors.h"
-#include "main.h" // HAL_GetTick
-#include <stdio.h> // for printf
-#include <string.h> // for memset
-#include <math.h> // for sqrtf, powf, ldexpf
+#include "main.h" /* HAL_GetTick */
+#include <stdio.h> /* printf */
+#include <string.h> /* memcpy, memset */
+#include <math.h> /* sqrtf, powf, ldexpf */
 #include "lsm6dsv16x_reg.h"
 #include "mlx90393_driver.h"
 #include "sen0321_driver.h"
@@ -37,7 +37,6 @@ static gdk101_ctx_t gdk_ctx;
 static mcp9600_ctx_t mcp_ctx;
 static sht31_ctx_t sht_ctx;
 static ms5611_ctx_t ms_ctx;
-static ms5611_ctx_t ms_ctx;
 static cm1107n_ctx_t cm_ctx;
 static xa1110_ctx_t xa_ctx;
 
@@ -68,16 +67,18 @@ static float half_to_float(uint16_t h) {
         return 0.0f; // Treat Inf/NaN as 0 for safety in control loop
     }
     
-    // Normalized
-    // Float32: S(1) | E(8) | M(23)
-    // E32 = E16 - 15 + 127 = E16 + 112
+    /* Normalized
+     * Float32: S(1) | E(8) | M(23)
+     * E32 = E16 - 15 + 127 = E16 + 112 */
     uint32_t s32 = (uint32_t)s << 31;
-    uint32_t e32 = (uint32_t)(e + 112) << 23;
+    uint32_t e32 = (uint32_t)(e + 112U) << 23;
     uint32_t m32 = (uint32_t)m << 13;
     
-    union { uint32_t i; float f; } u;
-    u.i = s32 | e32 | m32;
-    return u.f;
+    /* MISRA C: Use memcpy instead of union type punning */
+    uint32_t bits = s32 | e32 | m32;
+    float result;
+    (void)memcpy(&result, &bits, sizeof(result));
+    return result;
 }
 
 // --- Platform Functions ---
@@ -125,10 +126,13 @@ static int32_t uart_read_mock(void *handle, uint8_t *buf, uint16_t len) {
         buf[4] = 0xF4; // Low byte 500
         buf[5] = 0x00;
         buf[6] = 0x00;
-        // Calc CS
-        uint16_t sum = 0;
-        for(int i=0; i<7; i++) sum += buf[i];
-        buf[7] = (256 - (sum % 256)) % 256;
+        /* Calc CS */
+        uint16_t sum = 0U;
+        uint8_t k;
+        for (k = 0U; k < 7U; k++) {
+            sum += buf[k];
+        }
+        buf[7] = (uint8_t)((256U - (sum % 256U)) % 256U);
     }
     return 0;
 }
@@ -300,22 +304,23 @@ SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
 
 void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
     int16_t data_raw[3];
+    uint8_t idx;
     
-    // Read Accel
+    /* Read Accel */
     lsm6dsv16x_acceleration_raw_get(&lsm_ctx, data_raw);
-    // Convert to m/s^2 * 1000
-    for(int i=0; i<3; i++) {
-        float mg = lsm6dsv16x_from_fs2_to_mg(data_raw[i]);
-        accel[i] = (int32_t)(mg * 9.8f); 
+    /* Convert to m/s^2 * 1000 */
+    for (idx = 0U; idx < 3U; idx++) {
+        float mg = lsm6dsv16x_from_fs2_to_mg(data_raw[idx]);
+        accel[idx] = (int32_t)(mg * 9.8f); 
     }
     
-    // Read Gyro
+    /* Read Gyro */
     lsm6dsv16x_angular_rate_raw_get(&lsm_ctx, data_raw);
-    for(int i=0; i<3; i++) {
-         float mdps = lsm6dsv16x_from_fs2000_to_mdps(data_raw[i]);
-         // rad/s * 1000. 1 mdps = 0.00001745 rad/s.
-         // result = mdps * 0.01745
-         gyro[i] = (int32_t)(mdps * 0.01745f);
+    for (idx = 0U; idx < 3U; idx++) {
+         float mdps = lsm6dsv16x_from_fs2000_to_mdps(data_raw[idx]);
+         /* rad/s * 1000. 1 mdps = 0.00001745 rad/s.
+          * result = mdps * 0.01745 */
+         gyro[idx] = (int32_t)(mdps * 0.01745f);
     }
 }
 
@@ -390,13 +395,18 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
                       uint8_t *sats_galileo, uint8_t *sats_beidou,
                       uint8_t *utc_hour, uint8_t *utc_min, uint8_t *utc_sec,
                       uint8_t *utc_day, uint8_t *utc_month, uint16_t *utc_year) {
-    // Mock: Feed NMEA data if fix is 0 (just to verify parsing on host)
-    if (xa_ctx.data.fix_type == 0) {
+    /* Mock: Feed NMEA data if fix is 0 (just to verify parsing on host) */
+    if (xa_ctx.data.fix_type == 0U) {
         const char *sim_gga = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
-        for (int i=0; sim_gga[i]; i++) XA1110_ProcessByte(&xa_ctx, (uint8_t)sim_gga[i]);
-        // Add RMC for time/date
+        uint16_t idx;
+        for (idx = 0U; sim_gga[idx] != '\0'; idx++) {
+            XA1110_ProcessByte(&xa_ctx, (uint8_t)sim_gga[idx]);
+        }
+        /* Add RMC for time/date */
         const char *sim_rmc = "$GPRMC,123519.00,A,4807.038,N,01131.000,E,0.0,0.0,060126,,,A*6B\r\n";
-        for (int i=0; sim_rmc[i]; i++) XA1110_ProcessByte(&xa_ctx, (uint8_t)sim_rmc[i]);
+        for (idx = 0U; sim_rmc[idx] != '\0'; idx++) {
+            XA1110_ProcessByte(&xa_ctx, (uint8_t)sim_rmc[idx]);
+        }
     }
 
     *lat = xa_ctx.data.lat_deg_e7;
@@ -405,13 +415,13 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     *fix = xa_ctx.data.fix_type;
     *sats = xa_ctx.data.sats_used;
     *sats_view = xa_ctx.data.sats_view_total;
-    // Parsing per-system sats logic not implemented in driver wrapper yet, mocking:
+    /* Parsing per-system sats logic not implemented in driver wrapper yet, mocking: */
     *sats_gps = *sats;
-    *sats_glonass = 0;
-    *sats_galileo = 0;
-    *sats_beidou = 0;
+    *sats_glonass = 0U;
+    *sats_galileo = 0U;
+    *sats_beidou = 0U;
     
-    // UTC Time from GPS
+    /* UTC Time from GPS */
     *utc_hour = xa_ctx.data.utc_hour;
     *utc_min = xa_ctx.data.utc_min;
     *utc_sec = xa_ctx.data.utc_sec;
@@ -419,8 +429,8 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     *utc_month = xa_ctx.data.utc_month;
     *utc_year = xa_ctx.data.utc_year;
     
-    // Check Health: if fix is valid or data coming
-    FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_GPS);
+    /* Check Health: if fix is valid or data coming */
+    FDIR_ReportSuccess(SENSOR_ID_GPS);
 }
 
 void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {

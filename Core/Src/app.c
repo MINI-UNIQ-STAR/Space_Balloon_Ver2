@@ -137,9 +137,9 @@ void App_Loop(void) {
     float current_battery_temp = telem_frame.payload.bat_temp_c_x100 / 100.0f;
     float current_board_temp = telem_frame.payload.board_temp_c_x100 / 100.0f;
     
-    // ** FDIR Baro Range Validation **
+    /* FDIR Baro Range Validation */
     if (!FDIR_ValidateRange_Baro(telem_frame.payload.ms5611_press_pa)) {
-        telem_frame.payload.ms5611_press_pa = 101325; // Use sea level as fallback
+        telem_frame.payload.ms5611_press_pa = 101325U; /* Use sea level as fallback */
     }
     
     // Barometric Altitude (Approx)
@@ -152,11 +152,11 @@ void App_Loop(void) {
     
     telem_frame.payload.press_alt_m = baro_alt; 
     
-    // ** Kalman Initial Convergence **
-    static uint8_t kf_initialized = 0;
-    if (!kf_initialized && baro_alt > -1000.0f && baro_alt < 40000.0f) { // Range check
-        hkf.x[0] = baro_alt; // Initialize State to Measurement
-        kf_initialized = 1;
+    /* Kalman Initial Convergence */
+    static uint8_t kf_initialized = 0U;
+    if ((kf_initialized == 0U) && (baro_alt > -1000.0f) && (baro_alt < 40000.0f)) { 
+        hkf.x[0] = baro_alt; /* Initialize State to Measurement */
+        kf_initialized = 1U;
     }
     
     // 2. PID Update
@@ -171,17 +171,19 @@ void App_Loop(void) {
     telem_frame.payload.heater_bat_duty_percent = (uint8_t)heater_battery_cmd;
     telem_frame.payload.heater_board_duty_percent = (uint8_t)heater_board_cmd;
     
-    // 3. Kalman Update
+    /* 3. Kalman Update (Predict --> Update) */
+    KF_Predict(&hkf);
     KF_Update_Altitude(&hkf, baro_alt);
-    KF_CheckDivergence(&hkf);  // FMEA W-05: Check and reset if diverged
+    
+    KF_CheckDivergence(&hkf);  /* FMEA W-05: Check and reset if diverged */
     
     telem_frame.payload.kf_alt_m = hkf.x[0];
     
     // ** FDIR Status Flags Update **
     telem_frame.payload.status_flags = FDIR_GetStatusFlags();
     
-    // Add heater active flag
-    if (heater_battery_cmd > 1.0f || heater_board_cmd > 1.0f) {
+    /* Add heater active flag */
+    if ((heater_battery_cmd > 1.0f) || (heater_board_cmd > 1.0f)) {
         telem_frame.payload.status_flags |= STATUS_HEATER_ACTIVE;
     }
     

@@ -55,10 +55,11 @@ static bool sensor_cold_disabled[SENSOR_ID_COUNT] = {false};
 static int16_t current_ext_temp_x100 = 2500; // Default 25°C
 
 void FDIR_Init(void) {
-    for(int i = 0; i < SENSOR_ID_COUNT; i++) {
+    uint8_t i;
+    for (i = 0U; i < (uint8_t)SENSOR_ID_COUNT; i++) {
         sensors_health[i].last_valid_update_ms = HAL_GetTick();
-        sensors_health[i].error_count = 0;
-        sensors_health[i].recovery_count = 0;
+        sensors_health[i].error_count = 0U;
+        sensors_health[i].recovery_count = 0U;
         sensors_health[i].state = FDIR_STATE_HEALTHY;
         sensors_health[i].enabled = true;
         sensor_cold_disabled[i] = false;
@@ -69,30 +70,34 @@ void FDIR_UpdateTemperature(int16_t ext_temp_c_x100) {
     current_ext_temp_x100 = ext_temp_c_x100;
 }
 
-void FDIR_ReportSuccess(void *sensor_id_ptr) {
-    SensorID_t id = (SensorID_t)(uintptr_t)sensor_id_ptr;
-    if (id >= SENSOR_ID_COUNT) return;
+void FDIR_ReportSuccess(SensorID_t id) {
+    if (id >= SENSOR_ID_COUNT) {
+        return;
+    }
     
     sensors_health[id].last_valid_update_ms = HAL_GetTick();
-    sensors_health[id].error_count = 0;
-    if (sensors_health[id].state == FDIR_STATE_WARNING || 
-        sensors_health[id].state == FDIR_STATE_RECOVERY) {
+    sensors_health[id].error_count = 0U;
+    if ((sensors_health[id].state == FDIR_STATE_WARNING) || 
+        (sensors_health[id].state == FDIR_STATE_RECOVERY)) {
         sensors_health[id].state = FDIR_STATE_HEALTHY;
-        sensors_health[id].recovery_count = 0;
+        sensors_health[id].recovery_count = 0U;
     }
 }
 
-void FDIR_ReportFailure(void *sensor_id_ptr, int error_code) {
-    SensorID_t id = (SensorID_t)(uintptr_t)sensor_id_ptr;
-    if (id >= SENSOR_ID_COUNT) return;
+void FDIR_ReportFailure(SensorID_t id, int32_t error_code) {
+    (void)error_code;  /* Currently unused, suppress warning */
+    if (id >= SENSOR_ID_COUNT) {
+        return;
+    }
     
     sensors_health[id].error_count++;
 }
 
 void FDIR_Update(void) {
     uint32_t now = HAL_GetTick();
+    uint8_t i;
     
-    for(int i = 0; i < SENSOR_ID_COUNT; i++) {
+    for (i = 0U; i < (uint8_t)SENSOR_ID_COUNT; i++) {
         int16_t min_temp = sensor_temp_limits[i][0];
         int16_t max_temp = sensor_temp_limits[i][1];
         
@@ -141,9 +146,13 @@ void FDIR_Update(void) {
             continue;
         }
         
-        // Skip disabled sensors
-        if (!sensors_health[i].enabled) continue;
-        if (sensors_health[i].state == FDIR_STATE_FAILURE_PERMANENT) continue;
+        /* Skip disabled sensors */
+        if (sensors_health[i].enabled == false) {
+            continue;
+        }
+        if (sensors_health[i].state == FDIR_STATE_FAILURE_PERMANENT) {
+            continue;
+        }
         
         // ===== Timeout-based recovery =====
         uint32_t diff = now - sensors_health[i].last_valid_update_ms;
@@ -185,8 +194,10 @@ uint32_t FDIR_GetRecoveryCount(SensorID_t id) {
 }
 
 bool FDIR_IsSensorHealthy(SensorID_t id) {
-    if (id >= SENSOR_ID_COUNT) return false;
-    return sensors_health[id].state == FDIR_STATE_HEALTHY;
+    if (id >= SENSOR_ID_COUNT) {
+        return false;
+    }
+    return (sensors_health[id].state == FDIR_STATE_HEALTHY);
 }
 
 bool FDIR_IsSensorColdDisabled(SensorID_t id) {
@@ -220,7 +231,7 @@ static bool range_error_detected = false;
 bool FDIR_ValidateRange_Baro(uint32_t press_pa) {
     if (press_pa < BARO_MIN_PA || press_pa > BARO_MAX_PA) {
         range_error_detected = true;
-        FDIR_ReportFailure((void*)(uintptr_t)SENSOR_ID_BARO, 1);
+        FDIR_ReportFailure(SENSOR_ID_BARO, 1);
         #ifdef DEBUG
         printf("FDIR: Baro range error: %u Pa\n", press_pa);
         #endif
@@ -232,7 +243,7 @@ bool FDIR_ValidateRange_Baro(uint32_t press_pa) {
 bool FDIR_ValidateRange_GPS_Alt(float alt_m) {
     if (alt_m < GPS_ALT_MIN_M || alt_m > GPS_ALT_MAX_M) {
         range_error_detected = true;
-        FDIR_ReportFailure((void*)(uintptr_t)SENSOR_ID_GPS, 2);
+        FDIR_ReportFailure(SENSOR_ID_GPS, 2);
         #ifdef DEBUG
         printf("FDIR: GPS altitude range error: %.1f m\n", alt_m);
         #endif
@@ -283,7 +294,7 @@ void FDIR_UpdateGPSAltitude(float gps_alt_m) {
     if (FDIR_ValidateRange_GPS_Alt(gps_alt_m) && FDIR_CheckContinuity_GPS_Alt(gps_alt_m)) {
         current_gps_alt_m = gps_alt_m;
         gps_alt_valid = true;
-        FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_GPS);
+        FDIR_ReportSuccess(SENSOR_ID_GPS);
     } else {
         gps_alt_valid = false;
     }
@@ -332,9 +343,10 @@ uint16_t FDIR_GetStatusFlags(void) {
         flags |= STATUS_TEMP_WARN;
     }
     
-    // Check if any sensor is in recovery
-    for (int i = 0; i < SENSOR_ID_COUNT; i++) {
-        if (sensors_health[i].state == FDIR_STATE_RECOVERY) {
+    /* Check if any sensor is in recovery */
+    uint8_t j;
+    for (j = 0U; j < (uint8_t)SENSOR_ID_COUNT; j++) {
+        if (sensors_health[j].state == FDIR_STATE_RECOVERY) {
             flags |= STATUS_FDIR_RECOVERY;
             break;
         }

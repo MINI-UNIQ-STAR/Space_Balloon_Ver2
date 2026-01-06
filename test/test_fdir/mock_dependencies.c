@@ -22,7 +22,7 @@ static int pms_set_state = -1;
 
 #include <stdio.h>
 
-void HAL_GPIO_WritePin(void* GPIOx, uint16_t GPIO_Pin, int PinState) {
+void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState) {
     printf("DEBUG: MockGPIO Write: Port=%p, Pin=%u, State=%d (Expected Port=%p, Pin=%u)\n", 
            GPIOx, GPIO_Pin, PinState, PMS_SET_GPIO_Port, PMS_SET_Pin);
     
