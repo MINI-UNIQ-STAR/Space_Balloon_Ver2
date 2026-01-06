@@ -1,0 +1,214 @@
+# Space Balloon 사양서 (Space Balloon Specification)
+- 문서 버전: Rev 5.0 (FDIR, Kalman Filter, PID Control, 50Hz Telemetry)
+- 작성일: 2026.01.04
+- 작성자: 박현수
+- 대상 하드웨어: STM32G431CBU6, TTGO LoRa32 v2.1
+
+---
+
+## 1. 개요 (Overview)
+본 시스템은 성층권(고도 30km 이상)의 극한 환경에서 다양한 대기 및 관성 데이터를 실시간(20ms) 수집하는 고신뢰성 온보드 컴퓨터(OBC)이다. 
+11종의 정밀 센서를 운용하며, PID 제어 기반 능동형 열 제어를 수행한다. 특히 FDIR(고장 감지 및 복구) 알고리즘을 적용하여 센서 연결 끊김, I2C 버스 멈춤 등의 장애 상황에서 시스템 리셋 없이 스스로 기능을 복구하도록 설계되었다.
+
+- MCU: ARM Cortex-M4F @ 170MHz (FPU 활성화), Flash 128KB, SRAM 32KB
+- 센서: 총 11종 (방사선, 오존, CO2, 미세먼지, 기압, IMU, GPS 등)
+- 통신: LoRa 기반 텔레메트리 (UART3 50Hz 송신), GPS 1PPS 동기화
+- 전원: 1S4P Li-Po 배터리 (3.7V × 4 병렬), ADC 전압 모니터링
+- 신뢰성: I2C Bus Clear, 개별 센서 Power Cycle, Watchdog, Kalman Filter 이상치 감지
+
+---
+
+## 2. 하드웨어 인터페이스 (Hardware Interface)
+
+### 2.1 I2C 버스 구성 (Downside/Upside 분리)
+| 구분 | 버스 | 연결 센서 | 할당 핀 | 비고 |
+|---|---|---|---|---|
+| I2C1 | Downside | LSM6DSV16X(IMU), MLX90393(자기계), GDK101(방사선) | PA15 / PB9 | Fast-mode Plus (CubeMX: I2C_Fast_Plus), 7-bit |
+| I2C3 | Upside | SEN0321(오존), SHT31-D(온습도), MS5611(기압), CM1107N(CO2), MCP9600(열전대) | PA8 / PB5 | Fast-mode Plus (CubeMX: I2C_Fast_Plus), 7-bit |
+
+### 2.2 UART 및 기타 인터페이스
+| 구분 | 장치명 | 용도 | 할당 핀 | 비고 |
+|---|---|---|---|---|
+| UART1 | XA1110 | GPS/GLONASS | PA10 / PC4 | RX DMA, 1PPS(PB4) |
+| UART2 | PMS3003 | 미세먼지 | PA3 / PA2 | RX DMA, Timeout 감지 |
+| UART3 | LoRa32 | 텔레메트리 송신 | PC10 / PC11 | 50Hz 패킷 전송 |
+| 1-Wire | DS18B20 | 온도(배터리/보드) | PB15 | CRC Error 감지 |
+| PWM | Heaters | PID 온도 제어 | PA6 / PC6 | TR 스위칭 구동 |
+| ADC | Battery | 전압 모니터링 | PA1 | 2:1 분배 (4.2V -> 2.1V) |
+
+### 2.3 전원 제어 (P-MOSFET: AO3401F)
+아래 항목은 **현재 펌웨어/IOC 기준으로 실제 매핑된 전원/리셋 제어 라인**이다.
+(P-MOSFET 제어/리셋 라인 혼재 가능: 구현에서는 일부 센서에 대해 HIGH=OFF로 사용)
+
+- SEN0321: PB1 (SEN_RST)
+- CM1107N: PB0 (CO2_RST)
+- GDK101: PB2 (GDK101_PWR)
+- PMS3003: PB10 (PMS_SET)
+- SHT31-D: PB13 (SHT_RST)
+- MS5611: PA5 (MS_RST)
+- LSM6DSV16X: PB11 (LSM_RST)
+- MLX90393: PB14 (MLX_RST)
+- XA1110: PA9 (GPS_RST)
+- MCP9600: PA4 (MCP_RST)
+
+비고:
+- GDK101 PB2는 CubeMX(.ioc)에는 미등록이지만, 펌웨어에서 런타임 GPIO로 초기화하여 사용한다.
+
+---
+
+## 3. 센서 시스템 (Sensor Subsystem)
+| 센서 | 측정 대상 | 단위 | 비고 |
+|---|---|---|---|
+| GDK101 | 방사선 | µSv/h | 감마선 선량율, 1분 이동 평균 |
+| SEN0321 | 오존 | ppb | O3 농도 |
+| CM1107N | CO2 | ppm | 이산화탄소 농도 |
+| PMS3003 | 미세먼지 | µg/m³ | PM1.0, PM2.5, PM10 |
+| SHT31-D | 온습도 | °C, %RH | 외부 대기, CRC 검증 |
+| MS5611 | 기압 | Pa | 고도 산출용 정밀 기압 |
+| LSM6DSV16X | IMU | m/s², rad/s | 6축 가속도/자이로 |
+| MLX90393 | 자기계 | μT | 3축 지자기 |
+| XA1110 | GPS | 위도/경도/고도 | 1PPS 정밀 동기화 |
+| MCP9600 | 열전대 | °C | K-Type, 광범위 온도 |
+| DS18B20 | 온도 | °C | 배터리팩/PCB 온도 (x2) |
+
+---
+
+## 4. 소프트웨어 아키텍처 및 복구 전략 (FDIR)
+
+### 4.1 Health Check
+- 주기: 1000ms
+- 기준: 2000ms (PMS3003은 3000ms) 이상 데이터 갱신 없으면 ERROR 간주.
+
+### 4.2 자가 복구 알고리즘 (Self-Recovery)
+1. **I2C 버스 장애 (Bus Lockup)**
+   - 감지: HAL_BUSY/HAL_ERROR 연속 3회.
+   - 복구: Soft Reset -> Bus Clear (SCL 9회 Toggle) -> Periph Re-init.
+2. **UART 센서 장애 (PMS3003)**
+   - 감지: 3초 이상 유효 패킷 미수신.
+   - 복구: AbortReceive -> DMA 재시작 -> Power Cycle (SET pin).
+3. **DS18B20 장애**
+   - 감지: CRC 에러, Presence Pulse 없음, 85.0°C 고정.
+   - 복구: Reset 신호 -> 500ms 대기 -> 재시도 (실패 시 히터 OFF).
+
+### 4.3 Permanent Failure
+- 조건: 연속 복구 시도 5회 실패.
+- 동작: 해당 센서 전원 차단(P-MOS), PERMANENT_FAIL 마킹, Status Flag 설정.
+
+---
+
+## 5. 열 제어 시스템 (Thermal Control)
+- 제어 방식: PID (1Hz 주기)
+- Fail-Safe: 센서 응답 없을 시 PWM 0% 강제 (과열 방지).
+
+| 대상 | 히터 종류 | 목표 온도 | 핀 | PID (Kp/Ki/Kd) |
+|---|---|---|---|---|
+| 배터리 팩 | Kapton Film | 10.0°C | PA6 | 1000.0 / 10.0 / 0.0 |
+| 메인 보드 | Minibulb | 5.0°C | PC6 | 500.0 / 5.0 / 0.0 |
+
+---
+
+## 6. 시스템 동작 타이밍
+- 20ms: Sensing (데이터 갱신, KF) & Telemetry (패킷 전송)
+- 1000ms: Health Check (Timeout 확인)
+- 1000ms: Thermal Control (PID)
+
+---
+
+## 7. 텔레메트리 및 데이터 프로토콜
+- 구조: GPS 최우선 + 센서 융합값(Kalman Filter)
+- LoRa 파라미터: 915MHz, SF 11, BW 125kHz, CR 4/5, Tx 100mW (20dBm).
+- Link Budget: Total Gain 35dB - Path Loss 137dB - Cable Loss 3dB = -105dB Margin.
+
+### 7.1 Status Flags (Bitwise)
+- Bit 0: DS18B20 Error
+- Bit 1: I2C1 Error (Downside)
+- Bit 2: I2C3 Error (Upside)
+- Bit 3: GPS Error
+- Bit 4: PMS3003 Timeout
+- Bit 5-7: Permanent Failure Flags
+
+### 7.2 데이터 패킷 구조체 (C Code Snippet)
+```c
+#include <stdint.h>
+#pragma pack(push, 1)
+
+typedef struct {
+    // 1. 시스템 상태
+    uint32_t uptime_ms;
+    uint16_t status_flags;
+    uint16_t co2_ppm;
+
+   // 2. IMU (x1000 scaled)
+   int32_t accel_mps2_x1000[3];
+   int32_t gyro_rads_x1000[3];
+
+   // 3. 자기계
+   float mag_uT[3];
+
+   // 4. 온도 (x100 scaled)
+   int16_t indoor_2nd_temp_c_x100;
+   int16_t external_temp_c_x100;
+   int16_t sht31_temp_c_x100;
+
+   // 11. 예약/상태 확장
+   // reserved1: ext health flags (int16)
+   // reserved2/3: health flags (uint16 low/high)
+   // reserved4: telemetry_service execution time (100us units)
+   int16_t reserved1;
+
+   // 5. GPS (x10^7 scaled for lat/lon)
+   int32_t gps_lat_deg_e7;
+   int32_t gps_lon_deg_e7;
+   float gps_alt_m;
+   uint8_t gps_fix;
+   uint8_t gps_sats_used;
+   uint8_t gps_sats_in_view_total;
+   uint8_t gps_sats_in_view_gps;
+   uint8_t gps_sats_in_view_glonass;
+   uint8_t gps_sats_in_view_galileo;
+   uint8_t gps_sats_in_view_beidou;
+   uint8_t reserved2;
+   uint8_t reserved3;
+   uint8_t reserved4;
+
+   uint16_t bat_mv;
+
+   // 6. 대기질
+   uint16_t pm1_ugm3;
+   uint16_t pm25_ugm3;
+   uint16_t pm10_ugm3;
+   int16_t ozone_ppb;
+
+   // 7. 기압/습도
+   uint16_t sht31_rh_x100;
+   uint32_t ms5611_press_pa;
+   int16_t ms5611_temp_c_x100;
+
+   // 8. 방사선 (x100 scaled)
+   uint16_t gdk101_usvh_x100;
+
+   int16_t bat_temp_c_x100;
+   int16_t board_temp_c_x100;
+
+   // 9. 히터 상태
+   uint8_t heater_bat_duty_percent;
+   uint8_t heater_board_duty_percent;
+
+   // 10. 고도 추정 (Fusion)
+   float press_alt_m;
+   float kf_alt_m;
+   float kf_roll_deg;
+   float kf_pitch_deg;
+} telemetry_payload_sensor_snapshot_t;
+
+typedef struct {
+   uint8_t magic[2];      // {0xA5, 0x5A}
+   uint8_t version;       // 1
+   uint8_t msg_type;      // 0x01 heartbeat, 0x02 sensor snapshot
+   uint16_t payload_len;  // bytes
+   uint16_t seq;
+   uint32_t timestamp_ms;
+   telemetry_payload_sensor_snapshot_t payload;
+   uint16_t crc16;        // CRC-16/CCITT-FALSE over header+payload
+} telemetry_frame_t;
+#pragma pack(pop)
