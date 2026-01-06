@@ -24,3 +24,4 @@ HostSim/build/
 # OS
 Thumbs.db
 Desktop.ini
+STM32G431CBUX_FLASH.ld
