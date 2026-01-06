@@ -1,0 +1,63 @@
+test/test_integration/test_mission.c: In function 'test_full_mission_profile':
+test/test_integration/test_mission.c:83:5: error: unknown type name 'KalmanState_t'; did you mean 'SimState_t'?
+   83 |     KalmanState_t kf_state;
+      |     ^~~~~~~~~~~~~
+      |     SimState_t
+test/test_integration/test_mission.c:87:5: error: implicit declaration of function 'Kalman_Init' [-Wimplicit-function-declaration]
+   87 |     Kalman_Init();
+      |     ^~~~~~~~~~~
+test/test_integration/test_mission.c:103:9: error: implicit declaration of function 'Kalman_Update' [-Wimplicit-function-declaration]
+  103 |         Kalman_Update(&sensor_data, &kf_state);
+      |         ^~~~~~~~~~~~~
+test/test_integration/test_mission.c:105:9: error: implicit declaration of function 'MockHAL_AdvanceTick' [-Wimplicit-function-declaration]
+  105 |         MockHAL_AdvanceTick(1000);
+      |         ^~~~~~~~~~~~~~~~~~~
+test/test_integration/test_mission.c:107:74: error: request for member 'altitude_m' in something not a structure or union
+  107 |         printf("T=%d Alt=%.1f KF=%.1f\n", t, sim_state.altitude, kf_state.altitude_m);
+      |                                                                          ^
+In file included from test/test_integration/test_mission.c:3:
+test/test_integration/test_mission.c:108:69: error: request for member 'altitude_m' in something not a structure or union
+  108 |         TEST_ASSERT_FLOAT_WITHIN(10.0f, sim_state.altitude, kf_state.altitude_m);
+      |                                                                     ^
+test/unity_minimal/unity.h:34:48: note: in definition of macro 'TEST_ASSERT_FLOAT_WITHIN'
+   34 |         if (fabs((double)(expected) - (double)(actual)) > (double)(delta)) { \
+      |                                                ^~~~~~
+test/test_integration/test_mission.c:108:69: error: request for member 'altitude_m' in something not a structure or union
+  108 |         TEST_ASSERT_FLOAT_WITHIN(10.0f, sim_state.altitude, kf_state.altitude_m);
+      |                                                                     ^
+test/unity_minimal/unity.h:36:66: note: in definition of macro 'TEST_ASSERT_FLOAT_WITHIN'
+   36 |                    (double)(expected), (double)(delta), (double)(actual), __FILE__, __LINE__); \
+      |                                                                  ^~~~~~
+test/test_integration/test_mission.c:124:85: error: request for member 'altitude_m' in something not a structure or union
+  124 |         printf("T=%d Alt=%.1f KF=%.1f Vel=%.1f\n", t+5, sim_state.altitude, kf_state.altitude_m, kf_state.vertical_velocity_mps);
+      |                                                                                     ^
+test/test_integration/test_mission.c:124:106: error: request for member 'vertical_velocity_mps' in something not a structure or union
+  124 |         printf("T=%d Alt=%.1f KF=%.1f Vel=%.1f\n", t+5, sim_state.altitude, kf_state.altitude_m, kf_state.vertical_velocity_mps);
+      |                                                                                                          ^
+test/test_integration/test_mission.c:127:50: error: request for member 'vertical_velocity_mps' in something not a structure or union
+  127 |     TEST_ASSERT_FLOAT_WITHIN(2.0f, 5.0f, kf_state.vertical_velocity_mps);
+      |                                                  ^
+test/unity_minimal/unity.h:34:48: note: in definition of macro 'TEST_ASSERT_FLOAT_WITHIN'
+   34 |         if (fabs((double)(expected) - (double)(actual)) > (double)(delta)) { \
+      |                                                ^~~~~~
+test/test_integration/test_mission.c:127:50: error: request for member 'vertical_velocity_mps' in something not a structure or union
+  127 |     TEST_ASSERT_FLOAT_WITHIN(2.0f, 5.0f, kf_state.vertical_velocity_mps);
+      |                                                  ^
+test/unity_minimal/unity.h:36:66: note: in definition of macro 'TEST_ASSERT_FLOAT_WITHIN'
+   36 |                    (double)(expected), (double)(delta), (double)(actual), __FILE__, __LINE__); \
+      |                                                                  ^~~~~~
+test/test_integration/test_mission.c:142:86: error: request for member 'altitude_m' in something not a structure or union
+  142 |         printf("T=%d Alt=%.1f KF=%.1f Vel=%.1f\n", t+15, sim_state.altitude, kf_state.altitude_m, kf_state.vertical_velocity_mps);
+      |                                                                                      ^
+test/test_integration/test_mission.c:142:107: error: request for member 'vertical_velocity_mps' in something not a structure or union
+  142 |         printf("T=%d Alt=%.1f KF=%.1f Vel=%.1f\n", t+15, sim_state.altitude, kf_state.altitude_m, kf_state.vertical_velocity_mps);
+      |                                                                                                           ^
+test/test_integration/test_mission.c:146:30: error: request for member 'vertical_velocity_mps' in something not a structure or union
+  146 |     TEST_ASSERT_TRUE(kf_state.vertical_velocity_mps < -10.0f);
+      |                              ^
+test/unity_minimal/unity.h:21:15: note: in definition of macro 'TEST_ASSERT'
+   21 |         if (!(condition)) { \
+      |               ^~~~~~~~~
+test/test_integration/test_mission.c:146:5: note: in expansion of macro 'TEST_ASSERT_TRUE'
+  146 |     TEST_ASSERT_TRUE(kf_state.vertical_velocity_mps < -10.0f);
+      |     ^~~~~~~~~~~~~~~~

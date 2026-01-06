@@ -1,0 +1,201 @@
+test/test_drivers/test_main.c: In function 'test_sensors_init_i2c1':
+test/test_drivers/test_main.c:49:5: error: implicit declaration of function 'TEST_ASSERT_EQUAL_HEX16'; did you mean 'TEST_ASSERT_EQUAL_INT'? [-Wimplicit-function-declaration]
+   49 |     TEST_ASSERT_EQUAL_HEX16(0x6B, last->addr);
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+      |     TEST_ASSERT_EQUAL_INT
+In file included from Core/Inc/sensors.h:9,
+                 from Core/Src/sensors.c:1:
+Core/Src/sensors.c: In function 'Sensors_Init':
+Core/Inc/main.h:110:30: error: 'GPIOA' undeclared (first use in this function); did you mean 'GPIOB'?
+  110 | #define XA1110_RST_GPIO_Port GPIOA
+      |                              ^~~~~
+Core/Src/sensors.c:136:23: note: in expansion of macro 'XA1110_RST_GPIO_Port'
+  136 |     HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
+      |                       ^~~~~~~~~~~~~~~~~~~~
+Core/Inc/main.h:110:30: note: each undeclared identifier is reported only once for each function it appears in
+  110 | #define XA1110_RST_GPIO_Port GPIOA
+      |                              ^~~~~
+Core/Src/sensors.c:136:23: note: in expansion of macro 'XA1110_RST_GPIO_Port'
+  136 |     HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
+      |                       ^~~~~~~~~~~~~~~~~~~~
+Core/Inc/main.h:109:24: error: 'GPIO_PIN_9' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+  109 | #define XA1110_RST_Pin GPIO_PIN_9
+      |                        ^~~~~~~~~~
+Core/Src/sensors.c:136:45: note: in expansion of macro 'XA1110_RST_Pin'
+  136 |     HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
+      |                                             ^~~~~~~~~~~~~~
+Core/Inc/main.h:86:25: error: 'GPIO_PIN_7' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+   86 | #define XA1110_Wake_Pin GPIO_PIN_7
+      |                         ^~~~~~~~~~
+Core/Src/sensors.c:137:46: note: in expansion of macro 'XA1110_Wake_Pin'
+  137 |     HAL_GPIO_WritePin(XA1110_Wake_GPIO_Port, XA1110_Wake_Pin, GPIO_PIN_SET);
+      |                                              ^~~~~~~~~~~~~~~
+Core/Inc/main.h:80:21: error: 'GPIO_PIN_4' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+   80 | #define MCP_RST_Pin GPIO_PIN_4
+      |                     ^~~~~~~~~~
+Core/Src/sensors.c:139:42: note: in expansion of macro 'MCP_RST_Pin'
+  139 |     HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_SET);
+      |                                          ^~~~~~~~~~~
+Core/Inc/main.h:82:20: error: 'GPIO_PIN_5' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+   82 | #define MS_RST_Pin GPIO_PIN_5
+      |                    ^~~~~~~~~~
+Core/Src/sensors.c:140:41: note: in expansion of macro 'MS_RST_Pin'
+  140 |     HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_SET);
+      |                                         ^~~~~~~~~~
+Core/Inc/main.h:88:25: error: 'GPIO_PIN_0' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+   88 | #define CM1107N_RST_Pin GPIO_PIN_0
+      |                         ^~~~~~~~~~
+Core/Src/sensors.c:141:46: note: in expansion of macro 'CM1107N_RST_Pin'
+  141 |     HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_SET);
+      |                                              ^~~~~~~~~~~~~~~
+Core/Inc/main.h:90:21: error: 'GPIO_PIN_1' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+   90 | #define SEN_RST_Pin GPIO_PIN_1
+      |                     ^~~~~~~~~~
+Core/Src/sensors.c:142:42: note: in expansion of macro 'SEN_RST_Pin'
+  142 |     HAL_GPIO_WritePin(SEN_RST_GPIO_Port, SEN_RST_Pin, GPIO_PIN_SET);
+      |                                          ^~~~~~~~~~~
+Core/Inc/main.h:103:21: error: 'GPIO_PIN_14' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+  103 | #define MLX_RST_Pin GPIO_PIN_14
+      |                     ^~~~~~~~~~~
+Core/Src/sensors.c:143:42: note: in expansion of macro 'MLX_RST_Pin'
+  143 |     HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_SET);
+      |                                          ^~~~~~~~~~~
+In file included from Core/Drivers/ds18b20/owlink.c:30:
+Core/Drivers/ds18b20/owhal.h:15:16: error: expected ';' before 'void'
+   15 | __STATIC_INLINE void OW_DIR_OUT(void)
+      |                ^~~~~
+      |                ;
+Core/Drivers/ds18b20/owhal.h: In function 'OW_DIR_OUT':
+Core/Drivers/ds18b20/owhal.h:17:5: error: unknown type name 'GPIO_InitTypeDef'
+   17 |     GPIO_InitTypeDef GPIO_InitStruct = {0};
+      |     ^~~~~~~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:18:20: error: request for member 'Pin' in something not a structure or union
+   18 |     GPIO_InitStruct.Pin = OW_PIN;
+      |                    ^
+In file included from Core/Drivers/ds18b20/owhal.h:4:
+Core/Inc/main.h:105:21: error: 'GPIO_PIN_15' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+  105 | #define DS18B20_Pin GPIO_PIN_15
+      |                     ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:7:17: note: in expansion of macro 'DS18B20_Pin'
+    7 | #define OW_PIN  DS18B20_Pin
+      |                 ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:18:27: note: in expansion of macro 'OW_PIN'
+   18 |     GPIO_InitStruct.Pin = OW_PIN;
+      |                           ^~~~~~
+Core/Inc/main.h:105:21: note: each undeclared identifier is reported only once for each function it appears in
+  105 | #define DS18B20_Pin GPIO_PIN_15
+      |                     ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:7:17: note: in expansion of macro 'DS18B20_Pin'
+    7 | #define OW_PIN  DS18B20_Pin
+      |                 ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:18:27: note: in expansion of macro 'OW_PIN'
+   18 |     GPIO_InitStruct.Pin = OW_PIN;
+      |                           ^~~~~~
+Core/Drivers/ds18b20/owhal.h:19:20: error: request for member 'Mode' in something not a structure or union
+   19 |     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD; // Open Drain for 1-Wire
+      |                    ^
+Core/Drivers/ds18b20/owhal.h:19:28: error: 'GPIO_MODE_OUTPUT_OD' undeclared (first use in this function)
+   19 |     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD; // Open Drain for 1-Wire
+      |                            ^~~~~~~~~~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:20:20: error: request for member 'Pull' in something not a structure or union
+   20 |     GPIO_InitStruct.Pull = GPIO_NOPULL; // External pull-up assumed, or PULLUP
+      |                    ^
+Core/Drivers/ds18b20/owhal.h:20:28: error: 'GPIO_NOPULL' undeclared (first use in this function)
+   20 |     GPIO_InitStruct.Pull = GPIO_NOPULL; // External pull-up assumed, or PULLUP
+      |                            ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:21:20: error: request for member 'Speed' in something not a structure or union
+   21 |     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+      |                    ^
+Core/Drivers/ds18b20/owhal.h:21:29: error: 'GPIO_SPEED_FREQ_HIGH' undeclared (first use in this function)
+   21 |     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+      |                             ^~~~~~~~~~~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:22:5: error: implicit declaration of function 'HAL_GPIO_Init' [-Wimplicit-function-declaration]
+   22 |     HAL_GPIO_Init(OW_PORT, &GPIO_InitStruct);
+      |     ^~~~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h: At top level:
+Core/Drivers/ds18b20/owhal.h:25:16: error: expected ';' before 'void'
+   25 | __STATIC_INLINE void OW_DIR_IN(void)
+      |                ^~~~~
+      |                ;
+Core/Drivers/ds18b20/owhal.h: In function 'OW_DIR_IN':
+Core/Drivers/ds18b20/owhal.h:27:5: error: unknown type name 'GPIO_InitTypeDef'
+   27 |     GPIO_InitTypeDef GPIO_InitStruct = {0};
+      |     ^~~~~~~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:28:20: error: request for member 'Pin' in something not a structure or union
+   28 |     GPIO_InitStruct.Pin = OW_PIN;
+      |                    ^
+Core/Inc/main.h:105:21: error: 'GPIO_PIN_15' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+  105 | #define DS18B20_Pin GPIO_PIN_15
+      |                     ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:7:17: note: in expansion of macro 'DS18B20_Pin'
+    7 | #define OW_PIN  DS18B20_Pin
+      |                 ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:28:27: note: in expansion of macro 'OW_PIN'
+   28 |     GPIO_InitStruct.Pin = OW_PIN;
+      |                           ^~~~~~
+Core/Drivers/ds18b20/owhal.h:29:20: error: request for member 'Mode' in something not a structure or union
+   29 |     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+      |                    ^
+Core/Drivers/ds18b20/owhal.h:29:28: error: 'GPIO_MODE_INPUT' undeclared (first use in this function)
+   29 |     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+      |                            ^~~~~~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:30:20: error: request for member 'Pull' in something not a structure or union
+   30 |     GPIO_InitStruct.Pull = GPIO_NOPULL;
+      |                    ^
+Core/Drivers/ds18b20/owhal.h:30:28: error: 'GPIO_NOPULL' undeclared (first use in this function)
+   30 |     GPIO_InitStruct.Pull = GPIO_NOPULL;
+      |                            ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h: At top level:
+Core/Drivers/ds18b20/owhal.h:43:16: error: expected ';' before 'void'
+   43 | __STATIC_INLINE void __delay_us(uint32_t us)
+      |                ^~~~~
+      |                ;
+Core/Drivers/ds18b20/owhal.h: In function '__delay_us':
+Core/Drivers/ds18b20/owhal.h:45:37: error: 'SystemCoreClock' undeclared (first use in this function)
+   45 |     volatile uint32_t count = us * (SystemCoreClock / 4000000); // approx
+      |                                     ^~~~~~~~~~~~~~~
+Core/Drivers/ds18b20/owlink.c: In function 'owReadBit':
+Core/Inc/main.h:105:21: error: 'GPIO_PIN_15' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+  105 | #define DS18B20_Pin GPIO_PIN_15
+      |                     ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:7:17: note: in expansion of macro 'DS18B20_Pin'
+    7 | #define OW_PIN  DS18B20_Pin
+      |                 ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:37:48: note: in expansion of macro 'OW_PIN'
+   37 | #define OW_LOW()    HAL_GPIO_WritePin(OW_PORT, OW_PIN, GPIO_PIN_RESET)
+      |                                                ^~~~~~
+Core/Drivers/ds18b20/owlink.c:51:5: note: in expansion of macro 'OW_LOW'
+   51 |     OW_LOW();
+      |     ^~~~~~
+Core/Drivers/ds18b20/owhal.h:39:22: error: implicit declaration of function 'HAL_GPIO_ReadPin'; did you mean 'HAL_GPIO_WritePin'? [-Wimplicit-function-declaration]
+   39 | #define OW_READ()   (HAL_GPIO_ReadPin(OW_PORT, OW_PIN) == GPIO_PIN_SET)
+      |                      ^~~~~~~~~~~~~~~~
+Core/Drivers/ds18b20/owlink.c:59:14: note: in expansion of macro 'OW_READ'
+   59 |     bit_in = OW_READ();
+      |              ^~~~~~~
+Core/Drivers/ds18b20/owlink.c: In function 'owWriteBit':
+Core/Inc/main.h:105:21: error: 'GPIO_PIN_15' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+  105 | #define DS18B20_Pin GPIO_PIN_15
+      |                     ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:7:17: note: in expansion of macro 'DS18B20_Pin'
+    7 | #define OW_PIN  DS18B20_Pin
+      |                 ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:37:48: note: in expansion of macro 'OW_PIN'
+   37 | #define OW_LOW()    HAL_GPIO_WritePin(OW_PORT, OW_PIN, GPIO_PIN_RESET)
+      |                                                ^~~~~~
+Core/Drivers/ds18b20/owlink.c:71:5: note: in expansion of macro 'OW_LOW'
+   71 |     OW_LOW();
+      |     ^~~~~~
+Core/Drivers/ds18b20/owlink.c: In function 'owTouchReset':
+Core/Inc/main.h:105:21: error: 'GPIO_PIN_15' undeclared (first use in this function); did you mean 'GPIO_PIN_10'?
+  105 | #define DS18B20_Pin GPIO_PIN_15
+      |                     ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:7:17: note: in expansion of macro 'DS18B20_Pin'
+    7 | #define OW_PIN  DS18B20_Pin
+      |                 ^~~~~~~~~~~
+Core/Drivers/ds18b20/owhal.h:37:48: note: in expansion of macro 'OW_PIN'
+   37 | #define OW_LOW()    HAL_GPIO_WritePin(OW_PORT, OW_PIN, GPIO_PIN_RESET)
+      |                                                ^~~~~~
+Core/Drivers/ds18b20/owlink.c:97:5: note: in expansion of macro 'OW_LOW'
+   97 |     OW_LOW();
+      |     ^~~~~~

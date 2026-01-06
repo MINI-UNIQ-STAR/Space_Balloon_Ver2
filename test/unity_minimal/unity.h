@@ -15,7 +15,7 @@ extern int tests_failed;
 void UnityBegin(void);
 int UnityEnd(void);
 
-// Basic Assertions
+// Boolean Assertions
 #define TEST_ASSERT(condition) \
     do { \
         if (!(condition)) { \
@@ -25,6 +25,10 @@ int UnityEnd(void);
         } \
     } while (0)
 
+#define TEST_ASSERT_TRUE(condition) TEST_ASSERT(condition)
+#define TEST_ASSERT_FALSE(condition) TEST_ASSERT(!(condition))
+
+// Float Assertions
 #define TEST_ASSERT_FLOAT_WITHIN(delta, expected, actual) \
     do { \
         if (fabs((double)(expected) - (double)(actual)) > (double)(delta)) { \
@@ -35,14 +39,31 @@ int UnityEnd(void);
         } \
     } while (0)
 
+// Integer Assertions
+#define TEST_ASSERT_EQUAL_INT(expected, actual) \
+    do { \
+        int e = (int)(expected); \
+        int a = (int)(actual); \
+        if (e != a) { \
+            printf(RED "FAIL: Expected %d but got %d at %s:%d" RESET "\n", \
+                   e, a, __FILE__, __LINE__); \
+            tests_failed++; \
+            return; \
+        } \
+    } while (0)
+
 #define RUN_TEST(test_func) \
     do { \
+        extern void setUp(void); \
+        extern void tearDown(void); \
+        setUp(); \
         printf("Running %s... ", #test_func); \
         int failed_before = tests_failed; \
         test_func(); \
         if (tests_failed == failed_before) { \
             printf(GREEN "PASS" RESET "\n"); \
         } \
+        tearDown(); \
         tests_run++; \
     } while (0)
 

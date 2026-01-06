@@ -110,9 +110,7 @@ void FDIR_Update(void) {
             
             // Physically disable if applicable
             if (i == SENSOR_ID_PMS) {
-                #ifndef HOST_TEST_MODE
                 HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_RESET);
-                #endif
             }
             else if (i == SENSOR_ID_CO2) {
                 // CM1107N has no enable pin, just stop reading
@@ -136,9 +134,7 @@ void FDIR_Update(void) {
             
             // Physically re-enable
             if (i == SENSOR_ID_PMS) {
-                #ifndef HOST_TEST_MODE
                 HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_SET);
-                #endif
             }
             
             Sensors_Reset((SensorID_t)i);

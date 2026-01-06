@@ -1,0 +1,7 @@
+Running test_fdir_init_healthy... [32mPASS[0m
+Running test_fdir_timeout_recovery... [32mPASS[0m
+Running test_fdir_permanent_failure... [32mPASS[0m
+Running test_fdir_cold_protection... DEBUG: MockGPIO Write: Port=0000000000004000, Pin=1024, State=0 (Expected Port=0000000000001000, Pin=1)
+[31mFAIL: Expected 0 but got -1 at test/test_fdir/test_main.c:80[0m
+-------------------------
+4 Tests Run, 1 Failed

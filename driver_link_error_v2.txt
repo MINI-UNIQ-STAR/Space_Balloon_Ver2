@@ -1,0 +1,5 @@
+C:/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/15.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\hyuns\AppData\Local\Temp\ccsuWVgv.o:test_main.c:(.text+0x173): undefined reference to `setUp'
+C:/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/15.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\hyuns\AppData\Local\Temp\ccsuWVgv.o:test_main.c:(.text+0x1bc): undefined reference to `tearDown'
+C:/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/15.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\hyuns\AppData\Local\Temp\ccsuWVgv.o:test_main.c:(.text+0x1d6): undefined reference to `setUp'
+C:/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/15.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\hyuns\AppData\Local\Temp\ccsuWVgv.o:test_main.c:(.text+0x21f): undefined reference to `tearDown'
+collect2.exe: error: ld returned 1 exit status

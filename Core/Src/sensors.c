@@ -44,6 +44,15 @@ static xa1110_ctx_t xa_ctx;
 // --- Mock State ---
 static float mock_altitude = 100.0f;
 static float mock_temp = 15.0f;
+static float mock_pressure = 101325.0f;
+
+#ifdef HOST_TEST_MODE
+void Sensors_SetMockData(float alt_m, float temp_c, float press_pa) {
+    mock_altitude = alt_m;
+    mock_temp = temp_c;
+    mock_pressure = press_pa;
+}
+#endif
 
 // --- Helper Functions ---
 static float half_to_float(uint16_t h) {
@@ -73,20 +82,18 @@ static float half_to_float(uint16_t h) {
 
 // --- Platform Functions ---
 static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
-    // HAL_I2C_Mem_Write(handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
+    HAL_I2C_Mem_Write((I2C_HandleTypeDef*)handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
     return 0;
 }
 
 // Wrapper for MLX (Standard I2C Write)
 static int32_t mlx_write(void *handle, uint8_t *buf, uint16_t len) {
-    // HAL_I2C_Master_Transmit(handle, MLX90393_DEFAULT_ADDR << 1, buf, len, 1000);
+    HAL_I2C_Master_Transmit((I2C_HandleTypeDef*)handle, MLX90393_ADDR << 1, buf, len, 1000);
     return 0;
 }
 
 static int32_t mlx_read(void *handle, uint8_t *buf, uint16_t len) {
-    // HAL_I2C_Master_Receive(handle, MLX90393_DEFAULT_ADDR << 1, buf, len, 1000);
-    // Mock for host test
-    memset(buf, 0, len);
+    HAL_I2C_Master_Receive((I2C_HandleTypeDef*)handle, MLX90393_ADDR << 1, buf, len, 1000);
     return 0;
 }
 
@@ -127,22 +134,7 @@ static int32_t uart_read_mock(void *handle, uint8_t *buf, uint16_t len) {
 }
 
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
-    // Real Hardware:
-    // HAL_I2C_Mem_Read(handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-    
-    // Mock Logic for Host Test
-    memset(bufp, 0, len);
-    if (reg == LSM6DSV16X_WHO_AM_I) {
-        bufp[0] = LSM6DSV16X_ID;
-    } 
-    // Mock Z-Accel 1G (approx 16384 LSB for +/- 2g maybe, depends on sensitivity)
-    // Default 2g sensitivity -> 0.061 mg/LSB. 1000mg / 0.061 = ~16393.
-    else if (reg == LSM6DSV16X_OUTZ_L_A) {
-        // Assuming len >= 2 for low/high read
-        int16_t val = 16384; 
-        bufp[0] = (uint8_t)(val & 0xFF);
-        if (len > 1) bufp[1] = (uint8_t)((val >> 8) & 0xFF);
-    }
+    HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
     return 0;
 }
 
@@ -299,8 +291,9 @@ SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
     Sensors_Read_BoardTemp(&data->board_temp_c_x100);
     
     // Update Mock physics
-    mock_altitude += 0.5f; // Climbing 0.5m per call (25m/s if 50Hz.. fast but ok for test)
-    if (mock_altitude > 30000.0f) mock_altitude = 100.0f; // Reset
+    // Controlled via Sensors_SetMockData() in tests
+    // mock_altitude += 0.5f; 
+    // if (mock_altitude > 30000.0f) mock_altitude = 100.0f; 
     
     return SENSOR_OK;
 }
@@ -346,6 +339,7 @@ void Sensors_Read_Rad(uint16_t *uSvh) {
 }
 
 void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
+#ifndef HOST_TEST_MODE
     int32_t p, t;
     if (MS5611_Read_PT(&ms_ctx, &p, &t) == 0) {
         *press_pa = (uint32_t)p;
@@ -354,6 +348,10 @@ void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
         *press_pa = 101325; 
         *temp_c_x100 = 2500;
     }
+#else
+    *press_pa = (uint32_t)mock_pressure;
+    *temp_c_x100 = (int16_t)(mock_temp * 100);
+#endif
 }
 
 void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
