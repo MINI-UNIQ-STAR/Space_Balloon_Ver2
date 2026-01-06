@@ -2,7 +2,7 @@
 #include "main.h"
 #include <stdio.h>
 
-static SystemHealth_t sys_health;
+
 static SensorHealth_t sensors_health[SENSOR_ID_COUNT];
 
 // Sensor-specific timeout configuration (in milliseconds)
@@ -99,7 +99,7 @@ void FDIR_Update(void) {
     
     for (i = 0U; i < (uint8_t)SENSOR_ID_COUNT; i++) {
         int16_t min_temp = sensor_temp_limits[i][0];
-        int16_t max_temp = sensor_temp_limits[i][1];
+        // int16_t max_temp = sensor_temp_limits[i][1]; // Unused
         
         // ===== Temperature-based protection =====
         // Check if temperature is below operating minimum
@@ -220,7 +220,7 @@ bool FDIR_IsSensorColdDisabled(SensorID_t id) {
 
 // Altitude tracking for fallback and continuity
 static float last_gps_alt_m = 0.0f;
-static float last_baro_alt_m = 0.0f;
+
 static float current_gps_alt_m = 0.0f;
 static float current_baro_alt_m = 0.0f;
 static bool gps_alt_valid = false;
@@ -233,7 +233,7 @@ bool FDIR_ValidateRange_Baro(uint32_t press_pa) {
         range_error_detected = true;
         FDIR_ReportFailure(SENSOR_ID_BARO, 1);
         #ifdef DEBUG
-        printf("FDIR: Baro range error: %u Pa\n", press_pa);
+        printf("FDIR: Baro range error: %lu Pa\n", press_pa);
         #endif
         return false;
     }

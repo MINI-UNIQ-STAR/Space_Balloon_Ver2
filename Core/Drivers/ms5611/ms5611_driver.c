@@ -1,5 +1,6 @@
 #include "ms5611_driver.h"
 #include "main.h"
+#include <stdio.h>
 
 // Helper to write command
 static int32_t _send_cmd(ms5611_ctx_t *ctx, uint8_t cmd) {

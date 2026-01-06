@@ -17,30 +17,14 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#ifndef HOST_TEST_MODE
+#if !defined(HOST_TEST_MODE) || defined(STM32G431xx)
 #include "stm32g4xx_hal.h"
-#else
-#include "mock_hal.h"
-// Keep Pin definitions if mock_hal.h doesn't have them (it doesn't)
-// But wait, pins are usually defined in main.h below.
-// The FDIR tests relied on GPIO_PIN_10 being defined here or in the manual block.
-// The manual block had #define GPIO_PIN_10 1024.
-// Let's keep the Pin definitions if they are not in mock_hal.h
-// Actually, mock_hal.h only has types.
-// So I should keep the defines or move them to mock_hal.h?
-// Moving them to mock_hal.h is cleaner if they are generic HAL things.
-// But GPIO_PIN_10 is specific.
-// Wait, GPIO_PIN_10 is a standard HAL define.
-// I should add standard HAL defines to mock_hal.h or keep them here.
-// Let's add them to mock_hal.h to be reusable.
-// But for now, I will just keep them here to minimize changes?
-// No, the manual block is ugly.
-// I'll assume mock_hal.h should provide standard HAL constants.
-// I will check mock_hal.h again. It has HAL_OK etc.
-// It doesn't have GPIO_PIN_RESET etc.
-// I should update mock_hal.h to include GPIO constants.
+#endif
+
+#if defined(HOST_TEST_MODE) && !defined(STM32G431xx)
 #include "mock_hal.h"
 #endif
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */

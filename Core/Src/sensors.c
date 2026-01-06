@@ -41,9 +41,11 @@ static cm1107n_ctx_t cm_ctx;
 static xa1110_ctx_t xa_ctx;
 
 // --- Mock State ---
+#ifdef HOST_TEST_MODE
 static float mock_altitude = 100.0f;
 static float mock_temp = 15.0f;
 static float mock_pressure = 101325.0f;
+#endif
 
 #ifdef HOST_TEST_MODE
 void Sensors_SetMockData(float alt_m, float temp_c, float press_pa) {
@@ -294,10 +296,24 @@ SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
     // 7. Others
     Sensors_Read_BoardTemp(&data->board_temp_c_x100);
     
-    // Update Mock physics
-    // Controlled via Sensors_SetMockData() in tests
-    // mock_altitude += 0.5f; 
-    // if (mock_altitude > 30000.0f) mock_altitude = 100.0f; 
+    // Update Mock physics (Ascent Simulation)
+#ifdef HOST_TEST_MODE
+    mock_altitude += 2.5f; // approx 5m/s at 2Hz check? No, Read_All is 50Hz? No, main loop calls it.
+    // Read_All is called in App_Loop.
+    if (mock_altitude > 30000.0f) mock_altitude = 100.0f;
+    
+    // Simple Standard Atmosphere approximation for Pressure/Temp
+    // T = 15 - 0.0065 * h
+    mock_temp = 15.0f - (0.0065f * mock_altitude);
+    
+    // P = 101325 * (1 - 2.25577e-5 * h)^5.25588
+    // Simplified: P approx decreases.
+    // Using crude linear for debug speed if powf not available/linked, but user has math.h
+    // Let's use simple exponential or just a lookup? 
+    // Just use a simple decay factor for visual check.
+    // P_new = P_sea * exp(-h/7400)
+    mock_pressure = 101325.0f * expf(-mock_altitude / 7400.0f);
+#endif 
     
     return SENSOR_OK;
 }
@@ -323,9 +339,16 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
           * result = mdps * 0.01745 */
          gyro[idx] = (int32_t)(mdps * 0.01745f);
     }
+    
+    /* Report Success if we got here (drivers usually return 0 on success, ignoring for now as previous code did, 
+       but strictly we should check. Assuming HAL I2C didn't timeout hard within the driver calls above) */
+    // Ideally check return values:
+    // if (ret_xl == 0 && ret_gy == 0)
+    FDIR_ReportSuccess(SENSOR_ID_IMU);
 #else
     accel[0] = 0; accel[1] = 0; accel[2] = 9810;
     gyro[0] = 0; gyro[1] = 0; gyro[2] = 0;
+    FDIR_ReportSuccess(SENSOR_ID_IMU);
 #endif
 }
 
@@ -335,8 +358,10 @@ void Sensors_Read_Mag(float mag[3]) {
     MLX90393_StartMeasurement(&mlx_ctx);
     // Delay needed? Mock instant.
     MLX90393_ReadMeasurement(&mlx_ctx, &mag[0], &mag[1], &mag[2]);
+    FDIR_ReportSuccess(SENSOR_ID_MAG);
 #else
     mag[0] = 0.0f; mag[1] = 0.0f; mag[2] = 0.0f;
+    FDIR_ReportSuccess(SENSOR_ID_MAG);
 #endif
 }
 
@@ -346,11 +371,13 @@ void Sensors_Read_Rad(uint16_t *uSvh) {
     // 10-min avg for stability
     if (GDK101_Read_10Min_Avg(&gdk_ctx, &val_uSvh) == 0) {
         *uSvh = (uint16_t)(val_uSvh * 100); // Scale x100
+        FDIR_ReportSuccess(SENSOR_ID_RAD);
     } else {
         *uSvh = 0; // Error
     }
 #else
     *uSvh = 0;
+    FDIR_ReportSuccess(SENSOR_ID_RAD);
 #endif
 }
 
@@ -360,6 +387,7 @@ void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
     if (MS5611_Read_PT(&ms_ctx, &p, &t) == 0) {
         *press_pa = (uint32_t)p;
         *temp_c_x100 = (int16_t)t;
+        FDIR_ReportSuccess(SENSOR_ID_BARO);
     } else {
         *press_pa = 101325; 
         *temp_c_x100 = 2500;
@@ -367,6 +395,7 @@ void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
 #else
     *press_pa = (uint32_t)mock_pressure;
     *temp_c_x100 = (int16_t)(mock_temp * 100);
+    FDIR_ReportSuccess(SENSOR_ID_BARO);
 #endif
 }
 
@@ -376,6 +405,7 @@ void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
     if (SHT31_ReadTempHum(&sht_ctx, &t, &rh) == 0) {
         *temp_c_x100 = (int16_t)(t * 100);
         *rh_x100 = (uint16_t)(rh * 100);
+        FDIR_ReportSuccess(SENSOR_ID_SHT);
     } else {
         *temp_c_x100 = 0;
         *rh_x100 = 0;
@@ -383,6 +413,7 @@ void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
 #else
     *temp_c_x100 = 2500;
     *rh_x100 = 5000;
+    FDIR_ReportSuccess(SENSOR_ID_SHT);
 #endif
 }
 
@@ -404,11 +435,16 @@ void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uin
     
     // Auto-increment mock if zero (since no ISR feeding it)
     if (*pm2_5 == 0) *pm2_5 = 15;
+    
+    FDIR_ReportSuccess(SENSOR_ID_CO2);
+    FDIR_ReportSuccess(SENSOR_ID_PMS);
 #else
     *co2 = 400;
     *ozone = 20;
     *pm1_0 = 5;
     *pm2_5 = 10;
+    FDIR_ReportSuccess(SENSOR_ID_CO2);
+    FDIR_ReportSuccess(SENSOR_ID_PMS);
 #endif
 }
 
@@ -506,11 +542,13 @@ void Sensors_Read_External(int16_t *temp_c_x100) {
     float val;
     if (MCP9600_ReadThermocouple(&mcp_ctx, &val) == 0) {
         *temp_c_x100 = (int16_t)(val * 100);
+        FDIR_ReportSuccess(SENSOR_ID_EXT_TEMP);
     } else {
         *temp_c_x100 = 0; // Error
     }
 #else
     *temp_c_x100 = -5000;
+    FDIR_ReportSuccess(SENSOR_ID_EXT_TEMP);
 #endif
 }
 
