@@ -111,3 +111,19 @@ int32_t SHT31_ReadTempHum(sht31_ctx_t *ctx, float *temp_c, float *rh) {
     
     return 0;
 }
+
+int32_t SHT31_SetHeater(sht31_ctx_t *ctx, bool enable) {
+    uint8_t cmd_lsb;
+    uint8_t cmd_msb;
+
+    if (enable) {
+        cmd_msb = (uint8_t)(SHT31_HEATEREN >> 8);
+        cmd_lsb = (uint8_t)(SHT31_HEATEREN & 0xFF);
+    } else {
+        cmd_msb = (uint8_t)(SHT31_HEATERDIS >> 8);
+        cmd_lsb = (uint8_t)(SHT31_HEATERDIS & 0xFF);
+    }
+
+    return ctx->write_reg(ctx->handle, cmd_msb, &cmd_lsb, 1);
+}
+

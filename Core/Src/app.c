@@ -91,6 +91,24 @@ void App_Loop(void) {
     if (!FDIR_IsSensorHealthy(SENSOR_ID_SHT) && !FDIR_IsSensorHealthy(SENSOR_ID_EXT_TEMP)) {
        // If both temp sensors fail, we might want to flag something, but currently just proceed
     }
+
+    // ** SHT31 Heater Control (Anti-condensation) **
+    // Turn ON if temp < 0C, Turn OFF if temp > 2C (Hysteresis)
+    float sht31_temp_c = telem_frame.payload.sht31_temp_c_x100 / 100.0f;
+    static uint8_t sht31_heater_on = 0;
+
+    if (sht31_temp_c < 0.0f) {
+        if (sht31_heater_on == 0) {
+            Sensors_SetHeater_SHT31(1);
+            sht31_heater_on = 1;
+        }
+    } else if (sht31_temp_c > 2.0f) {
+        if (sht31_heater_on == 1) {
+            Sensors_SetHeater_SHT31(0);
+            sht31_heater_on = 0;
+        }
+    }
+
     
     // 7. GPS
     Sensors_Read_GPS(&telem_frame.payload.gps_lat_deg_e7, &telem_frame.payload.gps_lon_deg_e7, 

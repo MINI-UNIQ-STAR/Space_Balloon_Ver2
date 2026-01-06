@@ -27,5 +27,7 @@ typedef struct {
 int32_t SHT31_Init(sht31_ctx_t *ctx);
 int32_t SHT31_Reset(sht31_ctx_t *ctx);
 int32_t SHT31_ReadTempHum(sht31_ctx_t *ctx, float *temp_c, float *rh);
+int32_t SHT31_SetHeater(sht31_ctx_t *ctx, bool enable);
+
 
 #endif

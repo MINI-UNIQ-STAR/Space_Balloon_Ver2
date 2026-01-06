@@ -57,6 +57,9 @@ void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100);
 void Sensors_Read_BoardTemp(int16_t *temp_c_x100);
 void Sensors_Read_External(int16_t *temp_c_x100);
 
+/* Control */
+void Sensors_SetHeater_SHT31(uint8_t enable);
+
 // GPS
 // Passing pointers to fill telemetry fields directly is easiest, or struct
 void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 

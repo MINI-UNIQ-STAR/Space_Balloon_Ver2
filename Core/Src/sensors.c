@@ -412,6 +412,12 @@ void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uin
 #endif
 }
 
+void Sensors_SetHeater_SHT31(uint8_t enable) {
+#ifndef HOST_TEST_MODE
+    SHT31_SetHeater(&sht_ctx, (bool)enable);
+#endif
+}
+
 void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
                       uint8_t *sats, uint8_t *sats_view,
                       uint8_t *sats_gps, uint8_t *sats_glonass,
