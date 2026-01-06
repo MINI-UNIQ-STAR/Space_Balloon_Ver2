@@ -1,6 +1,6 @@
 #include "mock_hal.h"
 
-static uint32_t mock_tick = 0;
+static uint32_t current_tick = 0;
 
 // --- I2C Mock State ---
 static MockI2C_LastWrite_t last_i2c_write;
@@ -9,7 +9,7 @@ static uint16_t next_read_len = 0;
 
 void MockI2C_ClearStats(void) {
     memset(&last_i2c_write, 0, sizeof(last_i2c_write));
-    mock_tick = 0;
+    current_tick = 0;
     next_read_len = 0;
 }
 
