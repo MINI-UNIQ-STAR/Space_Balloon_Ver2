@@ -197,24 +197,52 @@ mingw32-make -C build
 
 ---
 
-## 🚀 실행 방법
+## 🛡️ 코드 안전성 (MISRA C:2012)
 
-### 시뮬레이션 실행
+이 펌웨어는 **MISRA C:2012** 가이드라인을 준수하여 작성되었습니다.
+- **스택 안전성:** 재귀 호출 제거, 스택 사용량 최소화
+- **타입 안전성:** 명시적인 타입 캐스팅 및 크기 지정 (`uint8_t`, `int32_t` 등)
+- **알고리즘 검증:** Kalman Filter 및 PID 제어기의 수치적 안정성(NaN/Inf 체크) 강화
+
+---
+
+## 🧪 테스트 및 실행
+
+### 1. 유닛 테스트 (Unit Tests)
+개별 모듈의 알고리즘 동작을 검증합니다.
+
+```powershell
+# 예: Kalman Filter 테스트
+cd test/test_kalman
+gcc -o test_kalman test_kalman.c ..\..\Core\Src\kalman.c -I..\..\Core\Inc -DHOST_TEST_MODE
+.\test_kalman.exe
+```
+
+### 2. 통합 테스트 (Integration Test)
+전체 시스템의 비행 시나리오(대기-상승-폭발-하강)를 시뮬레이션하여 데이터 로직을 검증합니다.
+
+```powershell
+cd test/test_integration
+# 빌드 및 실행 (gcc 필요)
+gcc -o mission_test.exe test_mission.c ... (상세 명령어는 walkthrough.md 참조)
+.\mission_test.exe
+```
+
+### 3. 호스트 시뮬레이션 (HostSim)
+과거 비행 데이터(RS41)를 재생하여 실시간 텔레메트리 전송을 검증합니다.
 
 ```powershell
 cd HostSim
 .\build\test_host.exe
 ```
-
 **출력 예시:**
-
 ```text
 [Mock] Sensors Initialized - RS41 Flight Data Mode
 [Mock] Loaded 65 flight data points
 [Mock] Altitude range: 5174m - 5631m
 
 === TELEMETRY FRAME ===
-Frame Size: 126 bytes
+Frame Size: 130 bytes
 Header: magic=A5 5A, ver=1, type=0x02, seq=1, ts=20ms
 --- Sensor Payload ---
 GPS: 35.0929800N, 126.9988700E, Alt=5174.3m, Fix=1, Sats=9/12
@@ -237,33 +265,95 @@ CRC16: 0xABCD
 
 ## 📡 텔레메트리 프로토콜
 
-### 프레임 구조 (126 bytes)
+### 프레임 및 페이로드 구조 (C Struct)
 
-| 필드 | 크기 | 설명 |
-| :--- | :--- | :--- |
-| Magic | 2 | `0xA5 0x5A` |
-| Version | 1 | `0x01` |
-| Msg Type | 1 | `0x02` (Sensor Snapshot) |
-| Payload Len | 2 | 페이로드 길이 |
-| Sequence | 2 | 시퀀스 번호 |
-| Timestamp | 4 | 밀리초 타임스탬프 |
-| Payload | ~110 | 센서 데이터 |
-| CRC16 | 2 | CRC-16/CCITT-FALSE |
+`Core/Inc/telemetry.h`에 정의된 패킷 구조체입니다. (`#pragma pack(1)` 적용됨)
 
-### 페이로드 내용
+```c
+// 1. 센서 스냅샷 페이로드
+typedef struct {
+    /* 1. System Status */
+    uint32_t uptime_ms;
+    uint16_t status_flags;
+    uint16_t co2_ppm;           /* CM1107N */
 
-- System: uptime, status flags, CO2
-- IMU: accel[3], gyro[3] (x1000 스케일)
-- Mag: mag_uT[3]
-- Temperature: board, external, SHT31, battery (x100 스케일)
-- GPS: lat/lon (e7), altitude, fix, satellites
-- Air Quality: PM1/2.5/10, ozone
-- Pressure/Humidity: ms5611, sht31
-- Radiation: GDK101 (x100 스케일)
-- Heater: duty percent
-- Altitude: pressure-derived, Kalman-filtered
-- Attitude: roll, pitch
+    /* 2. IMU (LSM6DSV16X) (x1000 scaled) */
+    int32_t accel_mps2_x1000[3];
+    int32_t gyro_rads_x1000[3];
 
+    /* 3. Magnetometer (MLX90393) */
+    float mag_uT[3];
+
+    /* 4. Temperature (x100 scaled) */
+    int16_t board_temp_c_x100;      /* DS18B20 (Board) */
+    int16_t external_temp_c_x100;   /* MCP9600 */
+    int16_t sht31_temp_c_x100;      /* SHT31 */
+
+    /* 5. Reserved / Extended Status */
+    int16_t bat_temp_c_x100;        /* DS18B20 (Battery) */
+
+    /* 6. GPS (XA1110) (x10^7 scaled for lat/lon) */
+    int32_t gps_lat_deg_e7;
+    int32_t gps_lon_deg_e7;
+    float gps_alt_m;
+    uint8_t gps_fix;
+    uint8_t gps_sats_used;
+    uint8_t gps_sats_in_view_total;
+    uint8_t gps_sats_in_view_gps;
+    uint8_t gps_sats_in_view_glonass;
+    uint8_t gps_sats_in_view_galileo;
+    uint8_t gps_sats_in_view_beidou;
+    
+    /* GPS UTC Time (from RMC sentence) */
+    uint8_t gps_utc_hour;
+    uint8_t gps_utc_min;
+    uint8_t gps_utc_sec;
+    uint8_t gps_utc_day;
+    uint8_t gps_utc_month;
+    uint16_t gps_utc_year;
+
+    uint16_t bat_mv;            /* ADC PA1 */
+
+    /* 7. Air Quality */
+    uint16_t pm1_ugm3;          /* PMS3003 */
+    uint16_t pm25_ugm3;
+    uint16_t pm10_ugm3;
+    int16_t ozone_ppb;          /* SEN0321 */
+
+    /* 8. Pressure / Humidity */
+    uint16_t sht31_rh_x100;     /* SHT31 */
+    uint32_t ms5611_press_pa;   /* MS5611 */
+    int16_t ms5611_temp_c_x100;
+
+    /* 9. Radiation */
+    uint16_t gdk101_usvh_x100;  /* GDK101 */
+
+    /* 10. Heater Status */
+    uint8_t heater_bat_duty_percent;
+    uint8_t heater_board_duty_percent;
+
+    /* 11. Altitude Fusion */
+    float press_alt_m;
+    float kf_alt_m;
+    float kf_roll_deg;
+    float kf_pitch_deg;
+
+} telemetry_payload_sensor_snapshot_t;
+
+// 2. 전체 전송 프레임 (Header + Payload + CRC)
+typedef struct {
+    uint8_t magic[2];      /* {0xA5, 0x5A} */
+    uint8_t version;       /* 1 */
+    uint8_t msg_type;      /* 0x01 heartbeat, 0x02 sensor snapshot */
+    uint16_t payload_len;  /* bytes */
+    uint16_t seq;
+    uint32_t timestamp_ms;
+    telemetry_payload_sensor_snapshot_t payload;
+    uint16_t crc16;        /* CRC-16/CCITT-FALSE over header+payload */
+} telemetry_frame_t;
+```
+
+### 페이로드 상세 항목 (참고)
 ---
 
 ## 🌡 센서 목록
