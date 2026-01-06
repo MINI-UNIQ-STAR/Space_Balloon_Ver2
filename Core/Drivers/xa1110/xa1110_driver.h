@@ -13,6 +13,14 @@ typedef struct {
     uint8_t sats_used;
     uint8_t sats_view_total;
     
+    // UTC Time from GPS
+    uint8_t utc_hour;
+    uint8_t utc_min;
+    uint8_t utc_sec;
+    uint16_t utc_year;
+    uint8_t utc_month;
+    uint8_t utc_day;
+    
     // Sat counts per system (Mock/Parsed if GSA/GSV available)
     uint8_t sats_gps;
     uint8_t sats_glonass;

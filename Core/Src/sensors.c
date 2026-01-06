@@ -387,11 +387,16 @@ void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uin
 void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
                       uint8_t *sats, uint8_t *sats_view,
                       uint8_t *sats_gps, uint8_t *sats_glonass,
-                      uint8_t *sats_galileo, uint8_t *sats_beidou) {
+                      uint8_t *sats_galileo, uint8_t *sats_beidou,
+                      uint8_t *utc_hour, uint8_t *utc_min, uint8_t *utc_sec,
+                      uint8_t *utc_day, uint8_t *utc_month, uint16_t *utc_year) {
     // Mock: Feed NMEA data if fix is 0 (just to verify parsing on host)
     if (xa_ctx.data.fix_type == 0) {
         const char *sim_gga = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
         for (int i=0; sim_gga[i]; i++) XA1110_ProcessByte(&xa_ctx, (uint8_t)sim_gga[i]);
+        // Add RMC for time/date
+        const char *sim_rmc = "$GPRMC,123519.00,A,4807.038,N,01131.000,E,0.0,0.0,060126,,,A*6B\r\n";
+        for (int i=0; sim_rmc[i]; i++) XA1110_ProcessByte(&xa_ctx, (uint8_t)sim_rmc[i]);
     }
 
     *lat = xa_ctx.data.lat_deg_e7;
@@ -402,7 +407,17 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     *sats_view = xa_ctx.data.sats_view_total;
     // Parsing per-system sats logic not implemented in driver wrapper yet, mocking:
     *sats_gps = *sats;
-    // ...
+    *sats_glonass = 0;
+    *sats_galileo = 0;
+    *sats_beidou = 0;
+    
+    // UTC Time from GPS
+    *utc_hour = xa_ctx.data.utc_hour;
+    *utc_min = xa_ctx.data.utc_min;
+    *utc_sec = xa_ctx.data.utc_sec;
+    *utc_day = xa_ctx.data.utc_day;
+    *utc_month = xa_ctx.data.utc_month;
+    *utc_year = xa_ctx.data.utc_year;
     
     // Check Health: if fix is valid or data coming
     FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_GPS);

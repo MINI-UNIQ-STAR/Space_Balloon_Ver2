@@ -53,6 +53,14 @@ bool XA1110_ParseSentence(xa1110_ctx_t *ctx, char *sentence) {
                 ctx->data.lat_deg_e7 = minmea_rescale(&frame.latitude, 10000000);
                 ctx->data.lon_deg_e7 = minmea_rescale(&frame.longitude, 10000000);
                 ctx->data.fix_type = frame.valid ? 2 : 0; // Simple boolean to fix type
+                
+                // Parse UTC Time from RMC
+                ctx->data.utc_hour = frame.time.hours;
+                ctx->data.utc_min = frame.time.minutes;
+                ctx->data.utc_sec = frame.time.seconds;
+                ctx->data.utc_year = frame.date.year + 2000; // RMC year is 2-digit
+                ctx->data.utc_month = frame.date.month;
+                ctx->data.utc_day = frame.date.day;
             }
         } break;
         

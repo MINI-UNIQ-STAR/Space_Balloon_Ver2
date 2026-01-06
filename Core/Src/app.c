@@ -97,7 +97,9 @@ void App_Loop(void) {
                      &telem_frame.payload.gps_alt_m, &telem_frame.payload.gps_fix,
                      &telem_frame.payload.gps_sats_used, &telem_frame.payload.gps_sats_in_view_total,
                      &telem_frame.payload.gps_sats_in_view_gps, &telem_frame.payload.gps_sats_in_view_glonass,
-                     &telem_frame.payload.gps_sats_in_view_galileo, &telem_frame.payload.gps_sats_in_view_beidou);
+                     &telem_frame.payload.gps_sats_in_view_galileo, &telem_frame.payload.gps_sats_in_view_beidou,
+                     &telem_frame.payload.gps_utc_hour, &telem_frame.payload.gps_utc_min, &telem_frame.payload.gps_utc_sec,
+                     &telem_frame.payload.gps_utc_day, &telem_frame.payload.gps_utc_month, &telem_frame.payload.gps_utc_year);
     
     // ** FDIR GPS Altitude Tracking (Range + Continuity) **
     FDIR_UpdateGPSAltitude(telem_frame.payload.gps_alt_m);

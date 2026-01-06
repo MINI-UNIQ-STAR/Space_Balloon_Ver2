@@ -1,7 +1,7 @@
 # STM32 성층권 풍선 센서 플랫폼 사양서
 
-**버전:** Rev 3.0 (구현 기준)
-**날짜:** 2026-01-03
+**버전:** Rev 3.1 (GPS UTC 시간 추가)
+**날짜:** 2026-01-06
 **MCU:** STM32G431CBU6 (Cortex-M4F @ 170MHz)
 **RTOS:** FreeRTOS (Thread-Safe Strategy 4)
 
@@ -371,67 +371,70 @@ typedef struct __attribute__((packed)) {
 ### 센서 스냅샷 페이로드
 ```c
 typedef struct __attribute__((packed)) {
-    // 시스템 상태
-    uint32_t uptime_ms;
-    uint16_t status_flags;
-    uint16_t bat_mv;
+    // 1. 시스템 상태
+    uint32_t uptime_ms;               // 시스템 가동 시간 (ms)
+    uint16_t status_flags;            // FDIR 상태 플래그
+    uint16_t co2_ppm;                 // CO2 농도 (ppm)
 
-    // IMU (가속도, 자이로)
+    // 2. IMU (가속도, 자이로)
     int32_t accel_mps2_x1000[3];      // x, y, z (m/s² x1000)
     int32_t gyro_rads_x1000[3];       // x, y, z (rad/s x1000)
 
-    // 자기계
+    // 3. 자기계
     float mag_uT[3];                  // x, y, z (µT)
 
-    // 온도 측정
-    int16_t indoor_2nd_temp_c_x100;   // MCP9600 (°C x100)
-    int16_t external_temp_c_x100;     // 외부 온도
-    int16_t sht31_temp_c_x100;        // SHT31 온도
-    int16_t bat_temp_c_x100;          // 배터리 온도 (DS18B20)
-    int16_t board_temp_c_x100;        // 보드 온도 (DS18B20)
-    int16_t ms5611_temp_c_x100;       // MS5611 온도
+    // 4. 온도 측정
+    int16_t board_temp_c_x100;        // 보드 온도 - DS18B20 (°C x100)
+    int16_t external_temp_c_x100;     // 외부 온도 - MCP9600 (°C x100)
+    int16_t sht31_temp_c_x100;        // SHT31 온도 (°C x100)
+    int16_t bat_temp_c_x100;          // 배터리 온도 - DS18B20 (°C x100)
 
-    // GPS 데이터
+    // 5. GPS 데이터
     int32_t gps_lat_deg_e7;           // 위도 (도 x 10^7)
     int32_t gps_lon_deg_e7;           // 경도 (도 x 10^7)
     float gps_alt_m;                  // GPS 고도 (m)
     uint8_t gps_fix;                  // Fix 상태 (0=No, 1=2D, 2=3D)
     uint8_t gps_sats_used;            // 사용 중인 위성 수
     uint8_t gps_sats_in_view_total;   // 총 가시 위성
-    uint8_t gps_sats_in_view_gps;
-    uint8_t gps_sats_in_view_glonass;
-    uint8_t gps_sats_in_view_galileo;
-    uint8_t gps_sats_in_view_beidou;
+    uint8_t gps_sats_in_view_gps;     // GPS 위성
+    uint8_t gps_sats_in_view_glonass; // GLONASS 위성
+    uint8_t gps_sats_in_view_galileo; // Galileo 위성
+    uint8_t gps_sats_in_view_beidou;  // BeiDou 위성
 
-    // 대기질
-    uint16_t co2_ppm;                 // CO2 (ppm)
-    int16_t ozone_ppb;                // 오존 (ppb)
+    // 6. GPS UTC 시간 (RMC 문장에서 파싱)
+    uint8_t gps_utc_hour;             // 시 (0-23)
+    uint8_t gps_utc_min;              // 분 (0-59)
+    uint8_t gps_utc_sec;              // 초 (0-59)
+    uint8_t gps_utc_day;              // 일 (1-31)
+    uint8_t gps_utc_month;            // 월 (1-12)
+    uint16_t gps_utc_year;            // 년 (2000-2099)
+
+    // 7. 배터리
+    uint16_t bat_mv;                  // 배터리 전압 (mV)
+
+    // 8. 대기질
     uint16_t pm1_ugm3;                // PM1.0 (µg/m³)
     uint16_t pm25_ugm3;               // PM2.5 (µg/m³)
     uint16_t pm10_ugm3;               // PM10 (µg/m³)
+    int16_t ozone_ppb;                // 오존 (ppb)
 
-    // 기압/습도
-    uint32_t ms5611_press_pa;         // 기압 (Pa)
+    // 9. 기압/습도
     uint16_t sht31_rh_x100;           // 습도 (%RH x100)
+    uint32_t ms5611_press_pa;         // 기압 (Pa)
+    int16_t ms5611_temp_c_x100;       // MS5611 온도 (°C x100)
 
-    // 방사선
+    // 10. 방사선
     uint16_t gdk101_usvh_x100;        // 선량율 (µSv/h x100)
 
-    // 히터 상태
+    // 11. 히터 상태
     uint8_t heater_bat_duty_percent;  // 배터리 히터 듀티 (%)
     uint8_t heater_board_duty_percent;// 보드 히터 듀티 (%)
 
-    // 고도 추정
+    // 12. 고도 추정 (Kalman Filter)
     float press_alt_m;                // 기압 고도 (m)
     float kf_alt_m;                   // 칼만 필터 고도 (m)
     float kf_roll_deg;                // Roll (도)
     float kf_pitch_deg;               // Pitch (도)
-
-    // 예약 필드
-    int16_t reserved1;
-    uint8_t reserved2;
-    uint8_t reserved3;
-    uint8_t reserved4;
 } telemetry_payload_sensor_snapshot_t;
 ```
 

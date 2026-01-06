@@ -231,6 +231,8 @@ void Sensors_Reset(SensorID_t id) {
 | 5 | `HEATER_ACTIVE` | 히터 동작 중 |
 | 6 | `LOW_BATTERY` | 배터리 저전압 |
 | 7 | `FDIR_RECOVERY` | 복구 동작 진행 중 |
+| 8 | `ALT_JUMP` | 고도 점프 감지 (연속성 오류) |
+| 9 | `RANGE_ERROR` | 값 범위 초과 감지 |
 
 ---
 
