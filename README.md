@@ -28,6 +28,7 @@
 이 프로젝트는 고고도 기구(HAB: High Altitude Balloon)에 탑재되는 라디오존데 시스템입니다.
 
 **주요 기능:**
+
 - 11종 센서 데이터 수집 (IMU, GPS, 기압, 온도, 습도, 대기질, 방사선 등)
 - Kalman 필터 기반 자세/고도 추정
 - PID 제어 기반 히터 시스템 (배터리/보드 온도 유지)
@@ -41,7 +42,7 @@
 ### IDE / 에디터
 
 | 도구 | 버전 | 용도 |
-|------|------|------|
+| :--- | :--- | :--- |
 | **VS Code** | 1.96+ | 메인 개발 환경 |
 | **STM32CubeMX** | 6.x | 핀 설정 및 코드 생성 |
 | **STM32CubeIDE** | 1.x | (선택) CubeMX 통합 IDE |
@@ -49,7 +50,7 @@
 ### VS Code 확장
 
 | 확장 | 설명 |
-|------|------|
+| :--- | :--- |
 | **CMake Tools** | CMake 빌드 시스템 지원 |
 | **Cortex-Debug** | ARM Cortex-M 디버깅 |
 | **C/C++** (Microsoft) | IntelliSense 및 코드 탐색 |
@@ -58,7 +59,7 @@
 ### 툴체인 / 빌드 도구
 
 | 도구 | 버전 | 용도 |
-|------|------|------|
+| :--- | :--- | :--- |
 | **ARM GCC** | 13.x+ | 크로스 컴파일러 (arm-none-eabi-gcc) |
 | **cube-cmake** | - | STM32 CMake 빌드 도구 |
 | **MinGW-w64** | 15.x | Windows 네이티브 빌드 (시뮬레이션) |
@@ -68,7 +69,7 @@
 ### 디버거 / 프로그래머
 
 | 도구 | 용도 |
-|------|------|
+| :--- | :--- |
 | **ST-Link V2** | STM32 플래싱 및 SWD 디버깅 |
 | **OpenOCD** | GDB 서버 |
 
@@ -88,6 +89,7 @@ scoop install gcc arm-none-eabi-gcc cmake python
 ### VS Code 설정 (권장)
 
 `.vscode/settings.json`:
+
 ```json
 {
     "cmake.configureOnOpen": true,
@@ -101,7 +103,7 @@ scoop install gcc arm-none-eabi-gcc cmake python
 ## 🔧 하드웨어 구성
 
 | 구분 | 센서/모듈 | 인터페이스 | 용도 |
-|------|-----------|-----------|------|
+| :--- | :--- | :--- | :--- |
 | MCU | STM32G431CBU6 | - | 메인 프로세서 |
 | IMU | LSM6DSV16X | I2C1 | 가속도/자이로 |
 | Mag | MLX90393 | I2C1 | 자기장 |
@@ -119,7 +121,7 @@ scoop install gcc arm-none-eabi-gcc cmake python
 
 ## 📁 프로젝트 구조
 
-```
+```text
 stm32_spaceballoon/
 ├── Core/
 │   ├── Inc/                    # 헤더 파일
@@ -205,7 +207,8 @@ cd HostSim
 ```
 
 **출력 예시:**
-```
+
+```text
 [Mock] Sensors Initialized - RS41 Flight Data Mode
 [Mock] Loaded 65 flight data points
 [Mock] Altitude range: 5174m - 5631m
@@ -237,7 +240,7 @@ CRC16: 0xABCD
 ### 프레임 구조 (126 bytes)
 
 | 필드 | 크기 | 설명 |
-|------|------|------|
+| :--- | :--- | :--- |
 | Magic | 2 | `0xA5 0x5A` |
 | Version | 1 | `0x01` |
 | Msg Type | 1 | `0x02` (Sensor Snapshot) |
@@ -266,7 +269,7 @@ CRC16: 0xABCD
 ## 🌡 센서 목록
 
 | ID | 센서 | 측정값 | 샘플링 |
-|----|------|--------|--------|
+| :--- | :--- | :--- | :--- |
 | 0 | LSM6DSV16X | 가속도, 자이로 | 480Hz |
 | 1 | MLX90393 | 자기장 X/Y/Z | 50Hz |
 | 2 | MS5611 | 기압, 온도 | 5Hz |
