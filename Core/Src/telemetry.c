@@ -5,9 +5,9 @@
 #include <stdio.h>
 #endif
 
-// CRC16-CCITT FALSE (Poly 0x1021, Init 0xFFFF)
+/* CRC16-CCITT FALSE (Poly 0x1021, Init 0xFFFF) */
 uint16_t CRC16_CCITT(uint8_t *data, uint16_t length) {
-    uint16_t crc = 0xFFFF;
+    uint16_t crc = 0xFFFFU;
     for (uint16_t i = 0; i < length; i++) {
         crc ^= (uint16_t)data[i] << 8;
         for (uint8_t j = 0; j < 8; j++) {
@@ -80,17 +80,19 @@ static void Telemetry_PrintFrame(telemetry_frame_t *frame) {
 #endif
 
 void Telemetry_Send(telemetry_frame_t *frame) {
-    // 1. Calculate CRC over Header (excluding CRC field) + Payload
-    // Header is 12 bytes. payload is variable.
-    // Total length to CRC = sizeof(header before crc) + payload_len
-    // Actually, let's just calc CRC over the whole structure excluding the last 2 bytes?
-    // Structure alignment might be tricky. Safest is to just cast to uint8_t*
+    /* 1. Calculate CRC over Header (excluding CRC field) + Payload
+     * Header is 12 bytes. payload is variable.
+     * Total length to CRC = sizeof(header before crc) + payload_len
+     * Actually, let's just calc CRC over the whole structure excluding the last 2 bytes?
+     * Structure alignment might be tricky. Safest is to just cast to uint8_t* 
+     */
     
-    // Frame size = sizeof(telemetry_frame_t).
-    // CRC applies to bytes 0 to end-3 (Total - 2 bytes for CRC)
+    /* Frame size = sizeof(telemetry_frame_t).
+     * CRC applies to bytes 0 to end-3 (Total - 2 bytes for CRC)
+     */
     
     uint16_t total_len = sizeof(telemetry_frame_t);
-    uint16_t crc_len = total_len - 2;
+    uint16_t crc_len = total_len - 2U;
     
     frame->crc16 = CRC16_CCITT((uint8_t*)frame, crc_len);
     
@@ -98,10 +100,11 @@ void Telemetry_Send(telemetry_frame_t *frame) {
     Telemetry_PrintFrame(frame);
 #endif
     
-    // 2. Send via UART
-    // Assuming UART3 is used for LoRa as per spec
-    // extern UART_HandleTypeDef huart3;
-    // HAL_UART_Transmit(&huart3, (uint8_t*)frame, total_len, 100);
+    /* 2. Send via UART
+     * Assuming UART3 is used for LoRa as per spec
+     * extern UART_HandleTypeDef huart3;
+     * HAL_UART_Transmit(&huart3, (uint8_t*)frame, total_len, 100);
+     */
     
-    // Mock Send (No-op)
+    /* Mock Send (No-op) */
 }
