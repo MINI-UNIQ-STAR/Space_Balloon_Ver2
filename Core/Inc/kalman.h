@@ -28,6 +28,7 @@ typedef struct {
 void KF_Init(KF_Handle_t *hkf, float dt, float process_noise, float meas_noise);
 void KF_Predict(KF_Handle_t *hkf);
 void KF_Update_Altitude(KF_Handle_t *hkf, float measurement);
+void KF_CheckDivergence(KF_Handle_t *hkf);  // Reset covariance if diverged
 // Placeholder for Attitude Update
 // void KF_Update_Attitude(KF_Handle_t *hkf, ...);
 

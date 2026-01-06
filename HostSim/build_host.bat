@@ -1,6 +1,8 @@
 @echo off
 gcc -DHOST_TEST_MODE -DUNIT_TEST ^
+    -I. ^
     -Imock_inc ^
+    -I../test/test_drivers ^
     -I../Core/Inc ^
     -I../Core/Drivers/lsm6dsv16x ^
     -I../Core/Drivers/ms5611 ^

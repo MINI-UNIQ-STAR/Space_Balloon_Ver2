@@ -1,5 +1,9 @@
 #include "kalman.h"
 
+#ifdef HOST_TEST_MODE
+#include <stdio.h>
+#endif
+
 void KF_Init(KF_Handle_t *hkf, float dt, float process_noise, float meas_noise) {
     hkf->dt = dt;
     
@@ -69,4 +73,31 @@ void KF_Update_Altitude(KF_Handle_t *hkf, float measurement) {
     hkf->P[0][1] -= K0 * p01;
     hkf->P[1][0] -= K1 * p00;
     hkf->P[1][1] -= K1 * p01;
+}
+
+// ===== Divergence Protection (FMEA W-05) =====
+#define KF_P_MAX  10000.0f  // Covariance divergence threshold
+
+void KF_CheckDivergence(KF_Handle_t *hkf) {
+    // Check if covariance has grown too large (filter divergence)
+    if (hkf->P[0][0] > KF_P_MAX || hkf->P[1][1] > KF_P_MAX) {
+        #ifdef HOST_TEST_MODE
+        printf("[KF] Divergence detected! P[0][0]=%.1f. Resetting covariance.\n", hkf->P[0][0]);
+        #endif
+        
+        // Reset covariance to initial values
+        hkf->P[0][0] = 1.0f; hkf->P[0][1] = 0.0f;
+        hkf->P[1][0] = 0.0f; hkf->P[1][1] = 1.0f;
+    }
+    
+    // Also check for NaN (numerical instability)
+    if (hkf->x[0] != hkf->x[0] || hkf->x[1] != hkf->x[1]) { // NaN check
+        #ifdef HOST_TEST_MODE
+        printf("[KF] NaN detected! Resetting state.\n");
+        #endif
+        hkf->x[0] = 0.0f;
+        hkf->x[1] = 0.0f;
+        hkf->P[0][0] = 1.0f; hkf->P[0][1] = 0.0f;
+        hkf->P[1][0] = 0.0f; hkf->P[1][1] = 1.0f;
+    }
 }

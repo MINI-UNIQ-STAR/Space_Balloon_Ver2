@@ -9,6 +9,37 @@
 static uint32_t current_frame = 0;
 static uint32_t loop_count = 0;
 
+// ===== Fault Injection for FDIR Testing =====
+typedef enum {
+    FAULT_NONE = 0,
+    FAULT_BARO_RANGE,      // Inject out-of-range pressure
+    FAULT_GPS_JUMP,        // Inject altitude jump
+    FAULT_BARO_TIMEOUT,    // Stop reporting baro data
+    FAULT_GPS_TIMEOUT,     // Stop reporting GPS data
+} FaultType_t;
+
+static FaultType_t active_fault = FAULT_NONE;
+static uint32_t fault_start_frame = 0;
+static uint32_t fault_duration_frames = 50; // ~1 second at 50Hz
+
+void MockSensors_InjectFault(FaultType_t fault, uint32_t at_frame, uint32_t duration) {
+    active_fault = fault;
+    fault_start_frame = at_frame;
+    fault_duration_frames = duration;
+    printf("[MockFault] Injecting fault %d at frame %u for %u frames\n", fault, at_frame, duration);
+}
+
+void MockSensors_ClearFault(void) {
+    active_fault = FAULT_NONE;
+    printf("[MockFault] Fault cleared\n");
+}
+
+static bool _is_fault_active(void) {
+    return (active_fault != FAULT_NONE && 
+            current_frame >= fault_start_frame && 
+            current_frame < fault_start_frame + fault_duration_frames);
+}
+
 // Interpolation helper
 static float lerp(float a, float b, float t) {
     return a + (b - a) * t;
@@ -22,10 +53,11 @@ void Sensors_Init(void) {
            flight_data[FLIGHT_DATA_COUNT-1].alt_m);
     current_frame = 0;
     loop_count = 0;
+    active_fault = FAULT_NONE;
 }
 
 void Sensors_Reset(SensorID_t id) {
-    printf("[Mock] Sensor Reset: %d\n", id);
+    printf("[Mock] Sensor Reset: %d\n", id); 
 }
 
 // Stub other inits

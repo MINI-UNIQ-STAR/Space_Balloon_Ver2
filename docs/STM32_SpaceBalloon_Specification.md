@@ -81,8 +81,8 @@
 - **UART2**: PMS3003 미세먼지 센서 (9600 baud)
 - **UART3**: LoRa32 텔레메트리 출력
 - **ADC1_IN2 (PA1)**: 배터리 전압 측정
-- **TIM16_CH1 (PA6)**: 배터리 히터 PWM (Kapton 필름)
-- **TIM3_CH4 (PB1)**: 보드 히터 PWM (Minibulb)
+- **TIM3_CH1 (PA6)**: 배터리 히터 PWM (Kapton 필름)
+- **TIM8_CH1 (PC6)**: 보드 히터 PWM (Minibulb)
 - **1-Wire (PB15)**: DS18B20 온도 센서 x2 (배터리 + 보드)
 
 ---
@@ -93,7 +93,7 @@
 
 | # | 센서 모델 | 측정 항목 | 인터페이스 | 주소/설정 | 서비스 모듈 |
 |---|-----------|-----------|------------|-----------|-------------|
-| 1 | LSM6DSV16X | 6축 IMU (가속도/자이로) | I2C1 | 0x6A | imu_service.c |
+| 1 | LSM6DSV16X | 6축 IMU (가속도/자이로) | I2C1 | 0x6B | sensors.c |
 | 2 | MLX90393 | 3축 자기계 | I2C1 | 0x0C | mag_service.c |
 | 3 | GDK101 | 방사선 (γ선) | I2C1 | 0x18 | gdk101_service.c |
 | 4 | DS18B20 x2 | 온도 (배터리/보드) | 1-Wire (PB15) | - | aux_sensors_service.c |
@@ -300,7 +300,7 @@ typedef struct {
 ### 히터 시스템 구성
 
 #### 배터리 히터 (Kapton Film)
-- **PWM 채널**: TIM16_CH1 (PA6)
+- **PWM 채널**: TIM3_CH1 (PA6)
 - **온도 센서**: DS18B20 인덱스 0
 - **목표 온도**: 10°C (조정 가능)
 - **PID 상수**:
@@ -310,7 +310,7 @@ typedef struct {
   - Integral Max: 30000.0
 
 #### 보드 히터 (Minibulb)
-- **PWM 채널**: TIM3_CH4 (PB1)
+- **PWM 채널**: TIM8_CH1 (PC6)
 - **온도 센서**: DS18B20 인덱스 1
 - **목표 온도**: 5°C (조정 가능)
 - **PID 상수**:
@@ -463,7 +463,7 @@ typedef struct __attribute__((packed)) {
 | PA3 | USART2_RX | AF PP | PMS3003 RX | PMS3003 TX |
 | PA4 | MCP_RST | GPIO Output | MCP9600 리셋 | MCP9600 RST |
 | PA5 | MS_RST | GPIO Output | MS5611 리셋 | MS5611 RST |
-| PA6 | TIM16_CH1 | AF PP | 배터리 히터 PWM | Kapton Film |
+| PA6 | TIM3_CH1 | AF PP | 배터리 히터 PWM | Kapton Film |
 | PA7 | GPS_Wake | GPIO Output | GPS 웨이크업 | XA1110 Wake |
 | PA8 | I2C3_SCL | AF OD | I2C3 클럭 | CM1107N, MCP9600 |
 | PA9 | GPS_nRST | GPIO Output | GPS 리셋 | XA1110 nRST |
@@ -472,7 +472,7 @@ typedef struct __attribute__((packed)) {
 | PA15 | I2C1_SCL | AF OD | I2C1 클럭 | Downside 센서 |
 | **포트 B** |
 | PB0 | CO2_RST | GPIO Output | CO2 센서 리셋 | CM1107N RST |
-| PB1 | TIM3_CH4 | AF PP | 보드 히터 PWM | Minibulb |
+| PC6 | TIM8_CH1 | AF PP | 보드 히터 PWM | Minibulb |
 | PB4 | GPS_PPS | EXTI4 (Rising) | GPS 1PPS 입력 | XA1110 1PPS |
 | PB5 | I2C3_SDA | AF OD | I2C3 데이터 | CM1107N, MCP9600 |
 | PB6 | LSM_INT | EXTI6 (Rising) | IMU 인터럽트 | LSM6DSV16X INT |

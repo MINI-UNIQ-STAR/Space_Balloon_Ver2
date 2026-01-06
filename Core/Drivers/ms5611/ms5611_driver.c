@@ -35,10 +35,48 @@ int32_t MS5611_Init(ms5611_ctx_t *ctx) {
     _send_cmd(ctx, MS5611_CMD_RESET);
     // Need Delay ~3ms
     
-    // Read PROM C1-C6
-    for (int i=1; i<=6; i++) {
-        if (_read_prom(ctx, i, &ctx->C[i]) != 0) return -1;
+    // Read PROM C1-C6 (indices 1-6)
+    // Also read C0 (Factory data) and C7 (CRC) for validation
+    uint16_t prom[8];
+    prom[0] = 0; // C0 - factory reserved
+    for (int i=0; i<=7; i++) {
+        if (_read_prom(ctx, i, &prom[i]) != 0) return -1;
     }
+    
+    // Copy C1-C6 to context
+    for (int i=1; i<=6; i++) {
+        ctx->C[i] = prom[i];
+    }
+    
+    // CRC4 Verification (FMEA S-07 mitigation)
+    // Standard MS5611 CRC4 algorithm per datasheet AN520
+    uint16_t crc_read = prom[7] & 0x000F; // Last 4 bits of PROM[7]
+    prom[7] = (prom[7] & 0xFF00); // CRC byte removed for calculation
+    
+    uint16_t n_rem = 0;
+    for (int cnt = 0; cnt < 16; cnt++) {
+        if (cnt % 2 == 1) {
+            n_rem ^= (prom[cnt >> 1] & 0x00FF);
+        } else {
+            n_rem ^= (prom[cnt >> 1] >> 8);
+        }
+        for (int n_bit = 8; n_bit > 0; n_bit--) {
+            if (n_rem & 0x8000) {
+                n_rem = (n_rem << 1) ^ 0x3000;
+            } else {
+                n_rem = (n_rem << 1);
+            }
+        }
+    }
+    n_rem = (n_rem >> 12) & 0x000F;
+    
+    if (n_rem != crc_read) {
+        #ifdef DEBUG
+        printf("MS5611: PROM CRC4 mismatch! calc=%u read=%u\n", n_rem, crc_read);
+        #endif
+        return -2; // CRC Error
+    }
+    
     return 0;
 }
 

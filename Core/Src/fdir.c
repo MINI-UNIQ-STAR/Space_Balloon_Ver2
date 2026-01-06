@@ -193,3 +193,169 @@ bool FDIR_IsSensorColdDisabled(SensorID_t id) {
     if (id >= SENSOR_ID_COUNT) return false;
     return sensor_cold_disabled[id];
 }
+
+// ===== New FDIR.md Compliance Functions =====
+
+// Range limits (from FDIR.md L122-136)
+#define BARO_MIN_PA     1000
+#define BARO_MAX_PA     110000
+#define GPS_ALT_MIN_M   (-500.0f)
+#define GPS_ALT_MAX_M   50000.0f
+#define TEMP_MIN_X100   (-8000)   // -80°C
+#define TEMP_MAX_X100   6000      // +60°C
+
+// Continuity check threshold (from FDIR.md L144)
+#define ALT_JUMP_THRESHOLD_M  500.0f
+
+// Altitude tracking for fallback and continuity
+static float last_gps_alt_m = 0.0f;
+static float last_baro_alt_m = 0.0f;
+static float current_gps_alt_m = 0.0f;
+static float current_baro_alt_m = 0.0f;
+static bool gps_alt_valid = false;
+static bool baro_alt_valid = false;
+static bool alt_jump_detected = false;
+static bool range_error_detected = false;
+
+bool FDIR_ValidateRange_Baro(uint32_t press_pa) {
+    if (press_pa < BARO_MIN_PA || press_pa > BARO_MAX_PA) {
+        range_error_detected = true;
+        FDIR_ReportFailure((void*)(uintptr_t)SENSOR_ID_BARO, 1);
+        #ifdef DEBUG
+        printf("FDIR: Baro range error: %u Pa\n", press_pa);
+        #endif
+        return false;
+    }
+    return true;
+}
+
+bool FDIR_ValidateRange_GPS_Alt(float alt_m) {
+    if (alt_m < GPS_ALT_MIN_M || alt_m > GPS_ALT_MAX_M) {
+        range_error_detected = true;
+        FDIR_ReportFailure((void*)(uintptr_t)SENSOR_ID_GPS, 2);
+        #ifdef DEBUG
+        printf("FDIR: GPS altitude range error: %.1f m\n", alt_m);
+        #endif
+        return false;
+    }
+    return true;
+}
+
+bool FDIR_ValidateRange_Temp(int16_t temp_c_x100) {
+    if (temp_c_x100 < TEMP_MIN_X100 || temp_c_x100 > TEMP_MAX_X100) {
+        range_error_detected = true;
+        #ifdef DEBUG
+        printf("FDIR: Temp range error: %.1f C\n", temp_c_x100 / 100.0f);
+        #endif
+        return false;
+    }
+    return true;
+}
+
+bool FDIR_CheckContinuity_GPS_Alt(float new_alt_m) {
+    static bool first_reading = true;
+    
+    if (first_reading) {
+        last_gps_alt_m = new_alt_m;
+        first_reading = false;
+        return true;
+    }
+    
+    float delta = new_alt_m - last_gps_alt_m;
+    if (delta < 0) delta = -delta; // abs
+    
+    if (delta > ALT_JUMP_THRESHOLD_M) {
+        alt_jump_detected = true;
+        #ifdef DEBUG
+        printf("FDIR: GPS altitude jump detected: %.1f -> %.1f (delta=%.1fm)\n", 
+               last_gps_alt_m, new_alt_m, delta);
+        #endif
+        // Don't update last value on jump detection
+        return false;
+    }
+    
+    last_gps_alt_m = new_alt_m;
+    alt_jump_detected = false;
+    return true;
+}
+
+void FDIR_UpdateGPSAltitude(float gps_alt_m) {
+    if (FDIR_ValidateRange_GPS_Alt(gps_alt_m) && FDIR_CheckContinuity_GPS_Alt(gps_alt_m)) {
+        current_gps_alt_m = gps_alt_m;
+        gps_alt_valid = true;
+        FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_GPS);
+    } else {
+        gps_alt_valid = false;
+    }
+}
+
+void FDIR_UpdateBaroAltitude(float baro_alt_m) {
+    // Convert altitude back to pressure for range check (simplified)
+    // This is just for internal tracking, main range check should be on raw pressure
+    current_baro_alt_m = baro_alt_m;
+    baro_alt_valid = (sensors_health[SENSOR_ID_BARO].state == FDIR_STATE_HEALTHY);
+}
+
+float FDIR_GetBackupAltitude(void) {
+    // Priority: Baro > GPS (baro is more accurate at high altitudes)
+    // But if baro fails, use GPS as backup
+    if (baro_alt_valid && sensors_health[SENSOR_ID_BARO].state == FDIR_STATE_HEALTHY) {
+        return current_baro_alt_m;
+    }
+    
+    if (gps_alt_valid && sensors_health[SENSOR_ID_GPS].state == FDIR_STATE_HEALTHY) {
+        #ifdef DEBUG
+        printf("FDIR: Using GPS altitude as backup: %.1f m\n", current_gps_alt_m);
+        #endif
+        return current_gps_alt_m;
+    }
+    
+    // Both failed - return last known good value
+    return current_baro_alt_m;
+}
+
+uint16_t FDIR_GetStatusFlags(void) {
+    uint16_t flags = STATUS_SYS_OK;  // Start with OK
+    
+    // Check sensor states
+    if (sensors_health[SENSOR_ID_GPS].state != FDIR_STATE_HEALTHY) {
+        flags |= STATUS_GPS_WARN;
+    }
+    if (sensors_health[SENSOR_ID_BARO].state != FDIR_STATE_HEALTHY) {
+        flags |= STATUS_BARO_WARN;
+    }
+    if (sensors_health[SENSOR_ID_IMU].state != FDIR_STATE_HEALTHY) {
+        flags |= STATUS_IMU_WARN;
+    }
+    if (sensors_health[SENSOR_ID_SHT].state != FDIR_STATE_HEALTHY ||
+        sensors_health[SENSOR_ID_EXT_TEMP].state != FDIR_STATE_HEALTHY) {
+        flags |= STATUS_TEMP_WARN;
+    }
+    
+    // Check if any sensor is in recovery
+    for (int i = 0; i < SENSOR_ID_COUNT; i++) {
+        if (sensors_health[i].state == FDIR_STATE_RECOVERY) {
+            flags |= STATUS_FDIR_RECOVERY;
+            break;
+        }
+    }
+    
+    // Altitude jump flag
+    if (alt_jump_detected) {
+        flags |= STATUS_ALT_JUMP;
+    }
+    
+    // Range error flag
+    if (range_error_detected) {
+        flags |= STATUS_RANGE_ERROR;
+        range_error_detected = false; // Reset after reading
+    }
+    
+    // If any warning is set, clear SYS_OK
+    if (flags & (STATUS_GPS_WARN | STATUS_BARO_WARN | STATUS_IMU_WARN | STATUS_TEMP_WARN)) {
+        flags &= ~STATUS_SYS_OK;
+    }
+    
+    return flags;
+}
+

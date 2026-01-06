@@ -99,6 +99,9 @@ void App_Loop(void) {
                      &telem_frame.payload.gps_sats_in_view_gps, &telem_frame.payload.gps_sats_in_view_glonass,
                      &telem_frame.payload.gps_sats_in_view_galileo, &telem_frame.payload.gps_sats_in_view_beidou);
     
+    // ** FDIR GPS Altitude Tracking (Range + Continuity) **
+    FDIR_UpdateGPSAltitude(telem_frame.payload.gps_alt_m);
+    
     // ** Attitude Estimation (SFLP) **
     float quat[4]; // x, y, z, w
     float roll_deg = 0.0f;
@@ -132,10 +135,18 @@ void App_Loop(void) {
     float current_battery_temp = telem_frame.payload.bat_temp_c_x100 / 100.0f;
     float current_board_temp = telem_frame.payload.board_temp_c_x100 / 100.0f;
     
+    // ** FDIR Baro Range Validation **
+    if (!FDIR_ValidateRange_Baro(telem_frame.payload.ms5611_press_pa)) {
+        telem_frame.payload.ms5611_press_pa = 101325; // Use sea level as fallback
+    }
+    
     // Barometric Altitude (Approx)
     // P0=101325, Lapse Rate can be added later. Linear approx near sea level: 12Pa per meter.
     if (telem_frame.payload.ms5611_press_pa == 0) telem_frame.payload.ms5611_press_pa = 101325; // Prevent jump if 0
-    float baro_alt = (101325.0f - (float)telem_frame.payload.ms5611_press_pa) / 12.0f; 
+    float baro_alt = (101325.0f - (float)telem_frame.payload.ms5611_press_pa) / 12.0f;
+    
+    // ** FDIR Baro Altitude Tracking **
+    FDIR_UpdateBaroAltitude(baro_alt); 
     
     telem_frame.payload.press_alt_m = baro_alt; 
     
@@ -160,8 +171,17 @@ void App_Loop(void) {
     
     // 3. Kalman Update
     KF_Update_Altitude(&hkf, baro_alt);
+    KF_CheckDivergence(&hkf);  // FMEA W-05: Check and reset if diverged
     
     telem_frame.payload.kf_alt_m = hkf.x[0];
+    
+    // ** FDIR Status Flags Update **
+    telem_frame.payload.status_flags = FDIR_GetStatusFlags();
+    
+    // Add heater active flag
+    if (heater_battery_cmd > 1.0f || heater_board_cmd > 1.0f) {
+        telem_frame.payload.status_flags |= STATUS_HEATER_ACTIVE;
+    }
     
     // 4. Update Header
     telem_frame.seq++;
