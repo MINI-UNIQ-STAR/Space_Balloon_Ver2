@@ -1,0 +1,130 @@
+Change Dir: 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+
+Run Build Command(s): C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/cmake.exe -E env VERBOSE=1 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe -f Makefile test_integration_runner
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -SC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test -BC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test --check-build-system CMakeFiles\Makefile.cmake 0
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\Makefile2 test_integration_runner
+mingw32-make[1]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -SC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test -BC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test --check-build-system CMakeFiles\Makefile.cmake 0
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_progress_start C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\CMakeFiles 12
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\Makefile2 CMakeFiles/test_integration_runner.dir/all
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_integration_runner.dir\build.make CMakeFiles/test_integration_runner.dir/depend
+mingw32-make[3]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_depends "MinGW Makefiles" C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\CMakeFiles\test_integration_runner.dir\DependInfo.cmake "--color="
+Dependencies file "CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/app.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_integration_runner.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/fdir.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_integration_runner.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/kalman.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_integration_runner.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/pid.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_integration_runner.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/telemetry.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_integration_runner.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/xcp.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_integration_runner.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_hal.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_integration_runner.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_sensors.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_integration_runner.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_integration_runner.dir/test_integration/test_mission.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_integration_runner.dir/compiler_depend.internal".
+Consolidate compiler generated dependencies of target test_integration_runner
+mingw32-make[3]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_integration_runner.dir\build.make CMakeFiles/test_integration_runner.dir/build
+mingw32-make[3]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+[  8%] Building C object CMakeFiles/test_integration_runner.dir/test_integration/test_mission.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_integration_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_integration_runner.dir/test_integration/test_mission.c.obj -MF CMakeFiles\test_integration_runner.dir\test_integration\test_mission.c.obj.d -o CMakeFiles\test_integration_runner.dir\test_integration\test_mission.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_integration\test_mission.c
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_integration\test_mission.c: In function 'setUp':
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_integration\test_mission.c:42:5: warning: implicit declaration of function 'MockSensors_ClearStats' [-Wimplicit-function-declaration]
+   42 |     MockSensors_ClearStats();
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_integration\test_mission.c: In function 'test_full_mission_profile':
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_integration\test_mission.c:63:9: warning: implicit declaration of function 'MockHAL_AdvanceTick' [-Wimplicit-function-declaration]
+   63 |         MockHAL_AdvanceTick(20);
+      |         ^~~~~~~~~~~~~~~~~~~
+[ 16%] Building C object CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/app.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_integration_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/app.c.obj -MF CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\app.c.obj.d -o CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\app.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\app.c
+[ 25%] Building C object CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/fdir.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_integration_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/fdir.c.obj -MF CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\fdir.c.obj.d -o CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\fdir.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\fdir.c
+[ 33%] Building C object CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/kalman.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_integration_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/kalman.c.obj -MF CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\kalman.c.obj.d -o CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\kalman.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\kalman.c
+[ 41%] Building C object CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/pid.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_integration_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/pid.c.obj -MF CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\pid.c.obj.d -o CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\pid.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\pid.c
+[ 50%] Building C object CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/telemetry.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_integration_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/telemetry.c.obj -MF CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\telemetry.c.obj.d -o CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\telemetry.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\telemetry.c
+In file included from C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\telemetry.c:2:
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/main.h:14: warning: "GPIOB" redefined
+   14 | #define GPIOB ((void*)0x2)
+      | 
+In file included from C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/main.h:8:
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:74: note: this is the location of the previous definition
+   74 | #define GPIOB ((void*)0xB)
+      | 
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/main.h:15: warning: "GPIOC" redefined
+   15 | #define GPIOC ((void*)0x3)
+      | 
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:75: note: this is the location of the previous definition
+   75 | #define GPIOC ((void*)0xC)
+      | 
+[ 58%] Building C object CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/xcp.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_integration_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/xcp.c.obj -MF CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\xcp.c.obj.d -o CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\xcp.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\xcp.c
+[ 66%] Building C object CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_sensors.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_integration_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_sensors.c.obj -MF CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_sensors.c.obj.d -o CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_sensors.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_sensors.c
+[ 75%] Building C object CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_hal.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_integration_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_hal.c.obj -MF CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c.obj.d -o CMakeFiles\test_integration_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c
+In file included from C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c:1:
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/main.h:14: warning: "GPIOB" redefined
+   14 | #define GPIOB ((void*)0x2)
+      | 
+In file included from C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/main.h:8:
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:74: note: this is the location of the previous definition
+   74 | #define GPIOB ((void*)0xB)
+      | 
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/main.h:15: warning: "GPIOC" redefined
+   15 | #define GPIOC ((void*)0x3)
+      | 
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:75: note: this is the location of the previous definition
+   75 | #define GPIOC ((void*)0xC)
+      | 
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c:7:5: error: conflicting types for 'HAL_I2C_Mem_Read'; have 'int(void *, uint16_t,  uint16_t,  uint16_t,  uint8_t *, uint16_t,  uint32_t)' {aka 'int(void *, short unsigned int,  short unsigned int,  short unsigned int,  unsigned char *, short unsigned int,  unsigned int)'}
+    7 | int HAL_I2C_Mem_Read(void* hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+      |     ^~~~~~~~~~~~~~~~
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:54:19: note: previous declaration of 'HAL_I2C_Mem_Read' with type 'HAL_StatusTypeDef(I2C_HandleTypeDef *, uint16_t,  uint16_t,  uint16_t,  uint8_t *, uint16_t,  uint32_t)' {aka 'HAL_StatusTypeDef(I2C_HandleTypeDef *, short unsigned int,  short unsigned int,  short unsigned int,  unsigned char *, short unsigned int,  unsigned int)'}
+   54 | HAL_StatusTypeDef HAL_I2C_Mem_Read(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+      |                   ^~~~~~~~~~~~~~~~
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c:10:5: error: conflicting types for 'HAL_I2C_Mem_Write'; have 'int(void *, uint16_t,  uint16_t,  uint16_t,  uint8_t *, uint16_t,  uint32_t)' {aka 'int(void *, short unsigned int,  short unsigned int,  short unsigned int,  unsigned char *, short unsigned int,  unsigned int)'}
+   10 | int HAL_I2C_Mem_Write(void* hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+      |     ^~~~~~~~~~~~~~~~~
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:53:19: note: previous declaration of 'HAL_I2C_Mem_Write' with type 'HAL_StatusTypeDef(I2C_HandleTypeDef *, uint16_t,  uint16_t,  uint16_t,  uint8_t *, uint16_t,  uint32_t)' {aka 'HAL_StatusTypeDef(I2C_HandleTypeDef *, short unsigned int,  short unsigned int,  short unsigned int,  unsigned char *, short unsigned int,  unsigned int)'}
+   53 | HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+      |                   ^~~~~~~~~~~~~~~~~
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c:13:5: error: conflicting types for 'HAL_I2C_Master_Transmit'; have 'int(void *, uint16_t,  uint8_t *, uint16_t,  uint32_t)' {aka 'int(void *, short unsigned int,  unsigned char *, short unsigned int,  unsigned int)'}
+   13 | int HAL_I2C_Master_Transmit(void* hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+      |     ^~~~~~~~~~~~~~~~~~~~~~~
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:55:19: note: previous declaration of 'HAL_I2C_Master_Transmit' with type 'HAL_StatusTypeDef(I2C_HandleTypeDef *, uint16_t,  uint8_t *, uint16_t,  uint32_t)' {aka 'HAL_StatusTypeDef(I2C_HandleTypeDef *, short unsigned int,  unsigned char *, short unsigned int,  unsigned int)'}
+   55 | HAL_StatusTypeDef HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c:16:5: error: conflicting types for 'HAL_I2C_Master_Receive'; have 'int(void *, uint16_t,  uint8_t *, uint16_t,  uint32_t)' {aka 'int(void *, short unsigned int,  unsigned char *, short unsigned int,  unsigned int)'}
+   16 | int HAL_I2C_Master_Receive(void* hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+      |     ^~~~~~~~~~~~~~~~~~~~~~
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:56:19: note: previous declaration of 'HAL_I2C_Master_Receive' with type 'HAL_StatusTypeDef(I2C_HandleTypeDef *, uint16_t,  uint8_t *, uint16_t,  uint32_t)' {aka 'HAL_StatusTypeDef(I2C_HandleTypeDef *, short unsigned int,  unsigned char *, short unsigned int,  unsigned int)'}
+   56 | HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+      |                   ^~~~~~~~~~~~~~~~~~~~~~
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c:19:6: error: conflicting types for 'HAL_GPIO_WritePin'; have 'void(void *, uint16_t,  int)' {aka 'void(void *, short unsigned int,  int)'}
+   19 | void HAL_GPIO_WritePin(void* GPIOx, uint16_t GPIO_Pin, int PinState) {}
+      |      ^~~~~~~~~~~~~~~~~
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:25:6: note: previous declaration of 'HAL_GPIO_WritePin' with type 'void(void *, uint16_t,  GPIO_PinState)' {aka 'void(void *, short unsigned int,  GPIO_PinState)'}
+   25 | void HAL_GPIO_WritePin(void* GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState);
+      |      ^~~~~~~~~~~~~~~~~
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c:20:5: error: conflicting types for 'HAL_GPIO_ReadPin'; have 'int(void *, uint16_t)' {aka 'int(void *, short unsigned int)'}
+   20 | int HAL_GPIO_ReadPin(void* GPIOx, uint16_t GPIO_Pin) { return 0; }
+      |     ^~~~~~~~~~~~~~~~
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:26:15: note: previous declaration of 'HAL_GPIO_ReadPin' with type 'GPIO_PinState(void *, uint16_t)' {aka 'GPIO_PinState(void *, short unsigned int)'}
+   26 | GPIO_PinState HAL_GPIO_ReadPin(void* GPIOx, uint16_t GPIO_Pin);
+      |               ^~~~~~~~~~~~~~~~
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim\mock_hal.c:24:5: error: conflicting types for 'HAL_UART_Transmit'; have 'int(void *, uint8_t *, uint16_t,  uint32_t)' {aka 'int(void *, unsigned char *, short unsigned int,  unsigned int)'}
+   24 | int HAL_UART_Transmit(void* huart, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+      |     ^~~~~~~~~~~~~~~~~
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_inc/mock_hal.h:59:19: note: previous declaration of 'HAL_UART_Transmit' with type 'HAL_StatusTypeDef(UART_HandleTypeDef *, uint8_t *, uint16_t,  uint32_t)' {aka 'HAL_StatusTypeDef(UART_HandleTypeDef *, unsigned char *, short unsigned int,  unsigned int)'}
+   59 | HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+      |                   ^~~~~~~~~~~~~~~~~
+mingw32-make[3]: *** [CMakeFiles\test_integration_runner.dir\build.make:196: CMakeFiles/test_integration_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/HostSim/mock_hal.c.obj] Error 1
+mingw32-make[3]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+mingw32-make[2]: *** [CMakeFiles\Makefile2:194: CMakeFiles/test_integration_runner.dir/all] Error 2
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+mingw32-make[1]: *** [CMakeFiles\Makefile2:201: CMakeFiles/test_integration_runner.dir/rule] Error 2
+mingw32-make[1]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+mingw32-make: *** [Makefile:175: test_integration_runner] Error 2
+

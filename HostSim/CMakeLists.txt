@@ -27,7 +27,7 @@ include_directories(
 
 # Source Files (App Logic ONLY, No HAL Driver sources)
 set(APP_SOURCES
-    ../Src/test_host.c
+    ../Core/Src/test_host.c
     ../Core/Src/app.c
     ../Core/Src/kalman.c
     ../Core/Src/pid.c

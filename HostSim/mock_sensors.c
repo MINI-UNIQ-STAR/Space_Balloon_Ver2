@@ -9,6 +9,12 @@
 static uint32_t current_frame = 0;
 static uint32_t loop_count = 0;
 
+// Manual Mock Data Support
+static bool use_manual_mock_data = false;
+static float manual_alt_m = 0.0f;
+static float manual_temp_c = 25.0f;
+static uint32_t manual_press_pa = 101325;
+
 // ===== Fault Injection for FDIR Testing =====
 typedef enum {
     FAULT_NONE = 0,
@@ -54,6 +60,14 @@ void Sensors_Init(void) {
     current_frame = 0;
     loop_count = 0;
     active_fault = FAULT_NONE;
+    use_manual_mock_data = false;
+}
+
+void MockSensors_ClearStats(void) {
+    current_frame = 0;
+    loop_count = 0;
+    active_fault = FAULT_NONE;
+    use_manual_mock_data = false;
 }
 
 void Sensors_Reset(SensorID_t id) {
@@ -66,7 +80,34 @@ void Sensors_Init_I2C3(void) {}
 void Sensors_Init_UART(void) {}
 void Sensors_Init_1Wire(void) {}
 
+void Sensors_SetMockData(float alt_m, float temp_c, float press_pa) {
+    use_manual_mock_data = true;
+    manual_alt_m = alt_m;
+    manual_temp_c = temp_c;
+    manual_press_pa = (uint32_t)press_pa;
+}
+
 SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
+    if (use_manual_mock_data) {
+        // Manual Data Mode
+        data->gps_fix = 1;
+        data->gps_alt_m = manual_alt_m;
+        data->external_temp_c_x100 = (int16_t)(manual_temp_c * 100);
+        data->board_temp_c_x100 = (int16_t)((manual_temp_c + 5.0f) * 100);
+        data->ms5611_press_pa = manual_press_pa;
+        data->ms5611_temp_c_x100 = data->external_temp_c_x100;
+        
+        // Fill others with defaults
+        data->bat_mv = 4000;
+        data->gps_lat_deg_e7 = 370000000;
+        data->gps_lon_deg_e7 = 1270000000;
+        data->gps_sats_used = 8;
+        
+        FDIR_ReportSuccess(SENSOR_ID_GPS);
+        FDIR_ReportSuccess(SENSOR_ID_BARO);
+        return SENSOR_OK;
+    }
+
     // Get current and next frame for interpolation
     const flight_data_point_t *cur = &flight_data[current_frame];
     const flight_data_point_t *next = &flight_data[(current_frame + 1) % FLIGHT_DATA_COUNT];
@@ -254,4 +295,9 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     // Mock UTC Time
     *utc_hour = 12; *utc_min = 0; *utc_sec = 0;
     *utc_day = 1; *utc_month = 1; *utc_year = 2026;
+}
+
+void Sensors_SetHeater_SHT31(uint8_t enable) {
+    (void)enable;
+    printf("[Mock] SHT31 Heater Set: %d\n", enable);
 }

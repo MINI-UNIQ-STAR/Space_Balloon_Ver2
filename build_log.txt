@@ -1,0 +1,13 @@
+[ 20%] Building C object CMakeFiles/test_fdir_runner.dir/test_fdir/mock_dependencies.c.obj
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_fdir\mock_dependencies.c:24:6: error: conflicting types for 'HAL_GPIO_WritePin'; have 'void(void *, uint16_t,  GPIO_PinState)' {aka 'void(void *, short unsigned int,  GPIO_PinState)'}
+   24 | void HAL_GPIO_WritePin(void* GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState) {
+      |      ^~~~~~~~~~~~~~~~~
+In file included from C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_fdir\main.h:8,
+                 from C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_fdir\mock_dependencies.c:1:
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_fdir\mock_hal.h:50:6: note: previous declaration of 'HAL_GPIO_WritePin' with type 'void(GPIO_TypeDef *, uint16_t,  GPIO_PinState)' {aka 'void(GPIO_TypeDef *, short unsigned int,  GPIO_PinState)'}
+   50 | void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState);
+      |      ^~~~~~~~~~~~~~~~~
+mingw32-make[3]: *** [CMakeFiles\test_fdir_runner.dir\build.make:91: CMakeFiles/test_fdir_runner.dir/test_fdir/mock_dependencies.c.obj] Error 1
+mingw32-make[2]: *** [CMakeFiles\Makefile2:90: CMakeFiles/test_fdir_runner.dir/all] Error 2
+mingw32-make[1]: *** [CMakeFiles\Makefile2:97: CMakeFiles/test_fdir_runner.dir/rule] Error 2
+mingw32-make: *** [Makefile:123: test_fdir_runner] Error 2

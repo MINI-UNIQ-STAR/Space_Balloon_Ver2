@@ -1,4 +1,5 @@
 #include "mock_hal.h"
+#include <string.h>
 
 static uint32_t current_tick = 0;
 
@@ -84,8 +85,23 @@ HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAd
     return HAL_OK;
 }
 
+// --- UART Mock State ---
+static MockUART_LastTx_t last_uart_tx;
+
+void MockUART_ClearStats(void) {
+    memset(&last_uart_tx, 0, sizeof(last_uart_tx));
+}
+
+MockUART_LastTx_t* MockUART_GetLastTx(void) {
+    return &last_uart_tx;
+}
+
 // --- UART Implementations ---
 HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
+    if (Size > 256) Size = 256;
+    memcpy(last_uart_tx.data, pData, Size);
+    last_uart_tx.len = Size;
+    
     char tmp[128];
     if (Size < 128) {
         memcpy(tmp, pData, Size);
@@ -111,14 +127,14 @@ HAL_StatusTypeDef HAL_ADC_Stop(ADC_HandleTypeDef* hadc) { return HAL_OK; }
 // --- GPIO ---
 uint32_t SystemCoreClock = 16000000;
 
-void HAL_GPIO_WritePin(void* GPIOx, uint16_t GPIO_Pin, int PinState) {
+void HAL_GPIO_WritePin(void* GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState) {
     if (GPIO_Pin == 1024) { // Filter spam for FDIR pin if needed, or just print
          // printf("MOCK GPIO WRITE: Port=%p, Pin=%d, State=%d\n", GPIOx, GPIO_Pin, PinState);
     }
 }
 
-int HAL_GPIO_ReadPin(void* GPIOx, uint16_t GPIO_Pin) {
-    return 1; // Always return High/Set
+GPIO_PinState HAL_GPIO_ReadPin(void* GPIOx, uint16_t GPIO_Pin) {
+    return GPIO_PIN_SET; // Always return High/Set
 }
 
 void HAL_GPIO_Init(void* GPIOx, GPIO_InitTypeDef *GPIO_Init) {

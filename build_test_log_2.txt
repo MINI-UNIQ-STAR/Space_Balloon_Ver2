@@ -1,0 +1,55 @@
+Change Dir: 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+
+Run Build Command(s): C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/cmake.exe -E env VERBOSE=1 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe -f Makefile
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -SC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test -BC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test --check-build-system CMakeFiles\Makefile.cmake 0
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_progress_start C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\CMakeFiles C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\\CMakeFiles\progress.marks
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\Makefile2 all
+mingw32-make[1]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_fdir_runner.dir\build.make CMakeFiles/test_fdir_runner.dir/depend
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_depends "MinGW Makefiles" C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\CMakeFiles\test_fdir_runner.dir\DependInfo.cmake "--color="
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_fdir_runner.dir\build.make CMakeFiles/test_fdir_runner.dir/build
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+mingw32-make[2]: Nothing to be done for 'CMakeFiles/test_fdir_runner.dir/build'.
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+[ 14%] Built target test_fdir_runner
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_pid_runner.dir\build.make CMakeFiles/test_pid_runner.dir/depend
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_depends "MinGW Makefiles" C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\CMakeFiles\test_pid_runner.dir\DependInfo.cmake "--color="
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_pid_runner.dir\build.make CMakeFiles/test_pid_runner.dir/build
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+mingw32-make[2]: Nothing to be done for 'CMakeFiles/test_pid_runner.dir/build'.
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+[ 26%] Built target test_pid_runner
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_kalman_runner.dir\build.make CMakeFiles/test_kalman_runner.dir/depend
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_depends "MinGW Makefiles" C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\CMakeFiles\test_kalman_runner.dir\DependInfo.cmake "--color="
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_kalman_runner.dir\build.make CMakeFiles/test_kalman_runner.dir/build
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+mingw32-make[2]: Nothing to be done for 'CMakeFiles/test_kalman_runner.dir/build'.
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+[ 38%] Built target test_kalman_runner
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/depend
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_depends "MinGW Makefiles" C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\CMakeFiles\test_drivers_runner.dir\DependInfo.cmake "--color="
+Dependencies file "CMakeFiles/test_drivers_runner.dir/test_drivers/mock_hal.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_drivers_runner.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_drivers_runner.dir/test_drivers/test_main.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/test_drivers_runner.dir/compiler_depend.internal".
+Consolidate compiler generated dependencies of target test_drivers_runner
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/build
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+[ 41%] Building C object CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/sensors.c.obj
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -DHOST_TEST_MODE -DUNIT_TEST @CMakeFiles/test_drivers_runner.dir/includes_C.rsp -g -std=gnu11 -MD -MT CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/sensors.c.obj -MF CMakeFiles\test_drivers_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\sensors.c.obj.d -o CMakeFiles\test_drivers_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\sensors.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\sensors.c
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\sensors.c:8:10: fatal error: sen0321_driver.h: No such file or directory
+    8 | #include "sen0321_driver.h"
+      |          ^~~~~~~~~~~~~~~~~~
+compilation terminated.
+mingw32-make[2]: *** [CMakeFiles\test_drivers_runner.dir\build.make:106: CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/sensors.c.obj] Error 1
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+mingw32-make[1]: *** [CMakeFiles\Makefile2:168: CMakeFiles/test_drivers_runner.dir/all] Error 2
+mingw32-make[1]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test'
+mingw32-make: *** [Makefile:90: all] Error 2
+

@@ -1,0 +1,34 @@
+Change Dir: 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host'
+
+Run Build Command(s): C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/cmake.exe -E env VERBOSE=1 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe -f Makefile
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -SC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim -BC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_host --check-build-system CMakeFiles\Makefile.cmake 0
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_progress_start C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_host\CMakeFiles C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_host\\CMakeFiles\progress.marks
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\Makefile2 all
+mingw32-make[1]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_host.dir\build.make CMakeFiles/test_host.dir/depend
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host'
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_depends "MinGW Makefiles" C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\HostSim C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_host C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_host C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_host\CMakeFiles\test_host.dir\DependInfo.cmake "--color="
+Dependencies file "CMakeFiles/test_host.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/app.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host/CMakeFiles/test_host.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_host.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/fdir.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host/CMakeFiles/test_host.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_host.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/xcp.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host/CMakeFiles/test_host.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_host.dir/mock_hal.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host/CMakeFiles/test_host.dir/compiler_depend.internal".
+Dependencies file "CMakeFiles/test_host.dir/mock_sensors.c.obj.d" is newer than depends file "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host/CMakeFiles/test_host.dir/compiler_depend.internal".
+Consolidate compiler generated dependencies of target test_host
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\test_host.dir\build.make CMakeFiles/test_host.dir/build
+mingw32-make[2]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host'
+[ 10%] Linking C executable test_host.exe
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E cmake_link_script CMakeFiles\test_host.dir\link.txt --verbose=1
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\cmake.exe -E rm -f CMakeFiles\test_host.dir/objects.a
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\ar.exe qc CMakeFiles\test_host.dir/objects.a @CMakeFiles\test_host.dir\objects1.rsp
+C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe -g -Wl,--whole-archive CMakeFiles\test_host.dir/objects.a -Wl,--no-whole-archive -o test_host.exe -Wl,--out-implib,libtest_host.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\test_host.dir\linkLibs.rsp
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: CMakeFiles\test_host.dir/objects.a(app.c.obj): in function `App_Loop':
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/app.c:102:(.text+0x26f): undefined reference to `Sensors_SetHeater_SHT31'
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/app.c:107:(.text+0x29b): undefined reference to `Sensors_SetHeater_SHT31'
+collect2.exe: error: ld returned 1 exit status
+mingw32-make[2]: *** [CMakeFiles\test_host.dir\build.make:235: test_host.exe] Error 1
+mingw32-make[2]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host'
+mingw32-make[1]: *** [CMakeFiles\Makefile2:82: CMakeFiles/test_host.dir/all] Error 2
+mingw32-make[1]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_host'
+mingw32-make: *** [Makefile:90: all] Error 2
+
