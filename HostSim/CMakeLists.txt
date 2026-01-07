@@ -29,6 +29,7 @@ include_directories(
 set(APP_SOURCES
     ../Core/Src/test_host.c
     ../Core/Src/app.c
+    ../Core/Src/actuators.c
     ../Core/Src/kalman.c
     ../Core/Src/pid.c
     ../Core/Src/telemetry.c

@@ -39,8 +39,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-zmskrh"
-      binary: "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-zmskrh"
+      source: "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-x8q199"
+      binary: "C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-x8q199"
     cmakeVariables:
       CMAKE_C_FLAGS: ""
       CMAKE_C_FLAGS_DEBUG: "-g"
@@ -49,13 +49,13 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-zmskrh'
+        Change Dir: 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-x8q199'
         
-        Run Build Command(s): C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/cmake.exe -E env VERBOSE=1 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe -f Makefile cmTC_d2043/fast
-        C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\\cmTC_d2043.dir\\build.make CMakeFiles/cmTC_d2043.dir/build
-        mingw32-make[1]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-zmskrh'
-        Building C object CMakeFiles/cmTC_d2043.dir/CMakeCCompilerABI.c.obj
-        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe   -v -o CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj -c C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c
+        Run Build Command(s): C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/cmake.exe -E env VERBOSE=1 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe -f Makefile cmTC_ab725/fast
+        C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\\cmTC_ab725.dir\\build.make CMakeFiles/cmTC_ab725.dir/build
+        mingw32-make[1]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-x8q199'
+        Building C object CMakeFiles/cmTC_ab725.dir/CMakeCCompilerABI.c.obj
+        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe   -v -o CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj -c C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c
         Using built-in specs.
         COLLECT_GCC=C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe
         OFFLOAD_TARGET_NAMES=nvptx-none
@@ -64,8 +64,8 @@ events:
         Thread model: posix
         Supported LTO compression algorithms: zlib zstd
         gcc version 13.2.0 (MinGW-W64 x86_64-msvcrt-posix-seh, built by Brecht Sanders) 
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_d2043.dir\\'
-         C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/cc1.exe -quiet -v -iprefix C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/ -D_REENTRANT C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles\\cmTC_d2043.dir\\ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -o C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccczll1c.s
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_ab725.dir\\'
+         C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/cc1.exe -quiet -v -iprefix C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/ -D_REENTRANT C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles\\cmTC_ab725.dir\\ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -o C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccJOLFri.s
         GNU C17 (MinGW-W64 x86_64-msvcrt-posix-seh, built by Brecht Sanders) version 13.2.0 (x86_64-w64-mingw32)
         	compiled by GNU C version 13.2.0, GMP version 6.3.0, MPFR version 4.2.0, MPC version 1.3.1, isl version isl-0.26-GMP
         
@@ -84,17 +84,17 @@ events:
          C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/include
         End of search list.
         Compiler executable checksum: 85ba86b895ef18f31c2fc34889a3d52c
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_d2043.dir\\'
-         C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/as.exe -v -o CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccczll1c.s
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_ab725.dir\\'
+         C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/as.exe -v -o CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccJOLFri.s
         GNU assembler version 2.41 (x86_64-w64-mingw32) using BFD version (Binutils for MinGW-W64 x86_64, built by Brecht Sanders) 2.41
         COMPILER_PATH=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/
         LIBRARY_PATH=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../
-        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.'
-        Linking C executable cmTC_d2043.exe
-        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\cmake.exe -E cmake_link_script CMakeFiles\\cmTC_d2043.dir\\link.txt --verbose=1
-        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\cmake.exe -E rm -f CMakeFiles\\cmTC_d2043.dir/objects.a
-        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\ar.exe qc CMakeFiles\\cmTC_d2043.dir/objects.a @CMakeFiles\\cmTC_d2043.dir\\objects1.rsp
-        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe  -v -Wl,--whole-archive CMakeFiles\\cmTC_d2043.dir/objects.a -Wl,--no-whole-archive -o cmTC_d2043.exe -Wl,--out-implib,libcmTC_d2043.dll.a -Wl,--major-image-version,0,--minor-image-version,0 
+        COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.'
+        Linking C executable cmTC_ab725.exe
+        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\cmake.exe -E cmake_link_script CMakeFiles\\cmTC_ab725.dir\\link.txt --verbose=1
+        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\cmake.exe -E rm -f CMakeFiles\\cmTC_ab725.dir/objects.a
+        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\ar.exe qc CMakeFiles\\cmTC_ab725.dir/objects.a @CMakeFiles\\cmTC_ab725.dir\\objects1.rsp
+        C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe  -v -Wl,--whole-archive CMakeFiles\\cmTC_ab725.dir/objects.a -Wl,--no-whole-archive -o cmTC_ab725.exe -Wl,--out-implib,libcmTC_ab725.dll.a -Wl,--major-image-version,0,--minor-image-version,0 
         Using built-in specs.
         COLLECT_GCC=C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe
         COLLECT_LTO_WRAPPER=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe
@@ -106,10 +106,10 @@ events:
         gcc version 13.2.0 (MinGW-W64 x86_64-msvcrt-posix-seh, built by Brecht Sanders) 
         COMPILER_PATH=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/
         LIBRARY_PATH=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/;C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_d2043.exe' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_d2043.'
-         C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe -plugin C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll -plugin-opt=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe -plugin-opt=-fresolution=C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccOQqNus.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -m i386pep -Bdynamic -o cmTC_d2043.exe C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0 -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../.. --whole-archive CMakeFiles\\cmTC_d2043.dir/objects.a --no-whole-archive --out-implib libcmTC_d2043.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtend.o
-        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_d2043.exe' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_d2043.'
-        mingw32-make[1]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-zmskrh'
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ab725.exe' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_ab725.'
+         C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe -plugin C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll -plugin-opt=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe -plugin-opt=-fresolution=C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccagQ4yl.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -m i386pep -Bdynamic -o cmTC_ab725.exe C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0 -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../.. --whole-archive CMakeFiles\\cmTC_ab725.dir/objects.a --no-whole-archive --out-implib libcmTC_ab725.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtend.o
+        COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ab725.exe' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_ab725.'
+        mingw32-make[1]: Leaving directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-x8q199'
         
       exitCode: 0
   -
@@ -143,13 +143,13 @@ events:
     message: |
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld\\.exe|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        ignore line: [Change Dir: 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-zmskrh']
+        ignore line: [Change Dir: 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-x8q199']
         ignore line: []
-        ignore line: [Run Build Command(s): C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/cmake.exe -E env VERBOSE=1 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe -f Makefile cmTC_d2043/fast]
-        ignore line: [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\\cmTC_d2043.dir\\build.make CMakeFiles/cmTC_d2043.dir/build]
-        ignore line: [mingw32-make[1]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-zmskrh']
-        ignore line: [Building C object CMakeFiles/cmTC_d2043.dir/CMakeCCompilerABI.c.obj]
-        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe   -v -o CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj -c C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/cmake.exe -E env VERBOSE=1 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe -f Makefile cmTC_ab725/fast]
+        ignore line: [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/mingw32-make.exe  -f CMakeFiles\\cmTC_ab725.dir\\build.make CMakeFiles/cmTC_ab725.dir/build]
+        ignore line: [mingw32-make[1]: Entering directory 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/build_test/CMakeFiles/CMakeScratch/TryCompile-x8q199']
+        ignore line: [Building C object CMakeFiles/cmTC_ab725.dir/CMakeCCompilerABI.c.obj]
+        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe   -v -o CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj -c C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe]
         ignore line: [OFFLOAD_TARGET_NAMES=nvptx-none]
@@ -158,8 +158,8 @@ events:
         ignore line: [Thread model: posix]
         ignore line: [Supported LTO compression algorithms: zlib zstd]
         ignore line: [gcc version 13.2.0 (MinGW-W64 x86_64-msvcrt-posix-seh  built by Brecht Sanders) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_d2043.dir\\']
-        ignore line: [ C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/cc1.exe -quiet -v -iprefix C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/ -D_REENTRANT C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles\\cmTC_d2043.dir\\ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -o C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccczll1c.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_ab725.dir\\']
+        ignore line: [ C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/cc1.exe -quiet -v -iprefix C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/ -D_REENTRANT C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles\\cmTC_ab725.dir\\ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mtune=generic -march=x86-64 -version -o C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccJOLFri.s]
         ignore line: [GNU C17 (MinGW-W64 x86_64-msvcrt-posix-seh  built by Brecht Sanders) version 13.2.0 (x86_64-w64-mingw32)]
         ignore line: [	compiled by GNU C version 13.2.0  GMP version 6.3.0  MPFR version 4.2.0  MPC version 1.3.1  isl version isl-0.26-GMP]
         ignore line: []
@@ -178,8 +178,8 @@ events:
         ignore line: [ C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/include]
         ignore line: [End of search list.]
         ignore line: [Compiler executable checksum: 85ba86b895ef18f31c2fc34889a3d52c]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_d2043.dir\\']
-        ignore line: [ C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/as.exe -v -o CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccczll1c.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_ab725.dir\\']
+        ignore line: [ C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/bin/as.exe -v -o CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccJOLFri.s]
         ignore line: [GNU assembler version 2.41 (x86_64-w64-mingw32) using BFD version (Binutils for MinGW-W64 x86_64  built by Brecht Sanders) 2.41]
         ignore line: [COMPILER_PATH=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/]
         ignore line: [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/]
@@ -190,12 +190,12 @@ events:
         ignore line: [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/]
         ignore line: [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/]
         ignore line: [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_d2043.dir\\CMakeCCompilerABI.c.']
-        ignore line: [Linking C executable cmTC_d2043.exe]
-        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\cmake.exe -E cmake_link_script CMakeFiles\\cmTC_d2043.dir\\link.txt --verbose=1]
-        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\cmake.exe -E rm -f CMakeFiles\\cmTC_d2043.dir/objects.a]
-        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\ar.exe qc CMakeFiles\\cmTC_d2043.dir/objects.a @CMakeFiles\\cmTC_d2043.dir\\objects1.rsp]
-        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe  -v -Wl --whole-archive CMakeFiles\\cmTC_d2043.dir/objects.a -Wl --no-whole-archive -o cmTC_d2043.exe -Wl --out-implib libcmTC_d2043.dll.a -Wl --major-image-version 0 --minor-image-version 0 ]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.obj' '-c' '-mtune=generic' '-march=x86-64' '-dumpdir' 'CMakeFiles\\cmTC_ab725.dir\\CMakeCCompilerABI.c.']
+        ignore line: [Linking C executable cmTC_ab725.exe]
+        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\cmake.exe -E cmake_link_script CMakeFiles\\cmTC_ab725.dir\\link.txt --verbose=1]
+        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\cmake.exe -E rm -f CMakeFiles\\cmTC_ab725.dir/objects.a]
+        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\ar.exe qc CMakeFiles\\cmTC_ab725.dir/objects.a @CMakeFiles\\cmTC_ab725.dir\\objects1.rsp]
+        ignore line: [C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe  -v -Wl --whole-archive CMakeFiles\\cmTC_ab725.dir/objects.a -Wl --no-whole-archive -o cmTC_ab725.exe -Wl --out-implib libcmTC_ab725.dll.a -Wl --major-image-version 0 --minor-image-version 0 ]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=C:\\Users\\hyuns\\.gemini\\tools\\mingw\\mingw64\\bin\\gcc.exe]
         ignore line: [COLLECT_LTO_WRAPPER=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe]
@@ -214,13 +214,13 @@ events:
         ignore line: [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib/]
         ignore line: [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/]
         ignore line: [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../]
-        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_d2043.exe' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_d2043.']
-        link line: [ C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe -plugin C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll -plugin-opt=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe -plugin-opt=-fresolution=C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccOQqNus.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -m i386pep -Bdynamic -o cmTC_d2043.exe C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0 -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../.. --whole-archive CMakeFiles\\cmTC_d2043.dir/objects.a --no-whole-archive --out-implib libcmTC_d2043.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtend.o]
+        ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_ab725.exe' '-mtune=generic' '-march=x86-64' '-dumpdir' 'cmTC_ab725.']
+        link line: [ C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe -plugin C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll -plugin-opt=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe -plugin-opt=-fresolution=C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccagQ4yl.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lkernel32 -m i386pep -Bdynamic -o cmTC_ab725.exe C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0 -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib -LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../.. --whole-archive CMakeFiles\\cmTC_ab725.dir/objects.a --no-whole-archive --out-implib libcmTC_ab725.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lkernel32 C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtend.o]
           arg [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/collect2.exe] ==> ignore
           arg [-plugin] ==> ignore
           arg [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/liblto_plugin.dll] ==> ignore
           arg [-plugin-opt=C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../libexec/gcc/x86_64-w64-mingw32/13.2.0/lto-wrapper.exe] ==> ignore
-          arg [-plugin-opt=-fresolution=C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccOQqNus.res] ==> ignore
+          arg [-plugin-opt=-fresolution=C:\\Users\\hyuns\\AppData\\Local\\Temp\\ccagQ4yl.res] ==> ignore
           arg [-plugin-opt=-pass-through=-lmingw32] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
           arg [-plugin-opt=-pass-through=-lgcc_eh] ==> ignore
@@ -244,7 +244,7 @@ events:
           arg [i386pep] ==> ignore
           arg [-Bdynamic] ==> search dynamic
           arg [-o] ==> ignore
-          arg [cmTC_d2043.exe] ==> ignore
+          arg [cmTC_ab725.exe] ==> ignore
           arg [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o] ==> obj [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o]
           arg [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o] ==> obj [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/crtbegin.o]
           arg [-LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0] ==> dir [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0]
@@ -254,10 +254,10 @@ events:
           arg [-LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib] ==> dir [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../../../x86_64-w64-mingw32/lib]
           arg [-LC:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../..] ==> dir [C:/Users/hyuns/.gemini/tools/mingw/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/13.2.0/../../..]
           arg [--whole-archive] ==> ignore
-          arg [CMakeFiles\\cmTC_d2043.dir/objects.a] ==> ignore
+          arg [CMakeFiles\\cmTC_ab725.dir/objects.a] ==> ignore
           arg [--no-whole-archive] ==> ignore
           arg [--out-implib] ==> ignore
-          arg [libcmTC_d2043.dll.a] ==> ignore
+          arg [libcmTC_ab725.dll.a] ==> ignore
           arg [--major-image-version] ==> ignore
           arg [0] ==> ignore
           arg [--minor-image-version] ==> ignore
