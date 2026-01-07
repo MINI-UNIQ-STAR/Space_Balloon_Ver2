@@ -24,6 +24,13 @@ import struct
 import csv
 import datetime
 
+try:
+    import contextily as cx
+    MAP_AVAILABLE = True
+except ImportError:
+    MAP_AVAILABLE = False
+    print("[WARN] 'contextily' not found. Map background disabled.")
+
 # --- Telemetry Struct Definition ---
 # Must match telemetry.h (Packed, Little Endian '<')
 # Order:
@@ -487,52 +494,7 @@ class SensorSenderGUI(QMainWindow):
         self.port_combo.clear()
         self.port_combo.addItems(ports)
 
-    def _update_plots(self):
-        if not self.times: return
-        
-        t = list(self.times)
-        
-        # 1. Map Update (Optimized)
-        if len(self.traj_lat) > 0:
-            self.line_traj.set_data(list(self.traj_lon), list(self.traj_lat))
-            self.line_pos.set_data([self.traj_lon[-1]], [self.traj_lat[-1]])
-            
-            self.ax_map.relim()
-            self.ax_map.autoscale_view()
-            
-            # Draw Map Background (Only once or if needed)
-            if MAP_AVAILABLE and not self.map_drawn and len(self.traj_lat) > 1:
-                try:
-                    cx.add_basemap(self.ax_map, crs='EPSG:4326', source=cx.providers.OpenStreetMap.Mapnik, zoom=13)
-                    self.map_drawn = True
-                except: pass
-        
-        self.canvas_map.draw()
 
-        # 2. Env
-        self.line_alt.set_data(t, list(self.buf_alt))
-        self.ax_alt.relim(); self.ax_alt.autoscale_view()
-        
-        self.line_press.set_data(t, list(self.buf_press))
-        self.ax_press.relim(); self.ax_press.autoscale_view()
-        self.canvas_env.draw()
-
-        # 3. IMU
-        self.line_acc.set_data(t, list(self.buf_acc_z))
-        self.ax_imu.relim(); self.ax_imu.autoscale_view()
-        self.canvas_imu.draw()
-
-        # 4. Payload
-        self.line_co2.set_data(t, list(self.buf_co2))
-        self.ax_co2.relim(); self.ax_co2.autoscale_view()
-        
-        self.line_rad.set_data(t, list(self.buf_rad))
-        self.ax_rad.relim(); self.ax_rad.autoscale_view()
-        self.canvas_air.draw()
-        ports = [p.device for p in serial.tools.list_ports.comports()]
-        ports.append("MOCK (Test Mode)")
-        self.port_combo.clear()
-        self.port_combo.addItems(ports)
 
     def _toggle_connection(self):
         if self.ser and (self.ser == "MOCK" or self.ser.is_open):
@@ -932,9 +894,7 @@ class SensorSenderGUI(QMainWindow):
         dlg.setLayout(main_layout)
         dlg.exec()
 
-import threading
 
-class AutomatedTestRunner(threading.Thread):
     def __init__(self, serial_port, status_label):
         super().__init__()
         self.ser = serial_port

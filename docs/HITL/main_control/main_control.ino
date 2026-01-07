@@ -74,8 +74,65 @@ void setup() {
 void parseSimData(String input) {
   // PC sends "ALL:Time,Lat,Lon,Alt,..." (CSV)
   if (input.startsWith("ALL:")) {
-     // Expected format: ALL:Timestamp,Status,CO2, ... (Full State)
-     // Parsing omitted for brevity (Mock assumes PC drives state locally or we parse strictly)
+     // Expected format: ALL:Timestamp,Status,CO2,ax,ay,az,gx,gy,gz,mx,my,mz,t_brd,t_ext,t_sht,t_bat,lat,lon,alt,... 
+     // Using ParseInt/Float from String is slow but easiest. Converting to C-string for strtok is better.
+     
+     char buf[256];
+     input.toCharArray(buf, 256);
+     
+     char *ptr = strtok(buf, ":"); // Skip "ALL"
+     ptr = strtok(NULL, ","); // Timestamp
+     if (ptr) sim_state.timestamp_ms = atol(ptr);
+     
+     ptr = strtok(NULL, ","); // Status (Skip)
+     ptr = strtok(NULL, ","); // CO2
+     if (ptr) sim_state.co2 = atoi(ptr);
+     
+     // Accel (x,y,z)
+     for (int i=0; i<3; i++) { ptr = strtok(NULL, ","); if(ptr) sim_state.accel[i] = atoi(ptr)/1000.0; }
+     
+     // Gyro (x,y,z)
+     for (int i=0; i<3; i++) { ptr = strtok(NULL, ","); if(ptr) sim_state.gyro[i] = atoi(ptr)/1000.0; }
+     
+     // Mag (x,y,z)
+     for (int i=0; i<3; i++) { ptr = strtok(NULL, ","); if(ptr) sim_state.mag[i] = atoi(ptr); } // uT matches?
+     
+     // Temps: Board, Ext, SHT, Bat
+     ptr = strtok(NULL, ","); if(ptr) sim_state.temp_c = atoi(ptr)/100.0; // Use Board/Ambient
+     ptr = strtok(NULL, ","); if(ptr) sim_state.ext_temp_c = atoi(ptr)/100.0;
+     ptr = strtok(NULL, ","); // SHT (Skip/Reuse)
+     ptr = strtok(NULL, ","); // Bat Temp (Skip)
+     
+     // GPS: Lat, Lon, Alt
+     ptr = strtok(NULL, ","); if(ptr) sim_state.lat_e7 = atol(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.lon_e7 = atol(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.alt_m = atof(ptr);
+     
+     // Fix, Sats... (Skip 7 items)
+     for(int i=0; i<7; i++) strtok(NULL, ",");
+     
+     // Time (Skip 6 items)
+     for(int i=0; i<6; i++) strtok(NULL, ",");
+     
+     // BatMV
+     ptr = strtok(NULL, ","); if(ptr) sim_state.bat_mv = atoi(ptr);
+     
+     // Air: PM1, PM2.5, PM10, Ozone
+     ptr = strtok(NULL, ","); // PM1
+     ptr = strtok(NULL, ","); if(ptr) sim_state.pm2_5 = atoi(ptr);
+     ptr = strtok(NULL, ","); // PM10
+     ptr = strtok(NULL, ","); if(ptr) sim_state.ozone_ppb = atoi(ptr);
+     
+     // Env: RH, Press, Temp
+     ptr = strtok(NULL, ","); if(ptr) sim_state.humidity = atoi(ptr)/100.0;
+     ptr = strtok(NULL, ","); if(ptr) sim_state.pressure_pa = atol(ptr); // Pa
+     ptr = strtok(NULL, ","); // Temp (Skip)
+     
+     // Rad
+     ptr = strtok(NULL, ","); if(ptr) sim_state.radiation = atoi(ptr)/100.0;
+     
+     // Send Immediately
+     esp_now_send(broadcastAddress, (uint8_t *) &sim_state, sizeof(sim_state));
   }
   else if (input.startsWith("CMD,FAULT,")) {
     // Format: CMD,FAULT,COMP,TYPE,DURATION
