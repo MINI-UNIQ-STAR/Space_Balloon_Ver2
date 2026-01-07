@@ -525,9 +525,12 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
 }
 
 void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {
-#ifndef HOST_TEST_MODE
     // 1Hz Limit for slow sensors
     static uint32_t last_bat = 0;
+    
+    // In Host Test, we might want to run faster or just respect the timer.
+    // Since BSP_GetTick is mocked, this works fine.
+    
     if (BSP_GetTick() - last_bat > 1000) {
         
         *mv = BSP_ADC_Read_Battery_mV();
@@ -535,10 +538,22 @@ void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {
         *temp_c_x100 = DS18B20_ReadTemp_x100(0); // Battery Temp
         last_bat = BSP_GetTick();
     }
-#else
-    *mv = 16000;
-    *temp_c_x100 = 2000;
-#endif
+    // If not updated, values remain from previous read or 0 init.
+    // Ideally we should pass pointers to valid memory that retains state or handle this.
+    // For now, let's just let it update when it can.
+    else {
+        // If we want it to return the 'last known' value, the caller should handle state.
+        // But here we are writing to pointers. 
+        // In simulation, if we don't update, we might return garbage if caller doesn't init.
+        // Let's force update for Mock Mode if needed, or better:
+        // Just let it run. The loop in test_host.c runs fast, so many calls will be skipped.
+        // We need to ensure test_host sets initial values or we return something.
+        
+        #ifdef HOST_TEST_MODE
+        *mv = BSP_ADC_Read_Battery_mV(); // Force read for test responsiveness? 
+                                         // Or just trust the timer. Mock tick advances.
+        #endif
+    }
 }
 
 // ...

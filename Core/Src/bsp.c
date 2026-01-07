@@ -170,6 +170,6 @@ uint16_t BSP_ADC_Read_Battery_mV(void) {
     HAL_ADC_Stop(&hadc1);
     return 0;
 #else
-    return 15500;
+    return 4200;
 #endif
 }
