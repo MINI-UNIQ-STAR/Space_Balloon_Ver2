@@ -25,7 +25,7 @@ set(DRIVER_INCLUDES
 
 include_directories(
     unity_minimal
-    ../HostSim/mock_inc # Prioritize Mocks
+    ${CMAKE_CURRENT_SOURCE_DIR}/../HostSim/mock_inc # Prioritize Mocks
     ../Core/Inc
     test_fdir # For mock_dependencies.h
     ${DRIVER_INCLUDES}

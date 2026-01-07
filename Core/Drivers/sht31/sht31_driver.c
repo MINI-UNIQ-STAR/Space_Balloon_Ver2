@@ -1,5 +1,6 @@
 #include "sht31_driver.h"
 #include <string.h> // for NULL check if needed
+#include "main.h" // for HAL_GetTick
 
 /* 
  * SHT31 Command Write Logic:
@@ -47,8 +48,17 @@ static uint8_t crc8(const uint8_t *data, int len) {
     return crc;
 }
 
+// State definitions
+#define SHT_IDLE 0
+#define SHT_WAIT 1
+
 int32_t SHT31_Init(sht31_ctx_t *ctx) {
     if (!ctx->address) ctx->address = SHT31_I2C_ADDR_DEFAULT;
+    
+    // Reset state
+    ctx->state = SHT_IDLE;
+    ctx->tick_start = 0;
+    
     return SHT31_Reset(ctx);
 }
 
@@ -58,58 +68,58 @@ int32_t SHT31_Reset(sht31_ctx_t *ctx) {
 }
 
 int32_t SHT31_ReadTempHum(sht31_ctx_t *ctx, float *temp_c, float *rh) {
-    // 1. Send Measure Command
-    uint8_t cmd_lsb = SHT31_MEAS_HIGHREP & 0xFF;
-    if (ctx->write_reg(ctx->handle, SHT31_MEAS_HIGHREP >> 8, &cmd_lsb, 1) != 0) return -1;
-    
-    // 2. Wait for measurement (platform specific delay usually needed here, 
-    // but pure driver logic often skips delay or assumes user handles it / non-blocking?
-    // For simplicity in this mock/driver, we assume the platform_read might block or we just read.
-    // In strict driver creation, we might need a delay callback.
-    // Adding a dummy loop or relying on I2C stretch (if enabled). 
-    // Using simple read for now. In real HW, need HAL_Delay(20) between write/read if no clock stretching.
-    
-    // 3. Read 6 Bytes: TempMSB, TempLSB, CRC, HumMSB, HumLSB, CRC
-    // We cannot use standard Mem_Read here easily because there is no "Register" to read from.
-    // It's just a Receive request.
-    // If we use Mem_Read with a dummy register, it might send a Write-Restart-Read. SHT31 might dislike that.
-    // 
-    // Usually for SHT31: 
-    // Write(Addr, CMD) -> Stop -> Delay -> Read(Addr, 6 bytes).
-    // Our 'read_reg' abstraction is commonly Mem_Read.
-    // We might need a raw 'read' function pointer if protocol differs.
-    // But let's look at platform_read implementation in sensors.c:
-    // It mocks Mem_Read. 
-    // For SHT31, if we pass a special flag or just handle it, it's fine.
-    // Let's assume read_reg can handle "current pointer read" if reg address is a special value?
-    // Or we just abuse the abstraction: pass 0 as reg?
-    
-    uint8_t buf[6];
-    // We'll pass 0 as reg, and hope platform handles "no register" or we accept the dummy write.
-    // SHT31 doesn't have registers for data read. It just streams data after measurement cmd.
-    // Ideally we update ctx to have a 'receive' function. 
-    // For now, we use read_reg with 0 and assume the platform adaptation layer (sensors.c) handles SHT31 specifics 
-    // or the device ignores the register write phase (not ideal).
-    // CORRECT APPROACH: Modify `sensors.h` or `types` to allow Receive-Only?
-    // Let's stick to the current ptrs and assume read_reg(handle, 0, buf, 6) works enough for mock.
-    
-    if (ctx->read_reg(ctx->handle, 0, buf, 6) != 0) return -1;
+    uint32_t now = HAL_GetTick();
 
-    // Check CRC
-    if (buf[2] != crc8(buf, 2) || buf[5] != crc8(buf + 3, 2)) {
-        // Return error or ignore? Host mock data won't have valid CRC usually unless we mock that too.
-        // For host test, we might skip CRC check or ensure mock generates correct CRC.
-        // Let's allow failure but comment out for Mock stability if needed.
-        // return -2; 
+    switch (ctx->state) {
+        case SHT_IDLE:
+        {
+            // 1. Send Measure Command
+            uint8_t cmd_lsb = SHT31_MEAS_HIGHREP & 0xFF;
+            if (ctx->write_reg(ctx->handle, SHT31_MEAS_HIGHREP >> 8, &cmd_lsb, 1) != 0) return SHT31_ERROR;
+            
+            ctx->tick_start = now;
+            ctx->state = SHT_WAIT;
+            return SHT31_BUSY;
+        }
+
+        case SHT_WAIT:
+        {
+            // 2. Wait 15ms (High Repeatability Measurement Time)
+            // If clock stretching was enabled, read attempt would block.
+            // Since we use non-blocking here, we must rely on timer.
+            if ((now - ctx->tick_start) < 15) return SHT31_BUSY;
+
+            // 3. Read 6 Bytes
+            uint8_t buf[6];
+            // Passing 0 as reg address (dummy) as discussed previously
+            if (ctx->read_reg(ctx->handle, 0, buf, 6) != 0) {
+                // Read failed (maybe NACK if not ready?), reset to retry
+                ctx->state = SHT_IDLE;
+                return SHT31_ERROR;
+            }
+
+            // Check CRC
+            if (buf[2] != crc8(buf, 2) || buf[5] != crc8(buf + 3, 2)) {
+                 // CRC Fail
+                 ctx->state = SHT_IDLE;
+                 return SHT31_ERROR;
+            }
+
+            uint16_t st = (buf[0] << 8) | buf[1];
+            uint16_t sh = (buf[3] << 8) | buf[4];
+
+            *temp_c = -45.0f + (175.0f * (float)st / 65535.0f);
+            *rh = 100.0f * (float)sh / 65535.0f;
+            
+            // Success, go back to IDLE for next cycle
+            ctx->state = SHT_IDLE;
+            return SHT31_OK;
+        }
+        
+        default:
+            ctx->state = SHT_IDLE;
+            return SHT31_ERROR;
     }
-
-    uint16_t st = (buf[0] << 8) | buf[1];
-    uint16_t sh = (buf[3] << 8) | buf[4];
-
-    *temp_c = -45.0f + (175.0f * (float)st / 65535.0f);
-    *rh = 100.0f * (float)sh / 65535.0f;
-    
-    return 0;
 }
 
 int32_t SHT31_SetHeater(sht31_ctx_t *ctx, bool enable) {

@@ -22,7 +22,16 @@ typedef struct {
     sht31_read_ptr read_reg;
     void *handle; // generic handle for I2C instance
     uint8_t address;
+
+    // Non-blocking State Machine
+    uint8_t state;       // 0:IDLE, 1:WAIT_MEAS
+    uint32_t tick_start; // Timestamp
 } sht31_ctx_t;
+
+// Return codes for non-blocking API
+#define SHT31_OK           0
+#define SHT31_BUSY         1
+#define SHT31_ERROR        -1
 
 int32_t SHT31_Init(sht31_ctx_t *ctx);
 int32_t SHT31_Reset(sht31_ctx_t *ctx);

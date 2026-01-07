@@ -1,5 +1,5 @@
 @echo off
-gcc -DHOST_TEST_MODE -DUNIT_TEST ^
+"C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe" -DHOST_TEST_MODE -DUNIT_TEST ^
     -I. ^
     -Imock_inc ^
     -I../test/test_drivers ^
@@ -21,6 +21,7 @@ gcc -DHOST_TEST_MODE -DUNIT_TEST ^
     ../Core/Src/pid.c ^
     ../Core/Src/telemetry.c ^
     ../Core/Src/fdir.c ^
+    ../Core/Src/actuators.c ^
     ../Core/Src/xcp.c ^
     mock_sensors.c ^
     mock_hal.c ^

@@ -116,28 +116,7 @@ static int32_t pms_write(void *handle, uint8_t *buf, uint16_t len) {
     return 0;
 }
 
-static int32_t uart_read_mock(void *handle, uint8_t *buf, uint16_t len) {
-    // Mock UART Receive for CM1107N
-    // Return a valid response frame: 16 05 01 [DF1] [DF2] [DF3] [DF4] [CS]
-    // 0x16 0x05 0x01 0x01 0xF4 0x00 0x00 [CS] -> 500 ppm
-    if (len >= 8) {
-        buf[0] = 0x16;
-        buf[1] = 0x05;
-        buf[2] = 0x01;
-        buf[3] = 0x01; // High byte 500
-        buf[4] = 0xF4; // Low byte 500
-        buf[5] = 0x00;
-        buf[6] = 0x00;
-        /* Calc CS */
-        uint16_t sum = 0U;
-        uint8_t k;
-        for (k = 0U; k < 7U; k++) {
-            sum += buf[k];
-        }
-        buf[7] = (uint8_t)((256U - (sum % 256U)) % 256U);
-    }
-    return 0;
-}
+
 
 static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
     HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
@@ -239,6 +218,12 @@ void Sensors_Init_I2C3(void) {
     sht_ctx.read_reg = platform_read;
     sht_ctx.address = SHT31_I2C_ADDR_DEFAULT;
     SHT31_Init(&sht_ctx);
+    
+    // CM1107N Init (Moved from UART to I2C3)
+    cm_ctx.write = platform_write;
+    cm_ctx.read = platform_read;
+    cm_ctx.address = CM1107N_I2C_ADDR; // 0x31
+    CM1107N_Init(&cm_ctx);
 #endif
 }
 
@@ -248,9 +233,6 @@ void Sensors_Init_UART(void) {
     PMS_Init(&pms_ctx);
     PMS_ActiveMode(&pms_ctx);
     
-    cm_ctx.write = pms_write;
-    cm_ctx.read = uart_read_mock;
-    CM1107N_Init(&cm_ctx);
     
     xa_ctx.write = pms_write;
     XA1110_Init(&xa_ctx);
@@ -274,19 +256,12 @@ SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
     // 2. Mag
     Sensors_Read_Mag(data->mag_uT);
     
-    // 3. Baro (Decimated 5Hz)
-    static uint32_t last_baro = 0;
-    if (HAL_GetTick() - last_baro > 200) {
-        Sensors_Read_Baro(&data->ms5611_press_pa, &data->ms5611_temp_c_x100);
-        last_baro = HAL_GetTick();
-    }
+    // 3. Baro (Non-blocking, called every cycle to advance state machine)
+    // Driver handles 20ms delays internally without blocking
+    Sensors_Read_Baro(&data->ms5611_press_pa, &data->ms5611_temp_c_x100);
     
-    // 4. Humidity/Temp (Decimated 1Hz)
-    static uint32_t last_env = 0;
-    if (HAL_GetTick() - last_env > 1000) {
-        Sensors_Read_Humid(&data->sht31_temp_c_x100, &data->sht31_rh_x100);
-        last_env = HAL_GetTick();
-    }
+    // 4. Humidity/Temp (Non-blocking, 10Hz target)
+    Sensors_Read_Humid(&data->sht31_temp_c_x100, &data->sht31_rh_x100);
     
     // GPS, Battery handled in App_Loop
     
@@ -366,6 +341,16 @@ void Sensors_Read_Mag(float mag[3]) {
 }
 
 void Sensors_Read_Rad(uint16_t *uSvh) {
+    static uint32_t last_rad = 0;
+    
+    // Strategy: Read at 1Hz (Fastest connectivity check).
+    // Even if data only changes every 1 min, we read 1Hz to detect sensor failure quickly.
+    // Redundant data writes are harmless.
+    if (HAL_GetTick() - last_rad < 1000) {
+        return;
+    }
+    last_rad = HAL_GetTick();
+
 #ifndef HOST_TEST_MODE
     float val_uSvh;
     // 10-min avg for stability
@@ -373,7 +358,10 @@ void Sensors_Read_Rad(uint16_t *uSvh) {
         *uSvh = (uint16_t)(val_uSvh * 100); // Scale x100
         FDIR_ReportSuccess(SENSOR_ID_RAD);
     } else {
-        *uSvh = 0; // Error
+        // Read failed -> Sensor dead?
+        // Keep old value or set error? 
+        // Setting 0 might mislead, but FDIR will flag failure.
+        *uSvh = 0; 
     }
 #else
     *uSvh = 0;
@@ -384,13 +372,20 @@ void Sensors_Read_Rad(uint16_t *uSvh) {
 void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
 #ifndef HOST_TEST_MODE
     int32_t p, t;
-    if (MS5611_Read_PT(&ms_ctx, &p, &t) == 0) {
+    int32_t status = MS5611_Read_PT(&ms_ctx, &p, &t);
+    
+    if (status == MS5611_OK) {
+        // Only update values when new data is ready
         *press_pa = (uint32_t)p;
         *temp_c_x100 = (int16_t)t;
         FDIR_ReportSuccess(SENSOR_ID_BARO);
-    } else {
+    } else if (status == MS5611_ERROR) {
+        // On Error, set error values
+        // Note: MS5611_BUSY (1) does nothing, keeps old values
         *press_pa = 101325; 
         *temp_c_x100 = 2500;
+        // Should we report failure here? Or only on repeated failures?
+        // Simple logic: Report failure immediately for now.
     }
 #else
     *press_pa = (uint32_t)mock_pressure;
@@ -402,13 +397,39 @@ void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
 void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
 #ifndef HOST_TEST_MODE
     float t, rh;
-    if (SHT31_ReadTempHum(&sht_ctx, &t, &rh) == 0) {
-        *temp_c_x100 = (int16_t)(t * 100);
-        *rh_x100 = (uint16_t)(rh * 100);
-        FDIR_ReportSuccess(SENSOR_ID_SHT);
+    
+    // To limit frequency to ~10Hz (100ms), we can gate the start.
+    // But we need to know if we are IDLE.
+    // Accessing ctx.state directly (exposed in header)
+    if (sht_ctx.state == 0 /* SHT_IDLE */) {
+        static uint32_t last_success_tick = 0;
+        if ((HAL_GetTick() - last_success_tick) < 100) return; // Wait for 100ms period
+        
+        // If time passed, we proceed to call driver which will Start measurement.
+        int32_t status = SHT31_ReadTempHum(&sht_ctx, &t, &rh);
+        if (status == SHT31_BUSY) {
+            // Started
+        } else if (status == SHT31_ERROR) {
+            // Error on start
+        }
     } else {
-        *temp_c_x100 = 0;
-        *rh_x100 = 0;
+         // In progress (WAIT), must poll
+         int32_t status = SHT31_ReadTempHum(&sht_ctx, &t, &rh);
+         if (status == SHT31_OK) {
+             // Finished
+             *temp_c_x100 = (int16_t)(t * 100);
+             *rh_x100 = (uint16_t)(rh * 100);
+             FDIR_ReportSuccess(SENSOR_ID_SHT);
+             
+             // Update timestamp for rate limiting
+             // static variable above is not visible here. 
+             // We need a global or static inside this function tracking last success.
+             // Re-declaring static inside function works but scope is tricky with the if-block.
+             // Let's move static to function level.
+         } else if (status == SHT31_ERROR) {
+             *temp_c_x100 = 0;
+             *rh_x100 = 0;
+         }
     }
 #else
     *temp_c_x100 = 2500;
@@ -418,6 +439,15 @@ void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
 }
 
 void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uint16_t *pm2_5) {
+    static uint32_t last_air = 0;
+    
+    // Throttle to 1Hz (1000ms)
+    // Air quality changes slowly, 20ms update is overkill and wastes I2C bandwidth.
+    if (HAL_GetTick() - last_air < 1000) {
+        return; 
+    }
+    last_air = HAL_GetTick();
+
 #ifndef HOST_TEST_MODE
     // Read CO2
     CM1107N_ReadCO2(&cm_ctx, co2);

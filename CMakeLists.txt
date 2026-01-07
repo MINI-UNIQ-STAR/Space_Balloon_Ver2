@@ -205,7 +205,7 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     # -Wsuggest-override
     >
     $<$<COMPILE_LANGUAGE:ASM>:-x assembler-with-cpp>
-    $<$<CONFIG:Debug>:-O0 -g3 -ggdb>
+    $<$<CONFIG:Debug>:-Og -g3 -ggdb>
     $<$<CONFIG:Release>:-Oz>
 )
 
@@ -216,7 +216,7 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     ${compiler_OPTS}
     ${linker_OPTS}
     -Wl,-Map=${CMAKE_PROJECT_NAME}.map
-    -u _printf_float # STDIO float formatting support (remove if not used)
+    # -u _printf_float # STDIO float formatting support (remove if not used)
     -specs=nosys.specs
     -Wl,--start-group
     -lc

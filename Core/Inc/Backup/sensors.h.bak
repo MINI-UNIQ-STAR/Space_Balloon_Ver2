@@ -42,6 +42,7 @@ SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data);
 // Individual Read Wrappers (Mock/Real)
 // Downside
 void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]);
+void Sensors_Read_SFLP(float quaternion[4]); // x, y, z, w
 void Sensors_Read_Mag(float mag[3]);
 void Sensors_Read_Rad(uint16_t *uSvh);
 
@@ -56,12 +57,17 @@ void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100);
 void Sensors_Read_BoardTemp(int16_t *temp_c_x100);
 void Sensors_Read_External(int16_t *temp_c_x100);
 
+/* Control */
+void Sensors_SetHeater_SHT31(uint8_t enable);
+
 // GPS
 // Passing pointers to fill telemetry fields directly is easiest, or struct
 void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
                       uint8_t *sats, uint8_t *sats_view,
                       uint8_t *sats_gps, uint8_t *sats_glonass,
-                      uint8_t *sats_galileo, uint8_t *sats_beidou);
+                      uint8_t *sats_galileo, uint8_t *sats_beidou,
+                      uint8_t *utc_hour, uint8_t *utc_min, uint8_t *utc_sec,
+                      uint8_t *utc_day, uint8_t *utc_month, uint16_t *utc_year);
 
 #ifdef __cplusplus
 }

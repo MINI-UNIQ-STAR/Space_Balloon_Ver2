@@ -11,8 +11,8 @@
 void Error_Handler(void);
 
 // Mock GPIO Ports (Pointers)
-#define GPIOB ((void*)0x2)
-#define GPIOC ((void*)0x3)
+// #define GPIOB ((void*)0x2)
+// #define GPIOC ((void*)0x3)
 
 // Mock Pin Labels
 #define PMS_SET_GPIO_Port GPIOB
