@@ -14,10 +14,22 @@
 uint16_t mock_co2 = 400;
 
 // --- ESP-NOW Callback ---
+// --- Timing Configuration ---
+const uint32_t UPDATE_INTERVAL_MS = 2000; // Slow NDIR response
+uint32_t last_update_ms = 0;
+
+// Internal Buffer
+uint16_t current_co2 = 400;
+
+// --- ESP-NOW Callback ---
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   if (len != sizeof(HitlStatePacket)) return;
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
-  mock_co2 = pkt->co2;
+  
+  if (millis() - last_update_ms >= UPDATE_INTERVAL_MS) {
+      current_co2 = pkt->co2;
+      last_update_ms = millis();
+  }
 }
 
 // CM1107N Protocol State
@@ -47,9 +59,9 @@ void onRequest() {
   resp[1] = 0x05; // Length
   resp[2] = 0x01; // Cmd/Type
   
-  // CO2 Data (DF1, DF2)
-  resp[3] = (mock_co2 >> 8) & 0xFF;
-  resp[4] = mock_co2 & 0xFF;
+  // CO2 Data (DF1, DF2) - Use Buffered Value
+  resp[3] = (current_co2 >> 8) & 0xFF;
+  resp[4] = current_co2 & 0xFF;
   
   // DF3, DF4 (Status/Reserved?)
   resp[5] = 0x00; 

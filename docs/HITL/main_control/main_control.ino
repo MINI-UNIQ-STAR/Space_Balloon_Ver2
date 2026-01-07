@@ -41,7 +41,8 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
 
 void setup() {
   Serial.begin(115200);
-  SerialSTM.begin(57600, SERIAL_8N1, STM32_UART3_RX_PIN, STM32_UART3_TX_PIN);
+  // STM32 UART3 is configured for 115200 (Checked in usart.c)
+  SerialSTM.begin(115200, SERIAL_8N1, STM32_UART3_RX_PIN, STM32_UART3_TX_PIN);
 
   Serial.println("HITL Main Control Node Starting...");
 
@@ -72,31 +73,131 @@ void setup() {
 
 void parseSimData(String input) {
   // PC sends "ALL:Time,Lat,Lon,Alt,..." (CSV)
-  // Logic from sensor_emulator.ino adapted here
-  
   if (input.startsWith("ALL:")) {
-     // Quick Parsing ( Simplified for brevity - implement robustly in real usage)
-     // Assume fixed indices for simplicity or use strtok
-     
-     // Example: ALL:0,37.123,127.123,100.5,...
-     // We need to fill 'sim_state' struct
-     
-     // Mocking parsing for now (Since verified parsing was in UART Mock)
-     // Let's assume input drives the values.
-     
-     // Ideally, move the CSV parsing logic here completely.
-     // For this step, I will put specific logic if user asks or just pass-through.
-     // Since 'sensor_emulator' already had the parser, I should copy it here.
-     
-     // Placeholder: Valid Parse
-     sim_state.lat_e7 = 371234567;
-     sim_state.lon_e7 = 1271234567;
-     sim_state.alt_m += 1.0; 
-     sim_state.temp_c = 25.0;
-     sim_state.pressure_pa = 101300;
-     
-     // Broadcast
-     esp_now_send(broadcastAddress, (uint8_t *) &sim_state, sizeof(sim_state));
+     // Expected format: ALL:Timestamp,Status,CO2, ... (Full State)
+     // Parsing omitted for brevity (Mock assumes PC drives state locally or we parse strictly)
+  }
+  else if (input.startsWith("CMD,FAULT,")) {
+    // Format: CMD,FAULT,COMP,TYPE,DURATION
+    // Example: CMD,FAULT,GPS,TIMEOUT,10
+    
+    // Simple Parse
+    int first = input.indexOf(',', 10);
+    int second = input.indexOf(',', first + 1);
+    
+    if (first > 0 && second > 0) {
+       String compStr = input.substring(10, first);
+       String typeStr = input.substring(first + 1, second);
+       
+       uint8_t compId = 0;
+       if (compStr == "GPS") compId = 1;
+       else if (compStr == "IMU") compId = 2;
+       else if (compStr == "BARO") compId = 3;
+       else if (compStr == "ENV") compId = 4;
+       else if (compStr == "CO2") compId = 5;
+       else if (compStr == "RAD") compId = 6;
+       
+       uint8_t typeId = 0;
+       if (typeStr == "TIMEOUT") typeId = 1;
+       else if (typeStr == "FREEZE") typeId = 2;
+       else if (typeStr == "NOISE") typeId = 3;
+       else if (typeStr == "OFFSET") typeId = 4;
+       else if (typeStr == "FAIL") typeId = 5;
+       else if (typeStr == "HIGH") typeId = 6; // Reuse
+       
+       sim_state.fault_comp = compId;
+       sim_state.fault_type = typeId;
+       
+       Serial.printf("[CMD] Fault Injected: Comp=%d Type=%d\n", compId, typeId);
+       
+       // Force immediate broadcast
+       esp_now_send(broadcastAddress, (uint8_t *) &sim_state, sizeof(sim_state));
+    }
+  }
+}
+
+// --- STM32 Telemetry Parser ---
+// Structure from telemetry.h
+typedef struct __attribute__((packed)) {
+    uint8_t magic[2];      /* {0xA5, 0x5A} */
+    uint8_t version;       /* 1 */
+    uint8_t msg_type;      /* 0x01 heartbeat, 0x02 sensor snapshot */
+    uint16_t payload_len;  /* bytes */
+    uint16_t seq;
+    uint32_t timestamp_ms;
+    // Payload follows...
+} TelemHeader;
+
+enum TelemState {
+  WAIT_SYNC1, WAIT_SYNC2, READ_HEADER, READ_PAYLOAD, READ_CRC
+};
+
+TelemState t_state = WAIT_SYNC1;
+uint8_t t_buf[256];
+uint16_t t_idx = 0;
+TelemHeader t_hdr;
+uint16_t t_payload_remain = 0;
+
+void processSerialSTM() {
+  while (SerialSTM.available()) {
+    uint8_t b = SerialSTM.read();
+    
+    switch (t_state) {
+      case WAIT_SYNC1:
+        if (b == 0xA5) t_state = WAIT_SYNC2;
+        break;
+        
+      case WAIT_SYNC2:
+        if (b == 0x5A) {
+          t_state = READ_HEADER;
+          t_idx = 0;
+          // Store magic
+          t_buf[t_idx++] = 0xA5;
+          t_buf[t_idx++] = 0x5A;
+        } else {
+          t_state = WAIT_SYNC1; // Reset
+        }
+        break;
+        
+      case READ_HEADER:
+        t_buf[t_idx++] = b;
+        if (t_idx >= sizeof(TelemHeader)) {
+          memcpy(&t_hdr, t_buf, sizeof(TelemHeader));
+          if (t_hdr.payload_len > 200) { // Safety check
+             t_state = WAIT_SYNC1;
+          } else {
+             t_payload_remain = t_hdr.payload_len;
+             t_state = READ_PAYLOAD;
+          }
+        }
+        break;
+        
+      case READ_PAYLOAD:
+        t_buf[t_idx++] = b;
+        t_payload_remain--;
+        if (t_payload_remain == 0) {
+          t_state = READ_CRC;
+        }
+        break;
+        
+      case READ_CRC:
+        t_buf[t_idx++] = b; // CRC Byte 1
+        if (t_idx >= sizeof(TelemHeader) + t_hdr.payload_len + 2) {
+           // Frame Complete
+           
+           // Output HEX for PC Parser
+           // Format: TELEM_HEX:[HEX_STRING]\n
+           Serial.print("TELEM_HEX:");
+           // Header + Payload + CRC
+           for (int i=0; i < t_idx; i++) {
+             Serial.printf("%02X", t_buf[i]);
+           }
+           Serial.println();
+           
+           t_state = WAIT_SYNC1;
+        }
+        break;
+    }
   }
 }
 
@@ -107,25 +208,19 @@ void loop() {
     parseSimData(line);
   }
   
-  // 2. Handle STM32 Telemetry (Pass through to PC or Log)
-  if (SerialSTM.available()) {
-    // Just bridge to Serial for viewing
-    uint8_t b = SerialSTM.read();
-    // Maybe format it? Or raw dump.
-    // Serial.write(b); 
-    // If it's binary, printing might be messy.
-    // Assuming STM32 sends formatted telemetry or we just hex dump.
-    
-    // For now, minimal feedback
-    // Serial.print((char)b);
-  }
+  // 2. Handle STM32 Telemetry
+  processSerialSTM();
   
-  // Auto-generate test wave if no PC input?
+  // Auto-generate test wave if no PC input
   static uint32_t last_sim = 0;
   if (millis() - last_sim > 100) { // 10Hz
      sim_state.timestamp_ms = millis();
      sim_state.alt_m += 0.1;
      if (sim_state.alt_m > 1000) sim_state.alt_m = 0;
+     
+     // Mock defaults to prevent zeros
+     if (sim_state.pressure_pa == 0) sim_state.pressure_pa = 101325;
+     if (sim_state.temp_c == 0) sim_state.temp_c = 25.0;
      
      esp_now_send(broadcastAddress, (uint8_t *) &sim_state, sizeof(sim_state));
      last_sim = millis();

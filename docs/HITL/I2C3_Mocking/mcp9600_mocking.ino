@@ -14,13 +14,29 @@
 float mock_ext_temp = -50.0; // Stratosphere cold
 float mock_amb_temp = 20.0;  // Internal
 
+// --- Timing Configuration ---
+const uint32_t UPDATE_INTERVAL_MS = 320; // 320ms conversion time
+uint32_t last_update_ms = 0;
+
+// Internal Buffer (Holds last valid sensor reading)
+float current_ext_temp = -50.0;
+float current_amb_temp = 20.0;
+
 // --- ESP-NOW Callback ---
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   if (len != sizeof(HitlStatePacket)) return;
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
-  mock_ext_temp = pkt->ext_temp_c;
-  // Ambient could be board temp
-  mock_amb_temp = pkt->temp_c;
+  
+  // Real Sensor Behavior:
+  // The sensor is doing ADC conversions internally. 
+  // We only update our "internal register" (current_*) from the "physics truth" (pkt)
+  // when the conversion time has passed.
+  
+  if (millis() - last_update_ms >= UPDATE_INTERVAL_MS) {
+      current_ext_temp = pkt->ext_temp_c;
+      current_amb_temp = pkt->temp_c;
+      last_update_ms = millis();
+  }
 }
 
 volatile uint8_t last_reg = 0;
@@ -39,8 +55,9 @@ void onRequest() {
   // 0x02: Cold Junction (Ambient)
   
   float target = 0.0;
-  if (last_reg == 0x00) target = mock_ext_temp;
-  else if (last_reg == 0x02) target = mock_amb_temp;
+  // Use BUFFERED values (not instantaneous pkt values) to simulate delay
+  if (last_reg == 0x00) target = current_ext_temp;
+  else if (last_reg == 0x02) target = current_amb_temp;
   else target = 0.0; // Default
   
   // Format: int16_t value = T / 0.0625

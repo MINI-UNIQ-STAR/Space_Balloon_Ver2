@@ -12,11 +12,24 @@ float mock_temp = 25.0;
 float mock_press = 101300.0; // Pa
 
 // --- ESP-NOW Callback ---
+// --- Timing Configuration ---
+const uint32_t UPDATE_INTERVAL_MS = 20; // Fast sensor P+T
+uint32_t last_update_ms = 0;
+
+// Internal Buffer
+float current_temp = 25.0;
+float current_press = 101300.0;
+
+// --- ESP-NOW Callback ---
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   if (len != sizeof(HitlStatePacket)) return;
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
-  mock_temp = pkt->temp_c;
-  mock_press = pkt->pressure_pa;
+  
+  if (millis() - last_update_ms >= UPDATE_INTERVAL_MS) {
+      current_temp = pkt->temp_c;
+      current_press = pkt->pressure_pa;
+      last_update_ms = millis();
+  }
 }
 
 volatile uint8_t last_cmd = 0;

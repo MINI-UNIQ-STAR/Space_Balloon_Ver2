@@ -12,11 +12,24 @@ float mock_temp = 25.0;
 float mock_hum = 50.0;
 
 // --- ESP-NOW Callback ---
+// --- Timing Configuration ---
+const uint32_t UPDATE_INTERVAL_MS = 20; // Fast sensor
+uint32_t last_update_ms = 0;
+
+// Internal Buffer
+float current_temp = 25.0;
+float current_hum = 50.0;
+
+// --- ESP-NOW Callback ---
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   if (len != sizeof(HitlStatePacket)) return;
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
-  mock_temp = pkt->temp_c;
-  mock_hum = pkt->humidity;
+  
+  if (millis() - last_update_ms >= UPDATE_INTERVAL_MS) {
+      current_temp = pkt->temp_c;
+      current_hum = pkt->humidity;
+      last_update_ms = millis();
+  }
 }
 
 volatile uint8_t last_msb = 0;
@@ -44,11 +57,11 @@ void onReceive(int len) {
 void onRequest() {
   // Return 6 bytes: [TempMSB, TempLSB, CRC, HumMSB, HumLSB, CRC]
   
-  // Convert Values
+  // Convert Values (Buffered)
   // T val = (T + 45) * 65535 / 175
-  uint16_t t_raw = (uint16_t)((mock_temp + 45.0f) * 65535.0f / 175.0f);
+  uint16_t t_raw = (uint16_t)((current_temp + 45.0f) * 65535.0f / 175.0f);
   // H val = H * 65535 / 100
-  uint16_t h_raw = (uint16_t)(mock_hum * 65535.0f / 100.0f);
+  uint16_t h_raw = (uint16_t)(current_hum * 65535.0f / 100.0f);
   
   uint8_t buf[2];
   

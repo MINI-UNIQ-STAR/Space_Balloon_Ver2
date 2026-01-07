@@ -14,9 +14,9 @@
 #define HEATER_BAT_PIN 18 // Connect to STM32 PA6 (TIM3_CH1) / PC6? Check Actuators.c: PA6 is Heater 1
 #define HEATER_BD_PIN  19 // Connect to STM32 PC6 (TIM8_CH1)
 
-// 3. Reset Monitors (Active Low)
-#define RST_XA1110_PIN 25 // PA9 ? Check main.h
-#define RST_PMS_PIN    26 // PB10
+// 3. Reset/Set Monitors
+#define RST_XA1110_PIN 23 // MOVED from 25 to 23 (Digital)
+#define SET_PMS_PIN    26 // PB10 (SET Pin: High=Run, Low=Sleep)
 #define RST_GDK_PIN    27 // PB2
 #define RST_SEN_PIN    14 // PB1
 #define RST_CM_PIN     12 // PB0
@@ -26,21 +26,56 @@
 #define RST_LSM_PIN    34 // PB13
 #define RST_MLX_PIN    35 // PB14
 
+// 4. Battery Voltage DAC
+#define BAT_DAC_PIN    25 // DAC1 (Connected to STM32 ADC)
+
 // OneWire Global Mock Temperatures (Updated via ESP-NOW)
 float mock_temp_1 = 25.0; // Device 1 (Battery)
 float mock_temp_2 = 30.0; // Device 2 (Board)
+
+// --- ESP-NOW Callback ---
+// --- Timing Configuration ---
+const uint32_t UPDATE_INTERVAL_MS = 750; // 12-bit conversion
+uint32_t last_update_ms = 0;
+
+// Internal Buffer
+float current_temp_1 = 25.0;
+float current_temp_2 = 30.0;
 
 // --- ESP-NOW Callback ---
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   if (len != sizeof(HitlStatePacket)) return;
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
   
-  // Update mock environment
-  // DS18B20 usually measures Battery/Board temp.
-  // In simulation, we might map 'temp_c' to Board Temp
-  // and maybe 'temp_c + 5' to Battery Temp?
-  mock_temp_1 = pkt->temp_c;      // Battery
-  mock_temp_2 = pkt->temp_c + 2.0; // Board (offset for variety)
+  if (millis() - last_update_ms >= UPDATE_INTERVAL_MS) {
+      current_temp_1 = pkt->temp_c;      // Battery
+      current_temp_2 = pkt->temp_c + 2.0; // Board
+      last_update_ms = millis();
+  }
+  // DAC Output Logic
+  // Map bat_mv (e.g. 12000 ~ 16800mV for 4S) to DAC (0~3.3V -> 0~255)
+  // STM32 ADC reads voltage divider. 
+  // We assume the hardware has a divider, or the Mock output directly feeds the ADC range.
+  // If Mock outputs 0-3.3V representing 0-18V, we utilize the full range.
+  // Let's assume standard divider logic is on the STM32 side, but here we output a voltage 
+  // proportional to 'bat_mv'.
+  // Example: 16.8V battery -> divider -> 2.4V ADC input
+  // So we mock the "2.4V".
+  // DAC Val = (bat_mv / DIVIDER_RATIO) ...
+  // Simplification: We assume the PC sends the "target DAC voltage in mV" or we calibrate here.
+  // Let's assume bat_mv is actual Battery MV.
+  // We need to know the divider ratio. 
+  // Default SpaceBalloon: 4S LiIon (16.8V max). 
+  // Divider typically 1/6 or similar to fit 3.3V. 
+  // voltage_mv = (raw * 3300.0f / 4096.0f) * 6.0f; (From sensors.c)
+  // So ADC_In = Bat_mV / 6.0
+  
+  uint16_t dac_mv = pkt->bat_mv / 6; 
+  if (dac_mv > 3300) dac_mv = 3300;
+  
+  // DAC 8-bit (0-255 corresponds to 0-3300mV)
+  uint8_t dac_val = map(dac_mv, 0, 3300, 0, 255);
+  dacWrite(BAT_DAC_PIN, dac_val);
 }
 
 // --- OneWire Mock Logic (Enhanced for 2 Devices) ---
@@ -211,7 +246,7 @@ void runOneWireMock() {
             // Start conversion (Mock: do nothing, data is ready)
         }
         else if (func == 0xBE) { // READ SCRATCHPAD
-            float t = (selected_device == 1) ? mock_temp_1 : mock_temp_2;
+            float t = (selected_device == 1) ? current_temp_1 : current_temp_2;
             int16_t raw = (int16_t)(t * 16.0);
             
             writeByte(raw & 0xFF);
@@ -242,15 +277,21 @@ void checkHeaters() {
 void checkResets() {
   // Simple state check
   static uint32_t last_rst[10] = {0};
-  uint8_t pins[] = {RST_XA1110_PIN, RST_PMS_PIN, RST_GDK_PIN, RST_LSM_PIN, RST_MLX_PIN, RST_MS_PIN, RST_SHT_PIN, RST_CM_PIN, RST_MCP_PIN, RST_SEN_PIN};
-  const char* names[] = {"GPS", "PMS", "GDK", "LSM", "MLX", "MS5611", "SHT", "CM1107", "MCP", "SEN"};
+  uint8_t pins[] = {RST_XA1110_PIN, SET_PMS_PIN, RST_GDK_PIN, RST_LSM_PIN, RST_MLX_PIN, RST_MS_PIN, RST_SHT_PIN, RST_CM_PIN, RST_MCP_PIN, RST_SEN_PIN};
+  const char* names[] = {"GPS_RST", "PMS_SET", "GDK_RST", "LSM_RST", "MLX_RST", "MS5611_RST", "SHT_RST", "CM1107_RST", "MCP_RST", "SEN_RST"};
   
   for(int i=0; i<10; i++) {
-    if (digitalRead(pins[i]) == LOW) {
-      if (millis() - last_rst[i] > 1000) { // Throttle logs
-        Serial.printf("RESET DETECTED: %s\n", names[i]);
-        last_rst[i] = millis();
-      }
+    int val = digitalRead(pins[i]);
+    
+    // PMS SET: LOW means Sleep (Inactive/Reset-like behavior)
+    // Others: LOW means Reset
+    
+    if (val == LOW) {
+       if (millis() - last_rst[i] > 1000) { 
+         if (pins[i] == SET_PMS_PIN) Serial.printf("STATUS: PMS SET LOW (SLEEP)\n");
+         else Serial.printf("RESET DETECTED: %s\n", names[i]);
+         last_rst[i] = millis();
+       }
     }
   }
 }
@@ -275,8 +316,11 @@ void setup() {
   pinMode(HEATER_BAT_PIN, INPUT);
   pinMode(HEATER_BD_PIN, INPUT);
   
-  uint8_t rst_pins[] = {RST_XA1110_PIN, RST_PMS_PIN, RST_GDK_PIN, RST_LSM_PIN, RST_MLX_PIN, RST_MS_PIN, RST_SHT_PIN, RST_CM_PIN, RST_MCP_PIN, RST_SEN_PIN};
+  uint8_t rst_pins[] = {RST_XA1110_PIN, SET_PMS_PIN, RST_GDK_PIN, RST_LSM_PIN, RST_MLX_PIN, RST_MS_PIN, RST_SHT_PIN, RST_CM_PIN, RST_MCP_PIN, RST_SEN_PIN};
   for(int i=0; i<10; i++) pinMode(rst_pins[i], INPUT_PULLUP);
+  
+  // DAC Init (No explicit init needed for dacWrite, but good practice)
+  // pinMode(BAT_DAC_PIN, ANALOG) not needed for ESP32 dacWrite
 }
 
 void loop() {

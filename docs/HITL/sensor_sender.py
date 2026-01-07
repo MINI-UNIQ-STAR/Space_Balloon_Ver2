@@ -17,8 +17,93 @@ matplotlib.use('QtAgg')
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+import threading
+import queue
+import binascii
+import struct
+import csv
+import datetime
 
-# Try to import Rust accelerator
+# --- Telemetry Struct Definition ---
+# Must match telemetry.h (Packed, Little Endian '<')
+# Order:
+# 1. System Status
+#   uint32_t uptime_ms; (I)
+#   uint16_t status_flags; (H)
+#   uint16_t co2_ppm; (H)
+# 2. IMU (x1000)
+#   int32_t accel[3]; (3i)
+#   int32_t gyro[3]; (3i)
+# 3. Mag
+#   float mag[3]; (3f)
+# 4. Temp (x100)
+#   int16_t board; (h)
+#   int16_t ext; (h)
+#   int16_t sht; (h)
+# 11. Reserved/Ext
+#   int16_t bat_temp; (h)
+# 5. GPS
+#   int32_t lat; (i)
+#   int32_t lon; (i)
+#   float alt; (f)
+#   uint8_t fix; (B)
+#   uint8_t sats_used; (B)
+#   uint8_t sats_tot; (B)
+#   uint8_t sats_gps; (B)
+#   uint8_t sats_glo; (B)
+#   uint8_t sats_gal; (B)
+#   uint8_t sats_bei; (B)
+#   uint8_t utc[6]; (6B)
+#   uint16_t bat_mv; (H)
+# 6. Air
+#   uint16_t pm1; (H)
+#   uint16_t pm25; (H)
+#   uint16_t pm10; (H)
+#   int16_t ozone; (h)
+# 7. Press/Hum
+#   uint16_t sht_rh; (H)
+#   uint32_t ms5611_p; (I)
+#   int16_t ms5611_t; (h)
+# 8. Rad
+#   uint16_t gdk; (H)
+# 9. Heater
+#   uint8_t h_bat; (B)
+#   uint8_t h_brd; (B)
+# 10. Fusion
+#   float p_alt; (f)
+#   float k_alt; (f)
+#   float k_roll; (f)
+#   float k_pitch; (f)
+
+TELEM_FMT = "<IHH3i3i3fhhhhiifBBBBBBBBBBBHHHHhHIhHBBffff"
+# Check size: 
+# 4+2+2 = 8
+# 12+12 = 24
+# 12
+# 2+2+2+2 = 8
+# 4+4+4 = 12
+# 1+1+1+1+1+1+1 = 7
+# 6 = 6
+# 2 = 2
+# 2+2+2+2 = 8
+# 2+4+2 = 8
+# 2
+# 1+1 = 2
+# 4*4 = 16
+# Total should be around 111 bytes. Calcs:
+# 8+24+12+8+12+7+6+2+8+8+2+2+16 = 115 bytes? Struct calc needed.
+TELEM_Header_FMT = "<2BBBHHIB" # Magic(2), Ver(1), Type(1), Len(2), Seq(2), TS(4), Payload... NO header is parsed separately in logic.
+
+CSV_HEADERS = [
+    "Timestamp", "Seq", "Uptime", "Status", "CO2", 
+    "AccX", "AccY", "AccZ", "GyroX", "GyroY", "GyroZ", "MagX", "MagY", "MagZ",
+    "TempBoard", "TempExt", "TempSHT", "TempBat",
+    "Lat", "Lon", "Alt", "Fix", "Sats",
+    "BatMV", "PM1", "PM2.5", "PM10", "Ozone",
+    "Hum", "Press", "TempBaro", "Rad",
+    "HeatBat", "HeatBrd",
+    "FusAlt", "KalAlt", "Roll", "Pitch"
+]
 try:
     import sim_core
     if hasattr(sim_core, 'RustSimulator'):
@@ -65,12 +150,168 @@ class DarkPalette(QPalette):
         self.setColor(QPalette.Highlight, QColor(ACCENT_COLOR))
         self.setColor(QPalette.HighlightedText, QColor("black"))
 
+
+class TelemetryReceiver(threading.Thread):
+    def __init__(self, ser, filename):
+        super().__init__()
+        self.ser = ser
+        self.filename = filename
+        self.running = True
+        self.daemon = True
+        
+        # Open CSV and write headers
+        with open(self.filename, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(CSV_HEADERS)
+            
+    def run(self):
+        print(f"[TELEM] Logging to {self.filename}")
+        while self.running and self.ser:
+            try:
+                if self.ser == "MOCK":
+                    time.sleep(1) # Nothing to receive in pure mock
+                    continue
+                
+                if self.ser.in_waiting:
+                    line = self.ser.readline().decode('utf-8', errors='replace').strip()
+                    if line.startswith("TELEM_HEX:"):
+                        payload_hex = line.split(":", 1)[1]
+                        self._process_payload(payload_hex)
+                    elif line.startswith("TELEM_RX") or line.startswith("[FEEDBACK]"):
+                         print(line) # Debug print
+            except Exception as e:
+                print(f"[TELEM RX ERR] {e}")
+                time.sleep(0.1)
+
+    def _process_payload(self, hex_str):
+        try:
+            # Hex to Bytes
+            data = binascii.unhexlify(hex_str)
+            # Remove Header (First 12 bytes: Magic(2)+Ver(1)+Msg(1)+Len(2)+Seq(2)+TS(4)) ?
+            ## WAIT: main_control.ino sends `t_buf` which includes Header!
+            ## Struct TelemetryFrame: Magic(2), Ver(1), Msg(1), Len(2), Seq(2), TS(4), Payload...
+            ## Header Header Size = 2+1+1+2+2+4 = 12 bytes.
+            ## We need to unpack Header first to check length or just offset.
+            
+            if len(data) < 110: return # Too short
+            
+            # Unpack Header
+            header_size = struct.calcsize(TELEM_Header_FMT) # 12 bytes
+            header_data = data[:header_size]
+            payload_data = data[header_size:-2] # Exclude Header and CRC(2) at end
+            
+            # Unpack Payload
+            # Note: The TELEM_FMT defined earlier MUST match the payload structure EXACTLY.
+            # Let's try unpacking
+            
+            fields = struct.unpack(TELEM_FMT, payload_data)
+            
+            # Extract important fields for CSV (Use list for easier writing)
+            # Match CSV_HEADERS order
+            
+            # fields index mapping based on TELEM_FMT:
+            # 0:uptime, 1:status, 2:co2 (Status)
+            # 3-5:acc, 6-8:gyro (IMU)
+            # 9-11:mag (Mag)
+            # 12:brd, 13:ext, 14:sht (Temp)
+            # 15:bat_temp (Res)
+            # 16:lat, 17:lon, 18:alt (GPS)
+            # 19:fix, 20:used, 21:tot, ... (GPS Sats)
+            # ...
+            
+            u_ts = datetime.datetime.now().strftime("%H:%M:%S.%f")
+            
+            row = [
+                u_ts, "?" , fields[0], fields[1], fields[2], # TS, Seq(skipped), Uptime, Status, CO2
+                fields[3], fields[4], fields[5], # Acc X Y Z
+                fields[6], fields[7], fields[8], # Gyro
+                fields[9], fields[10], fields[11], # Mag
+                fields[12], fields[13], fields[14], fields[15], # Temps (Brd, Ext, SHT, Bat)
+                fields[16], fields[17], fields[18], # GPS Lat, Lon, Alt
+                fields[19], fields[20], # Fix, Sats Used
+                fields[32], # Bat MV (Index jump due to UTC bytes?)
+                # Wait, unpacking "6B" (UTC) takes 6 items in tuple
+                # Let's count indices carefully.
+                
+                # 0: I (upt)
+                # 1: H (stat)
+                # 2: H (co2)
+                # 3,4,5: 3i (acc)
+                # 6,7,8: 3i (gyro)
+                # 9,10,11: 3f (mag)
+                # 12: h (brd)
+                # 13: h (ext)
+                # 14: h (sht)
+                # 15: h (bat_t)
+                # 16,17,18: 2i f (lat, lon, alt)
+                # 19: B (fix)
+                # 20: B (used)
+                # 21: B (tot)
+                # 22-26: 5B (sats_view)
+                # 27-32: 6B (UTC) -> items 27,28,29,30,31,32
+                # 33: H (bat_mv)
+                # 34: H (pm1)
+                # 35: H (pm25)
+                # 36: H (pm10)
+                # 37: h (ozone)
+                # 38: H (sht_rh)
+                # 39: I (ms5611_p)
+                # 40: h (ms_t)
+                # 41: H (gdk)
+                # 42: B (h_bat)
+                # 43: B (h_brd)
+                # 44: f (p_alt)
+                # 45: f (k_alt)
+                # 46: f (k_roll)
+                # 47: f (k_pitch)
+                
+            ]
+            
+            # Correct Mapping
+            # CSV: BatMV is after Sats
+            bat_mv = fields[33]
+            pm1 = fields[34]; pm25=fields[35]; pm10=fields[36]; ozone=fields[37]
+            hum=fields[38]; press=fields[39]; t_baro=fields[40]
+            rad=fields[41]
+            heat_bat=fields[42]; heat_brd=fields[43]
+            
+            row_full = [
+                u_ts, "SEQ?", fields[0], f"0x{fields[1]:04X}", fields[2],
+                fields[3], fields[4], fields[5],
+                fields[6], fields[7], fields[8],
+                fields[9], fields[10], fields[11],
+                fields[12], fields[13], fields[14], fields[15],
+                fields[16], fields[17], f"{fields[18]:.2f}",
+                fields[19], fields[20],
+                bat_mv, pm1, pm25, pm10, ozone,
+                hum, press, t_baro, rad,
+                heat_bat, heat_brd,
+                f"{fields[44]:.2f}", f"{fields[45]:.2f}", f"{fields[46]:.2f}", f"{fields[47]:.2f}"
+            ]
+            
+            with open(self.filename, 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(row_full)
+                
+             # Optional: Update GUI state directly?
+             # For now, just Log.
+             
+        except Exception as e:
+            print(f"[DECODE ERR] {e}")
+
+    def stop(self):
+        self.running = False
+
+
 class SensorSenderGUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("HITL Simulation Dashboard (PySide6)")
         self.resize(1400, 900)
         self.setPalette(DarkPalette())
+        
+        # Telemetry Receiver
+        self.telem_rx = None
         
         # Matplotlib Dark Theme
         plt.style.use('dark_background')
@@ -295,6 +536,12 @@ class SensorSenderGUI(QMainWindow):
 
     def _toggle_connection(self):
         if self.ser and (self.ser == "MOCK" or self.ser.is_open):
+            # Disconnect
+            if self.telem_rx:
+                self.telem_rx.stop()
+                self.telem_rx.join(timeout=1.0)
+                self.telem_rx = None
+                
             if self.ser != "MOCK": self.ser.close()
             self.ser = None
             self.connect_btn.setText("CONNECT")
@@ -307,12 +554,19 @@ class SensorSenderGUI(QMainWindow):
             self.lbl_status.setText("DISCONNECTED")
             self.lbl_status.setStyleSheet("color: red; font-weight: bold; font-size: 14px;")
         else:
+            # Connect
             port = self.port_combo.currentText()
             try:
                 if "MOCK" in port:
                     self.ser = "MOCK"
                 else:
                     self.ser = serial.Serial(port, 115200, timeout=1)
+                
+                # Start Telemetry Logger
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"telemetry_log_{timestamp}.csv"
+                self.telem_rx = TelemetryReceiver(self.ser, filename)
+                self.telem_rx.start()
                 
                 self.connect_btn.setText("DISCONNECT")
                 self.connect_btn.setStyleSheet("background-color: red; color: white; font-weight: bold;")

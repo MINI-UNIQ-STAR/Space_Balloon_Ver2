@@ -1,64 +1,61 @@
-# HITL 센서 에뮬레이터 & GCS (Sensor Sender)
+# HITL 시뮬레이션 시스템 (5-Board 최적화 구성)
 
-이 디렉토리는 하드웨어-인더-루프(HITL) 시뮬레이션을 위한 **센서 데이터 전송용 GCS 프로그램(`sensor_sender.py`)**과 **ESP32 에뮬레이터 펌웨어(`sensor_emulator.ino`)**를 포함하고 있습니다.
+이 디렉토리는 스페이스발룬 프로젝트의 **HITL (Hardware-In-The-Loop)** 시뮬레이션을 위한 통합 펌웨어와 문서를 포함합니다.
 
-## 🖥️ PC용 GCS 프로그램 (`sensor_sender.py`)
+## 🏗️ 5-Board 시스템 구성 (Dual-I2C 적용)
 
-Python 기반의 Grafana 스타일 GUI 프로그램으로, 가상의 센서 데이터를 생성하여 에뮬레이터(ESP32)로 전송합니다.
+총 5개의 ESP32/LoRa32 보드를 사용하여 STM32의 모든 주변장치를 모사합니다. 각 보드는 ESP-NOW로 PC와 통신하며, Dual I2C 기법을 통해 1개의 보드가 2개의 센서 역할을 수행합니다.
 
-### 1. 주요 기능
-*   **다크 테마 대시보드**: Grafana 스타일의 직관적인 UI.
-*   **실시간 그래프**: 고도, 기압, 가속도(IMU), CO2, 방사선 등 센서 데이터 시각화.
-*   **궤적 지도 (Trajectory Map)**: GPS 비행 경로 실시간 표시.
-*   **3가지 동작 모드**:
-    1.  **General Mode (일반 모드)**: 경상국립대(GNU) 좌표 고정 (기본 연결 테스트용).
-    2.  **Scenario Mode (시나리오 모드)**: `V4630075.json` 비행 데이터를 리플레이 (실제 비행 시뮬레이션).
-    3.  **FDIR Test Mode (고장 주입 모드)**: 정적 데이터에 사용자가 직접 고장(Fault)을 주입하여 테스트.
-*   **고장 주입 (Fault Injection)**: 팝업 메뉴를 통해 GPS Timeout, Baro Freeze 등 에러 상황 발생.
-*   **MOCK 모드**: 하드웨어 없이 GUI 및 시뮬레이션 로직만 테스트 가능.
+### 1. Hub Node (메인 컨트롤)
+*   **보드 권장**: **ESP32-C3** (또는 일반 ESP32)
+*   **역할**: PC 통신, 텔레메트리 중계, ESP-NOW 브로드캐스트.
+*   **펌웨어**: `main_control/main_control.ino`
 
-### 2. 설치 및 실행
+### 2. Mock Node A (I2C1 주요 센서)
+*   **보드 권장**: **LoRa32 #1**
+*   **펌웨어**: `I2C1_Mocking/I2C1_Dual_Mock.ino`
+*   **연결**:
+    *   **I2C Port 0** (`SDA=21`, `SCL=22`) <--> **LSM6DSV16X** (Addr 0x6B) 모사
+    *   **I2C Port 1** (`SDA=13`, `SCL=12`) <--> **MLX90393** (Addr 0x0C) 모사
+    *   *주의: STM32의 I2C1 라인에 두 포트 모두 병렬 연결.*
 
-#### 필요 라이브러리 설치
-```bash
-pip install matplotlib pyserial PySide6
-```
+### 3. Mock Node B (I2C1 방사선 + GPIO)
+*   **보드 권장**: **ESP32 Standard** (GPIO 핀 다수 필요)
+*   **펌웨어**: `I2C1_Mocking/I2C1_GDK_GPIO_Mock.ino`
+*   **연결**:
+    *   **I2C Port 0** (`SDA=21`, `SCL=22`) <--> **GDK101** (Addr 0x18)
+    *   **OneWire**: `GPIO 4` <--> **DS18B20** 모사
+    *   **DAC**: `GPIO 25` <--> **배터리 ADC**
+    *   **PWM In**: `GPIO 18, 19` <--> **히터 제어**
+    *   **Resets**: 각종 리셋 핀 연결.
 
-#### 프로그램 실행
-```bash
-python sensor_sender.py
-```
+### 4. Mock Node C (I2C3 환경 센서)
+*   **보드 권장**: **LoRa32 #2**
+*   **펌웨어**: `I2C3_Mocking/I2C3_Dual_Mock_A.ino`
+*   **연결**:
+    *   **I2C Port 0** (`SDA=21`, `SCL=22`) <--> **MS5611** (Addr 0x77)
+    *   **I2C Port 1** (`SDA=13`, `SCL=12`) <--> **SHT31** (Addr 0x44)
 
-### 3. 사용 방법
-
-1.  **연결 (Connection)**:
-    *   **COM 포트 선택**: 에뮬레이터(ESP32)가 연결된 포트를 선택하고 `CONNECT`를 클릭합니다.
-    *   **MOCK (Test Mode)**: 하드웨어가 없을 경우, 이 옵션을 선택하여 GUI 동작을 확인할 수 있습니다.
-2.  **모드 선택**: `Mode` 드롭다운에서 원하는 시뮬레이션 모드를 선택합니다.
-3.  **시뮬레이션 시작**: `▶ START` 버튼을 누르면 데이터 전송이 시작됩니다.
-4.  **고장 주입 (Fault Injection)**:
-    *   `⚠ FAULT MENU` 버튼을 클릭합니다.
-    *   원하는 고장 유형(예: "GPS TIMEOUT")을 클릭하면 즉시 적용됩니다.
-    *   비행 컴퓨터(Flight Computer)가 해당 고장을 감지하고 FDIR 로직을 수행하는지 확인합니다.
+### 5. Mock Node D (I2C3 공기질 + UART)
+*   **보드 권장**: **LoRa32 #3**
+*   **펌웨어**: `I2C3_Mocking/I2C3_Dual_Mock_B_UART.ino`
+*   **연결**:
+    *   **I2C Port 0** (`SDA=21`, `SCL=22`) <--> **CM1107N** (Addr 0x31)
+    *   **I2C Port 1** (`SDA=32`, `SCL=33`) <--> **MCP9600** (Addr 0x60) (핀 번호 코드 확인 필요)
+    *   **UART1** (`TX=17, RX=16`) <--> **GPS (XA1110)**
+    *   **UART2** (`TX=4, RX=15`) <--> **PMS3003** (핀 번호 코드 확인 필요)
 
 ---
 
-## 📡 ESP32 에뮬레이터 펌웨어 (`sensor_emulator.ino`)
+## ⚡ 배선 주의사항 (Parallel Wiring)
+Dual I2C 모드에서는 하나의 보드에서 나온 두 쌍의 SDA/SCL을 STM32의 같은 버스에 **병렬로** 연결합니다.
+(Open-Drain 방식이므로 전기적으로 안전합니다.)
 
-PC에서 받은 데이터를 파싱하여 UART를 통해 비행 컴퓨터(LoRa32)로 전달하는 브릿지 역할을 합니다.
+## 🚀 사용법
+1.  각 보드에 해당 펌웨어를 업로드합니다.
+2.  PC 앱(`sensor_sender.py`) 실행 후 Hub(C3)와 연결합니다.
+3.  시뮬레이션 시작 시 모든 위성 노드가 동기화되어 동작합니다.
 
-*   **업로드**: ESP32 보드에 이 코드를 업로드합니다.
-*   **배선 (Wiring)**: `wiring.md` 파일을 참조하여 비행 컴퓨터와 연결합니다.
-    *   ESP32(Emulator) -> LoRa32(Flight Computer)
-    *   **GPS TX**: GPIO 17 -> GPIO 34
-    *   **Aux TX**: GPIO 19 -> GPIO 35
-    *   **GND**: 서로 연결 (Common Ground)
-
-## ⚠️ 데이터 포맷
-
-GCS -> 에뮬레이터 -> 비행 컴퓨터로 전송되는 데이터 패킷 형식:
-
-```text
-ALL:<lat>,<lon>,<alt>,<press>,<temp>,<co2>,<rad>,<acc_x>,<acc_y>,<acc_z>
-```
-*   모든 센서 데이터(11종)가 하나의 통합 패킷으로 전송됩니다.
+## 🔎 연결 확인 (Connection Verification)
+*   **Heartbeat LED**: 각 Mock 노드는 Main Control로부터 패킷을 수신할 때마다 **내장 LED (GPIO 2)**를 토글(깜빡임)합니다.
+*   LED가 빠르게 깜빡인다면(10Hz), Main Control과의 무선 연결이 정상적으로 수립된 것입니다.

@@ -35,6 +35,13 @@ typedef struct __attribute__((packed)) {
   int16_t  ozone_ppb;
   float    radiation;
 
+  // Battery
+  uint16_t bat_mv;
+
+  // Fault Injection (Broadcast)
+  uint8_t fault_comp; // 0=None, 1=GPS, 2=IMU, 3=Baro, 4=Env, 5=Co2, 6=Rad
+  uint8_t fault_type; // 0=None, 1=Timeout, 2=Freeze, 3=Noise, 4=Offset, 5=Fail
+
 } HitlStatePacket;
 
 // Command Structure (Optional, for Feedback from Mocks to Main)
