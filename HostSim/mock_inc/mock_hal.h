@@ -14,6 +14,13 @@ typedef enum
   HAL_TIMEOUT  = 0x03U
 } HAL_StatusTypeDef;
 
+// CMSIS Mocks
+#ifndef __STATIC_INLINE
+#define __STATIC_INLINE static inline
+#endif
+
+extern uint32_t SystemCoreClock;
+
 // GPIO State
 typedef enum
 {
@@ -29,6 +36,15 @@ typedef struct
   uint32_t Speed;
   uint32_t Alternate;
 } GPIO_InitTypeDef;
+
+// GPIO Modes
+#define GPIO_MODE_INPUT     0x00000000U
+#define GPIO_MODE_OUTPUT_PP 0x00000001U
+#define GPIO_MODE_OUTPUT_OD 0x00000011U
+#define GPIO_NOPULL         0x00000000U
+#define GPIO_PULLUP         0x00000001U
+#define GPIO_SPEED_FREQ_LOW  0x00000000U
+#define GPIO_SPEED_FREQ_HIGH 0x00000002U
 
 // GPIO Mock
 void HAL_GPIO_WritePin(void* GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState);

@@ -1,5 +1,6 @@
 #include "sensors.h"
 #include "main.h" /* HAL_GetTick */
+#include "bsp.h" /* BSP Layer */
 #include <stdio.h> /* printf */
 #include <string.h> /* memcpy, memset */
 #include <math.h> /* sqrtf, powf, ldexpf */
@@ -84,43 +85,38 @@ static float half_to_float(uint16_t h) {
 }
 
 // --- Platform Functions ---
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Write((I2C_HandleTypeDef*)handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
-    return 0;
+// --- Platform Functions (BSP Adapters) ---
+
+// 1. I2C1 (Downside)
+static int32_t platform_write_i2c1(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
+    return BSP_I2C1_WriteReg((uintptr_t)handle, reg, (uint8_t*)bufp, len);
 }
 
-// Wrapper for MLX (Standard I2C Write)
+static int32_t platform_read_i2c1(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
+    return BSP_I2C1_ReadReg((uintptr_t)handle, reg, bufp, len);
+}
+
+// MLX (I2C1) Specific
 static int32_t mlx_write(void *handle, uint8_t *buf, uint16_t len) {
-    HAL_I2C_Master_Transmit((I2C_HandleTypeDef*)handle, MLX90393_ADDR << 1, buf, len, 1000);
-    return 0;
+    return BSP_I2C1_Write(BSP_MLX90393_ADDR << 1, buf, len);
 }
 
 static int32_t mlx_read(void *handle, uint8_t *buf, uint16_t len) {
-    HAL_I2C_Master_Receive((I2C_HandleTypeDef*)handle, MLX90393_ADDR << 1, buf, len, 1000);
-    return 0;
+    return BSP_I2C1_Read(BSP_MLX90393_ADDR << 1, buf, len);
 }
 
+// 2. I2C3 (Upside)
+static int32_t platform_write_i2c3(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
+    return BSP_I2C3_WriteReg((uintptr_t)handle, reg, (uint8_t*)bufp, len);
+}
+
+static int32_t platform_read_i2c3(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
+    return BSP_I2C3_ReadReg((uintptr_t)handle, reg, bufp, len);
+}
+
+// 3. UART
 static int32_t pms_write(void *handle, uint8_t *buf, uint16_t len) {
-#ifndef UNIT_TEST
-    // HAL_UART_Transmit(handle, buf, len, 100);
-#else
-    char tmp[128];
-    if (len < 128) {
-        memcpy(tmp, buf, len);
-        tmp[len] = 0;
-        // Check if it looks like a PMTK command to print cleanly
-        if (tmp[0] == '$') printf("UART TX: %s", tmp);
-        else printf("UART TX: [Binary %d bytes]\n", len);
-    }
-#endif
-    return 0;
-}
-
-
-
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-    return 0;
+    return BSP_UART_Write(buf, len);
 }
 
 void Sensors_Init(void) {
@@ -160,15 +156,15 @@ void Sensors_Init_I2C1(void) {
     MLX90393_Init(&mlx_ctx);
 
     // GDK101 Init
-    gdk_ctx.write_reg = platform_write;
-    gdk_ctx.read_reg = platform_read;
-    gdk_ctx.address = GDK101_I2C_ADDR; // 0x18
+    gdk_ctx.write_reg = platform_write_i2c1;
+    gdk_ctx.read_reg = platform_read_i2c1;
+    gdk_ctx.handle = (void*)(uintptr_t)BSP_GDK101_ADDR;
     GDK101_Init(&gdk_ctx);
 
     // LSM6DSV16X Init
-    lsm_ctx.write_reg = platform_write;
-    lsm_ctx.read_reg = platform_read;
-    // lsm_ctx.handle = &hi2c1; // In real HW
+    lsm_ctx.write_reg = platform_write_i2c1;
+    lsm_ctx.read_reg = platform_read_i2c1;
+    lsm_ctx.handle = (void*)(uintptr_t)BSP_LSM6DSV16X_ADDR;
     
     uint8_t whoamI = 0;
     lsm6dsv16x_device_id_get(&lsm_ctx, &whoamI);
@@ -196,33 +192,33 @@ void Sensors_Init_I2C1(void) {
 void Sensors_Init_I2C3(void) {
 #ifndef HOST_TEST_MODE
     // SEN0321 Init
-    sen_ctx.write_reg = platform_write; // Re-using platform_write (I2C Mem Write)
-    sen_ctx.read_reg = platform_read;   // Re-using platform_read
-    sen_ctx.address = SEN0321_I2C_ADDR_0; 
+    sen_ctx.write_reg = platform_write_i2c3; 
+    sen_ctx.read_reg = platform_read_i2c3;   
+    sen_ctx.handle = (void*)(uintptr_t)BSP_SEN0321_ADDR; 
     SEN0321_Init(&sen_ctx);
 
     // MCP9600 Init
-    mcp_ctx.write_reg = platform_write;
-    mcp_ctx.read_reg = platform_read; 
-    mcp_ctx.address = MCP9600_I2C_ADDR_DEFAULT; // 0x67
+    mcp_ctx.write_reg = platform_write_i2c3;
+    mcp_ctx.read_reg = platform_read_i2c3; 
+    mcp_ctx.handle = (void*)(uintptr_t)BSP_MCP9600_ADDR;
     MCP9600_Init(&mcp_ctx);
 
     // MS5611 Init
-    ms_ctx.write_reg = platform_write;
-    ms_ctx.read_reg = platform_read;
-    ms_ctx.address = MS5611_I2C_ADDR_HIGH;
+    ms_ctx.write_reg = platform_write_i2c3;
+    ms_ctx.read_reg = platform_read_i2c3;
+    ms_ctx.handle = (void*)(uintptr_t)BSP_MS5611_ADDR;
     MS5611_Init(&ms_ctx);
 
     // SHT31 Init
-    sht_ctx.write_reg = platform_write;
-    sht_ctx.read_reg = platform_read;
-    sht_ctx.address = SHT31_I2C_ADDR_DEFAULT;
+    sht_ctx.write_reg = platform_write_i2c3;
+    sht_ctx.read_reg = platform_read_i2c3;
+    sht_ctx.handle = (void*)(uintptr_t)BSP_SHT31_ADDR;
     SHT31_Init(&sht_ctx);
     
     // CM1107N Init (Moved from UART to I2C3)
-    cm_ctx.write = platform_write;
-    cm_ctx.read = platform_read;
-    cm_ctx.address = CM1107N_I2C_ADDR; // 0x31
+    cm_ctx.write = platform_write_i2c3;
+    cm_ctx.read = platform_read_i2c3;
+    cm_ctx.handle = (void*)(uintptr_t)BSP_CM1107N_ADDR; 
     CM1107N_Init(&cm_ctx);
 #endif
 }
@@ -346,10 +342,10 @@ void Sensors_Read_Rad(uint16_t *uSvh) {
     // Strategy: Read at 1Hz (Fastest connectivity check).
     // Even if data only changes every 1 min, we read 1Hz to detect sensor failure quickly.
     // Redundant data writes are harmless.
-    if (HAL_GetTick() - last_rad < 1000) {
+    if (BSP_GetTick() - last_rad < 1000) {
         return;
     }
-    last_rad = HAL_GetTick();
+    last_rad = BSP_GetTick();
 
 #ifndef HOST_TEST_MODE
     float val_uSvh;
@@ -403,7 +399,7 @@ void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
     // Accessing ctx.state directly (exposed in header)
     if (sht_ctx.state == 0 /* SHT_IDLE */) {
         static uint32_t last_success_tick = 0;
-        if ((HAL_GetTick() - last_success_tick) < 100) return; // Wait for 100ms period
+        if ((BSP_GetTick() - last_success_tick) < 100) return; // Wait for 100ms period
         
         // If time passed, we proceed to call driver which will Start measurement.
         int32_t status = SHT31_ReadTempHum(&sht_ctx, &t, &rh);
@@ -443,10 +439,10 @@ void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uin
     
     // Throttle to 1Hz (1000ms)
     // Air quality changes slowly, 20ms update is overkill and wastes I2C bandwidth.
-    if (HAL_GetTick() - last_air < 1000) {
+    if (BSP_GetTick() - last_air < 1000) {
         return; 
     }
-    last_air = HAL_GetTick();
+    last_air = BSP_GetTick();
 
 #ifndef HOST_TEST_MODE
     // Read CO2
@@ -532,24 +528,12 @@ void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {
 #ifndef HOST_TEST_MODE
     // 1Hz Limit for slow sensors
     static uint32_t last_bat = 0;
-    if (HAL_GetTick() - last_bat > 1000) {
+    if (BSP_GetTick() - last_bat > 1000) {
         
-#ifndef UNIT_TEST
-        // Real Hardware ADC
-        extern ADC_HandleTypeDef hadc1;
-        HAL_ADC_Start(&hadc1);
-        if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-            uint32_t raw = HAL_ADC_GetValue(&hadc1);
-            float voltage_mv = (raw * 3300.0f / 4096.0f) * 6.0f;
-            *mv = (uint16_t)voltage_mv;
-        }
-        HAL_ADC_Stop(&hadc1);
-#else
-        *mv = 15500; // Mock 15.5V (4S Battery)
-#endif
+        *mv = BSP_ADC_Read_Battery_mV();
         
         *temp_c_x100 = DS18B20_ReadTemp_x100(0); // Battery Temp
-        last_bat = HAL_GetTick();
+        last_bat = BSP_GetTick();
     }
 #else
     *mv = 16000;

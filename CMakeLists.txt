@@ -61,6 +61,7 @@ set(sources_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/sensors.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/telemetry.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/xcp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/bsp.c
     # HAL Drivers
     ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c

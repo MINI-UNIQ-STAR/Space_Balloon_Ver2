@@ -35,8 +35,26 @@ set(APP_SOURCES
     ../Core/Src/telemetry.c
     ../Core/Src/fdir.c
     ../Core/Src/xcp.c
-    # Use mock_sensors.c instead of Core/Src/sensors.c to avoid driver dependencies
-    mock_sensors.c
+    ../Core/Src/bsp.c
+    ../Core/Src/sensors.c
+    # Drivers
+    ../Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c
+    ../Core/Drivers/sht31/sht31_driver.c
+    ../Core/Drivers/mlx90393/mlx90393_driver.c
+    ../Core/Drivers/cm1107n/cm1107n_driver.c
+    ../Core/Drivers/ds18b20/ds18b20.c
+    ../Core/Drivers/ds18b20/ds18b20_driver.c
+    ../Core/Drivers/ds18b20/owlink.c
+    ../Core/Drivers/ds18b20/ownet.c
+    ../Core/Drivers/ds18b20/crcutil.c
+    ../Core/Drivers/gdk101/gdk101_driver.c
+    ../Core/Drivers/mcp9600/mcp9600_driver.c
+    ../Core/Drivers/pms3003/pms3003_driver.c
+    ../Core/Drivers/sen0321/sen0321_driver.c
+    ../Core/Drivers/xa1110/xa1110_driver.c
+    ../Core/Drivers/ms5611/ms5611_driver.c
+    ../Core/Drivers/minmea/minmea.c
+    
     mock_hal.c
 )
 

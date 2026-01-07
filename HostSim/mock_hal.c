@@ -5,6 +5,9 @@
 // Error Handler
 void Error_Handler(void) { printf("Error_Handler called\n"); }
 
+// System Clock Mock
+uint32_t SystemCoreClock = 170000000; // 170MHz
+
 // HAL Tick
 static uint32_t mock_tick = 0;
 uint32_t HAL_GetTick(void) { return mock_tick; }

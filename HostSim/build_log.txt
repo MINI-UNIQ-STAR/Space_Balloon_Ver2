@@ -1,0 +1,6 @@
+In file included from ../Core/Drivers/ds18b20/owlink.c:30:
+../Core/Drivers/ds18b20/owhal.h: In function 'OW_DIR_OUT':
+../Core/Drivers/ds18b20/owhal.h:22:5: warning: implicit declaration of function 'HAL_GPIO_Init'; did you mean 'HAL_Init'? [-Wimplicit-function-declaration]
+   22 |     HAL_GPIO_Init(OW_PORT, &GPIO_InitStruct);
+      |     ^~~~~~~~~~~~~
+      |     HAL_Init

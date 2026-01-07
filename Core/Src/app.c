@@ -2,6 +2,7 @@
 #include "fdir.h"
 #include "main.h"  // For HAL_GPIO and pin definitions
 #include "sensors.h" // For SensorID definitions
+#include "bsp.h" // BSP Layer
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
@@ -19,6 +20,9 @@ float heater_battery_cmd = 0.0f;
 float heater_board_cmd = 0.0f;
 
 void App_Init(void) {
+    // 0. Board Init
+    BSP_Init();
+
     // 1. Sensor Init
     Sensors_Init();
 

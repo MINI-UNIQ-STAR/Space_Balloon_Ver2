@@ -1,5 +1,6 @@
 #include "app.h"
 #include "fdir.h"
+#include "bsp.h" // [NEW] BSP Layer
 #include <stdio.h> // For printf if needed
 
 // Global Handles
@@ -15,6 +16,9 @@ float heater_battery_cmd = 0.0f;
 float heater_board_cmd = 0.0f;
 
 void App_Init(void) {
+    // 0. Board Init
+    BSP_Init();
+
     // 1. Sensor Init
     Sensors_Init();
 
