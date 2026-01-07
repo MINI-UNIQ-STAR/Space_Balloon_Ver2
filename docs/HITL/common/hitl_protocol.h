@@ -7,7 +7,6 @@
 #define ESP_NOW_CHANNEL 1
 
 // Data Structure broadcasted by Main Control to all Mocks
-// Packed to avoid padding issues between different ESP32 variants
 typedef struct __attribute__((packed)) {
   // Timestamp
   uint32_t timestamp_ms;
@@ -20,7 +19,8 @@ typedef struct __attribute__((packed)) {
   uint8_t sats;
 
   // Environment
-  float   temp_c;      // SHT31, MS5611, DS18B20
+  float   temp_c;      // SHT31, MS5611, DS18B20 (Internal/Ambient)
+  float   ext_temp_c;  // MCP9600 (Thermocouple)
   float   pressure_pa; // MS5611
   float   humidity;    // SHT31
   

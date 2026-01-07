@@ -30,9 +30,53 @@ void onReceive(int len) {
 
 void onRequest() {
   // 1. PROM Read (0xA0 ~ 0xAE)
+  // 1. PROM Read (0xA0 ~ 0xAE)
   if (last_cmd >= 0xA0 && last_cmd <= 0xAE) {
-     Wire.write(0x12);
-     Wire.write(0x34);
+     // Index 0..7
+     // Cmd 0xA0 -> Index 0
+     // Cmd 0xA2 -> Index 1 ...
+     uint8_t idx = (last_cmd - 0xA0) / 2;
+     
+     // Mock PROM Data (Calibration)
+     // C1=40127, C2=36924, C3=23317, C4=23282, C5=33464, C6=28312
+     // These are example coefficients.
+     // CRC needs to be valid.
+     
+     static uint16_t prom[8] = {
+         0x0000, // C0 (Reserved)
+         40127,  // C1
+         36924,  // C2
+         23317,  // C3
+         23282,  // C4
+         33464,  // C5
+         28312,  // C6
+         0x0000  // C7 (CRC will be inserted)
+     };
+     
+     static bool crc_calculated = false;
+     if (!crc_calculated) {
+         // CRC4 Calculation loop (Same as driver)
+         uint16_t n_rem = 0;
+         prom[7] = 0; // Clear CRC byte
+         
+         for (int cnt = 0; cnt < 16; cnt++) {
+             if (cnt % 2 == 1) n_rem ^= (prom[cnt >> 1] & 0x00FF);
+             else n_rem ^= (prom[cnt >> 1] >> 8);
+             
+             for (int n_bit = 8; n_bit > 0; n_bit--) {
+                 if (n_rem & 0x8000) n_rem = (n_rem << 1) ^ 0x3000;
+                 else n_rem = (n_rem << 1);
+             }
+         }
+         n_rem = (n_rem >> 12) & 0x000F;
+         prom[7] = n_rem; // Insert CRC at LSB 4 bits (or is it? Driver: crc_read = prom[7] & 0x000F)
+         // Wait, driver says: crc_read = prom[7] & 0x000F. So we put it in last 4 bits.
+         crc_calculated = true;
+     }
+     
+     uint16_t val = prom[idx];
+     Wire.write(val >> 8);
+     Wire.write(val & 0xFF);
   }
   // 2. ADC Read (0x00)
   else if (last_cmd == 0x00) {
