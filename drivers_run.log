@@ -1,4 +1,0 @@
-Running test_sensors_init_i2c1... [31mFAIL: Expected 215 but got 0 at C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_drivers\test_main.c:31[0m
-Running test_gps_parsing_mock... [32mPASS[0m
--------------------------
-2 Tests Run, 1 Failed
