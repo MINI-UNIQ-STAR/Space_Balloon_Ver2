@@ -84,71 +84,12 @@ static float half_to_float(uint16_t h) {
 }
 
 // --- Platform Functions ---
-// --- Platform Functions (Sensor Specific Wrappers) ---
-
-// 1. LSM6DSV16X (Addr: LSM6DSV16X_I2C_ADD_H)
-static int32_t lsm_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
+static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
     HAL_I2C_Mem_Write((I2C_HandleTypeDef*)handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
     return 0;
 }
-static int32_t lsm_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-    return 0;
-}
 
-// 2. GDK101 (Addr: GDK101_ADDR << 1)
-static int32_t gdk_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Write((I2C_HandleTypeDef*)handle, GDK101_ADDR << 1, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
-    return 0;
-}
-static int32_t gdk_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, GDK101_ADDR << 1, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-    return 0;
-}
-
-// 3. SEN0321 (Addr: SEN0321_I2C_ADDR_0 which includes shift usually? Check driver header. Assuming 7-bit in define, so shift. define is typically 8-bit in HAL context if named ADDR?) 
-// SEN0321_I2C_ADDR_0 is likely 0x7? << 1. Let's assume the driver header defines it ready for HAL or we shift.
-// Convention check: MLX and GDK above I shifted.
-static int32_t sen_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Write((I2C_HandleTypeDef*)handle, SEN0321_I2C_ADDR_0, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
-    return 0;
-}
-static int32_t sen_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, SEN0321_I2C_ADDR_0, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-    return 0;
-}
-
-// 4. MCP9600
-static int32_t mcp_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Write((I2C_HandleTypeDef*)handle, MCP9600_I2C_ADDR_DEFAULT, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
-    return 0;
-}
-static int32_t mcp_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, MCP9600_I2C_ADDR_DEFAULT, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-    return 0;
-}
-
-// 5. MS5611
-static int32_t ms_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Write((I2C_HandleTypeDef*)handle, MS5611_I2C_ADDR_HIGH, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
-    return 0;
-}
-static int32_t ms_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, MS5611_I2C_ADDR_HIGH, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-    return 0;
-}
-
-// 6. SHT31
-static int32_t sht_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Write((I2C_HandleTypeDef*)handle, SHT31_I2C_ADDR_DEFAULT, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
-    return 0;
-}
-static int32_t sht_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
-    HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, SHT31_I2C_ADDR_DEFAULT, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-    return 0;
-}
-
-// Wrapper for MLX (Standard I2C Write) - Existing
+// Wrapper for MLX (Standard I2C Write)
 static int32_t mlx_write(void *handle, uint8_t *buf, uint16_t len) {
     HAL_I2C_Master_Transmit((I2C_HandleTypeDef*)handle, MLX90393_ADDR << 1, buf, len, 1000);
     return 0;
@@ -160,7 +101,18 @@ static int32_t mlx_read(void *handle, uint8_t *buf, uint16_t len) {
 }
 
 static int32_t pms_write(void *handle, uint8_t *buf, uint16_t len) {
-    HAL_UART_Transmit((UART_HandleTypeDef*)handle, buf, len, 100);
+#ifndef UNIT_TEST
+    // HAL_UART_Transmit(handle, buf, len, 100);
+#else
+    char tmp[128];
+    if (len < 128) {
+        memcpy(tmp, buf, len);
+        tmp[len] = 0;
+        // Check if it looks like a PMTK command to print cleanly
+        if (tmp[0] == '$') printf("UART TX: %s", tmp);
+        else printf("UART TX: [Binary %d bytes]\n", len);
+    }
+#endif
     return 0;
 }
 
@@ -184,6 +136,11 @@ static int32_t uart_read_mock(void *handle, uint8_t *buf, uint16_t len) {
         }
         buf[7] = (uint8_t)((256U - (sum % 256U)) % 256U);
     }
+    return 0;
+}
+
+static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
+    HAL_I2C_Mem_Read((I2C_HandleTypeDef*)handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
     return 0;
 }
 
@@ -217,21 +174,21 @@ void Sensors_Init_1Wire(void) {
 }
 
 void Sensors_Init_I2C1(void) {
-// #ifndef HOST_TEST_MODE
+#ifndef HOST_TEST_MODE
     // MLX90393 Init
     mlx_ctx.write = mlx_write;
     mlx_ctx.read = mlx_read;
     MLX90393_Init(&mlx_ctx);
 
     // GDK101 Init
-    gdk_ctx.write_reg = gdk_write;
-    gdk_ctx.read_reg = gdk_read;
+    gdk_ctx.write_reg = platform_write;
+    gdk_ctx.read_reg = platform_read;
     gdk_ctx.address = GDK101_I2C_ADDR; // 0x18
     GDK101_Init(&gdk_ctx);
 
     // LSM6DSV16X Init
-    lsm_ctx.write_reg = lsm_write;
-    lsm_ctx.read_reg = lsm_read;
+    lsm_ctx.write_reg = platform_write;
+    lsm_ctx.read_reg = platform_read;
     // lsm_ctx.handle = &hi2c1; // In real HW
     
     uint8_t whoamI = 0;
@@ -254,39 +211,39 @@ void Sensors_Init_I2C1(void) {
     // Enable SFLP (Sensor Fusion Low Power) internal Kalman Filter
     lsm6dsv16x_sflp_game_rotation_set(&lsm_ctx, 1);
     lsm6dsv16x_sflp_data_rate_set(&lsm_ctx, LSM6DSV16X_SFLP_120Hz);
-// #endif
+#endif
 }
 
 void Sensors_Init_I2C3(void) {
-// #ifndef HOST_TEST_MODE
+#ifndef HOST_TEST_MODE
     // SEN0321 Init
-    sen_ctx.write_reg = sen_write;
-    sen_ctx.read_reg = sen_read;   
+    sen_ctx.write_reg = platform_write; // Re-using platform_write (I2C Mem Write)
+    sen_ctx.read_reg = platform_read;   // Re-using platform_read
     sen_ctx.address = SEN0321_I2C_ADDR_0; 
     SEN0321_Init(&sen_ctx);
 
     // MCP9600 Init
-    mcp_ctx.write_reg = mcp_write;
-    mcp_ctx.read_reg = mcp_read; 
+    mcp_ctx.write_reg = platform_write;
+    mcp_ctx.read_reg = platform_read; 
     mcp_ctx.address = MCP9600_I2C_ADDR_DEFAULT; // 0x67
     MCP9600_Init(&mcp_ctx);
 
     // MS5611 Init
-    ms_ctx.write_reg = ms_write;
-    ms_ctx.read_reg = ms_read;
+    ms_ctx.write_reg = platform_write;
+    ms_ctx.read_reg = platform_read;
     ms_ctx.address = MS5611_I2C_ADDR_HIGH;
     MS5611_Init(&ms_ctx);
 
     // SHT31 Init
-    sht_ctx.write_reg = sht_write;
-    sht_ctx.read_reg = sht_read;
+    sht_ctx.write_reg = platform_write;
+    sht_ctx.read_reg = platform_read;
     sht_ctx.address = SHT31_I2C_ADDR_DEFAULT;
     SHT31_Init(&sht_ctx);
-// #endif
+#endif
 }
 
 void Sensors_Init_UART(void) {
-// #ifndef HOST_TEST_MODE
+#ifndef HOST_TEST_MODE
     pms_ctx.write = pms_write;
     PMS_Init(&pms_ctx);
     PMS_ActiveMode(&pms_ctx);
@@ -297,7 +254,7 @@ void Sensors_Init_UART(void) {
     
     xa_ctx.write = pms_write;
     XA1110_Init(&xa_ctx);
-// #endif
+#endif
 }
 
 void Sensors_Reset(SensorID_t id) {
