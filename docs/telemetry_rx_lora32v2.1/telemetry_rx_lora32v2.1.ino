@@ -187,12 +187,108 @@ static void resetParser() {
   rxIdx = 0;
   rxNeed = 0;
 }
+#include <time.h>
+#include <sys/time.h>
+
+// Global GPS Time for SD timestamp (default 2026/1/8)
+static uint16_t gpsYear = 2026;
+static uint8_t gpsMonth = 1;
+static uint8_t gpsDay = 8;
+static uint8_t gpsHour = 0;
+static uint8_t gpsMin = 0;
+static uint8_t gpsSec = 0;
+
+// Set ESP32 system time to match the GPS (KST) time
+// This allows the SD library (via VFS) to use the correct timestamp for files
+void syncInternalClock(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec) {
+    struct tm tm;
+    tm.tm_year = year - 1900;
+    tm.tm_mon = month - 1;
+    tm.tm_mday = day;
+    tm.tm_hour = hour;
+    tm.tm_min = min;
+    tm.tm_sec = sec;
+    tm.tm_isdst = 0;
+    
+    time_t t = mktime(&tm);
+    struct timeval now = { .tv_sec = t, .tv_usec = 0 };
+    settimeofday(&now, NULL);
+}
 
 // ===== SD Card Functions =====
+void manageSDSpace() {
+  uint64_t total = SD.totalBytes();
+  uint64_t used = SD.usedBytes();
+  
+  // Safety check
+  if (total == 0) return;
+
+  // Percentage threshold (e.g., 90% full) or fixed bytes (e.g., 50MB free)
+  // Let's use 50MB free as safety margin
+  const uint64_t MIN_FREE_BYTES = 50 * 1024 * 1024;
+  
+  while ((total - used) < MIN_FREE_BYTES) {
+    Serial.printf("[SD] Low Space (Free: %llu MB). Cleaning up...\n", (total - used) / (1024*1024));
+    
+    File root = SD.open("/");
+    if (!root) break;
+
+    String oldestFile = "";
+    int oldestIndex = -1;
+
+    File entry = root.openNextFile();
+    while (entry) {
+      if (!entry.isDirectory()) {
+        String name = entry.name();
+        // Expect format: /telem_N.csv or telem_N.csv
+        int pIndex = name.indexOf("telem_");
+        int sIndex = name.indexOf(".csv");
+        
+        if (pIndex >= 0 && sIndex > pIndex) {
+          String numStr = name.substring(pIndex + 6, sIndex);
+          int num = numStr.toInt();
+          
+          if (oldestIndex == -1 || num < oldestIndex) {
+            oldestIndex = num;
+            oldestFile = name;
+          }
+        }
+      }
+      entry.close();
+      entry = root.openNextFile();
+    }
+    root.close();
+
+    if (oldestIndex != -1) {
+      if (!oldestFile.startsWith("/")) oldestFile = "/" + oldestFile;
+      Serial.printf("[SD] Deleting oldest: %s\n", oldestFile.c_str());
+      SD.remove(oldestFile);
+      
+      // Update usage
+      used = SD.usedBytes();
+    } else {
+      Serial.println("[SD] No valid log files found to delete. cleanup aborted.");
+      break;
+    }
+  }
+}
+
 void createNewLogFile() {
-  // Generate filename with timestamp
-  uint32_t t = millis() / 1000;
-  snprintf(filename, sizeof(filename), "/telem_%lu.csv", t);
+  // SdFile::dateTimeCallback(dateTime) REMOVED - not supported by ESP32 SD lib
+  // Instead, we rely on settimeofday() called when GPS data arrives.
+
+  // Ensure space before creating new file
+  manageSDSpace();
+
+  // Generate unique sequential filename
+  int fileIndex = 0;
+  while (true) {
+    snprintf(filename, sizeof(filename), "/telem_%d.csv", fileIndex);
+    if (!SD.exists(filename)) {
+      break;
+    }
+    fileIndex++;
+  }
   
   logFile = SD.open(filename, FILE_WRITE);
   if (logFile) {
@@ -268,6 +364,31 @@ void writeBufferToSd() {
     uint8_t utc_day = p[76];
     uint8_t utc_month = p[77];
     uint16_t utc_year = u16le(p + 78);
+
+    // Convert to KST (UTC+9)
+    if (utc_year > 2020) {
+      utc_hour += 9;
+      if (utc_hour >= 24) {
+        utc_hour -= 24;
+        utc_day++;
+        
+        uint8_t dim = 31;
+        if (utc_month == 4 || utc_month == 6 || utc_month == 9 || utc_month == 11) dim = 30;
+        else if (utc_month == 2) {
+          if ((utc_year % 4 == 0 && utc_year % 100 != 0) || (utc_year % 400 == 0)) dim = 29;
+          else dim = 28;
+        }
+        
+        if (utc_day > dim) {
+          utc_day = 1;
+          utc_month++;
+          if (utc_month > 12) {
+            utc_month = 1;
+            utc_year++;
+          }
+        }
+      }
+    }
     
     // Battery voltage (offset 80)
     uint16_t bat_mv = u16le(p + 80);
@@ -395,6 +516,74 @@ void processFrame(uint8_t *frame, size_t len) {
   // Keep latest for LoRa (raw binary as-is)
   memcpy(latestFrame, frame, len);
   latestFrameLen = len;
+  
+  // Update Global GPS Time for SD timestamp
+  // GPS fields are at offset 52 (lat) ... 73 (hour)
+  // Check GPS fix (offset 64)
+  const uint8_t gps_fix = frame[64 + 12]; // Offset 12 is payload start, 64 is offset inside payloadStruct
+  
+  // Actually, we can just use the memory directly. 
+  // Frame layout: [Header 12] [Payload...] [CRC 2]
+  // Payload offset = 12
+  // UTC Date/Time offsets in payload:
+  // Hour: 73, Min: 74, Sec: 75, Day: 76, Month: 77, Year: 78 (uint16)
+  
+  const uint8_t *p = &frame[12];
+  uint16_t year = u16le(p + 78);
+  
+  // Basic validation (Year > 2020) guarantees we have some time set
+  if (year > 2020) {
+      // Convert UTC to KST (UTC+9) for SD Timestamp
+      // 1. Get UTC values
+      uint16_t t_year = year;
+      uint8_t t_month = p[77];
+      uint8_t t_day = p[76];
+      uint8_t t_hour = p[73];
+      uint8_t t_min = p[74];
+      uint8_t t_sec = p[75];
+
+      // 2. Add 9 hours
+      t_hour += 9;
+      
+      // 3. Handle rollover
+      if (t_hour >= 24) {
+        t_hour -= 24;
+        t_day++;
+        
+        // Days in month calculation
+        uint8_t daysInMonth = 31;
+        if (t_month == 4 || t_month == 6 || t_month == 9 || t_month == 11) {
+          daysInMonth = 30;
+        } else if (t_month == 2) {
+          // Leap year check
+          if ((t_year % 4 == 0 && t_year % 100 != 0) || (t_year % 400 == 0)) {
+            daysInMonth = 29;
+          } else {
+            daysInMonth = 28;
+          }
+        }
+        
+        if (t_day > daysInMonth) {
+          t_day = 1;
+          t_month++;
+          if (t_month > 12) {
+            t_month = 1;
+            t_year++;
+          }
+        }
+      }
+
+      // 4. Update Globals
+      gpsYear = t_year;
+      gpsMonth = t_month;
+      gpsDay = t_day;
+      gpsHour = t_hour;
+      gpsMin = t_min;
+      gpsSec = t_sec;
+      
+      // 5. Update System Clock for SD File Timestamps
+      syncInternalClock(gpsYear, gpsMonth, gpsDay, gpsHour, gpsMin, gpsSec);
+  }
   
   // Debug output (every 50 frames = 1 second)
   if (rxCount % 50 == 0) {
