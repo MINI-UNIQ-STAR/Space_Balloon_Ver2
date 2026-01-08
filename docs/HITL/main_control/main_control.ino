@@ -107,12 +107,23 @@ void parseSimData(String input) {
      ptr = strtok(NULL, ","); if(ptr) sim_state.lat_e7 = atol(ptr);
      ptr = strtok(NULL, ","); if(ptr) sim_state.lon_e7 = atol(ptr);
      ptr = strtok(NULL, ","); if(ptr) sim_state.alt_m = atof(ptr);
-     
-     // Fix, Sats... (Skip 7 items)
-     for(int i=0; i<7; i++) strtok(NULL, ",");
-     
-     // Time (Skip 6 items)
-     for(int i=0; i<6; i++) strtok(NULL, ",");
+
+     // GPS: Fix, Sats, Sats_view, Multi-GNSS counts
+     ptr = strtok(NULL, ","); if(ptr) sim_state.fix_type = atoi(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.sats = atoi(ptr);
+     ptr = strtok(NULL, ","); // sats_view (skip - calculated from multi-GNSS)
+     ptr = strtok(NULL, ","); if(ptr) sim_state.sats_gps = atoi(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.sats_glonass = atoi(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.sats_galileo = atoi(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.sats_beidou = atoi(ptr);
+
+     // GPS UTC Time
+     ptr = strtok(NULL, ","); if(ptr) sim_state.utc_hour = atoi(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.utc_min = atoi(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.utc_sec = atoi(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.utc_day = atoi(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.utc_month = atoi(ptr);
+     ptr = strtok(NULL, ","); if(ptr) sim_state.utc_year = atoi(ptr);
      
      // BatMV
      ptr = strtok(NULL, ","); if(ptr) sim_state.bat_mv = atoi(ptr);

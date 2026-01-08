@@ -82,24 +82,32 @@ except ImportError:
 #   float k_roll; (f)
 #   float k_pitch; (f)
 
-TELEM_FMT = "<IHH3i3i3fhhhhiifBBBBBBBBBBBHHHHhHIhHBBffff"
-# Check size: 
-# 4+2+2 = 8
-# 12+12 = 24
-# 12
-# 2+2+2+2 = 8
-# 4+4+4 = 12
-# 1+1+1+1+1+1+1 = 7
-# 6 = 6
-# 2 = 2
-# 2+2+2+2 = 8
-# 2+4+2 = 8
-# 2
-# 1+1 = 2
-# 4*4 = 16
-# Total should be around 111 bytes. Calcs:
-# 8+24+12+8+12+7+6+2+8+8+2+2+16 = 115 bytes? Struct calc needed.
-TELEM_Header_FMT = "<2BBBHHIB" # Magic(2), Ver(1), Type(1), Len(2), Seq(2), TS(4), Payload... NO header is parsed separately in logic.
+
+TELEM_FMT = "<IHH3i3i3fhhhhiifBBBBBBB5BHHHHHhHIhHBBffff"
+# Size: 116 bytes (verified with struct.calcsize)
+# Layout matches Core/Inc/telemetry.h exactly:
+#   I(4): uptime_ms
+#   HH(4): status_flags, co2_ppm
+#   3i(12): accel[3]
+#   3i(12): gyro[3]
+#   3f(12): mag[3]
+#   hhhh(8): temps (board, ext, sht, bat)
+#   ii(8): lat, lon
+#   f(4): alt
+#   BBBBBBB(7): fix, sats_used, sats_view_total, sats_gps/gl/ga/bd
+#   5B(5): utc_hour, _min, _sec, _day, _month
+#   H(2): utc_year
+#   H(2): bat_mv
+#   HHHH(8): pm1, pm25, pm10, ozone(h)
+#   H(2): sht31_rh
+#   I(4): ms5611_press
+#   h(2): ms5611_temp
+#   H(2): gdk101
+#   BB(2): heater_bat, heater_board
+#   ffff(16): press_alt, kf_alt, kf_roll, kf_pitch
+# Total: 4+4+12+12+12+8+8+4+7+5+2+2+8+2+4+2+2+2+16 = 116 bytes
+
+TELEM_Header_FMT = "<2BBBHHIB" 
 
 CSV_HEADERS = [
     "Timestamp", "Seq", "Uptime", "Status", "CO2", 
@@ -152,7 +160,7 @@ class DarkPalette(QPalette):
         self.setColor(QPalette.Text, QColor(FG_COLOR))
         self.setColor(QPalette.Button, QColor(PANE_BG))
         self.setColor(QPalette.ButtonText, QColor(FG_COLOR))
-        self.setColor(QPalette.BrightText, QColor("red"))
+        self.setColor(QPalette.BrightText, QColor(ACCENT_COLOR))
         self.setColor(QPalette.Link, QColor(ACCENT_COLOR))
         self.setColor(QPalette.Highlight, QColor(ACCENT_COLOR))
         self.setColor(QPalette.HighlightedText, QColor("black"))
@@ -194,93 +202,86 @@ class TelemetryReceiver(threading.Thread):
         try:
             # Hex to Bytes
             data = binascii.unhexlify(hex_str)
-            # Remove Header (First 12 bytes: Magic(2)+Ver(1)+Msg(1)+Len(2)+Seq(2)+TS(4)) ?
-            ## WAIT: main_control.ino sends `t_buf` which includes Header!
-            ## Struct TelemetryFrame: Magic(2), Ver(1), Msg(1), Len(2), Seq(2), TS(4), Payload...
-            ## Header Header Size = 2+1+1+2+2+4 = 12 bytes.
-            ## We need to unpack Header first to check length or just offset.
             
-            if len(data) < 110: return # Too short
+            if len(data) < 116: return # Min size check (Payload 116 + CRC 2? No, payload only here?)
+            # Actually data includes Header(12) + Payload(116) + CRC(2) = 130 bytes usually?
+            # But binascii.unhexlify comes from "TELEM_HEX:..." which is printed in main_control.ino
+            # loop prints: Header + Payload + CRC.
             
-            # Unpack Header
             header_size = struct.calcsize(TELEM_Header_FMT) # 12 bytes
+            if len(data) < header_size: return
+
             header_data = data[:header_size]
-            payload_data = data[header_size:-2] # Exclude Header and CRC(2) at end
+            payload_data = data[header_size:-2] # Exclude Header and CRC(2)
             
             # Unpack Payload
-            # Note: The TELEM_FMT defined earlier MUST match the payload structure EXACTLY.
-            # Let's try unpacking
-            
             fields = struct.unpack(TELEM_FMT, payload_data)
             
-            # Extract important fields for CSV (Use list for easier writing)
-            # Match CSV_HEADERS order
-            
-            # fields index mapping based on TELEM_FMT:
-            # 0:uptime, 1:status, 2:co2 (Status)
-            # 3-5:acc, 6-8:gyro (IMU)
-            # 9-11:mag (Mag)
-            # 12:brd, 13:ext, 14:sht (Temp)
-            # 15:bat_temp (Res)
-            # 16:lat, 17:lon, 18:alt (GPS)
-            # 19:fix, 20:used, 21:tot, ... (GPS Sats)
-            # ...
+            # Extract fields
+            # 19 items prefix (0-18) matches perfectly.
             
             u_ts = datetime.datetime.now().strftime("%H:%M:%S.%f")
             
+            # Note on Indices:
+            # 0: uptime
+            # 1: status
+            # 2: co2
+            # 3-5: acc
+            # 6-8: gyro
+            # 9-11: mag
+            # 12: brd_temp
+            # 13: ext_temp
+            # 14: sht_temp
+            # 15: bat_temp
+            # 16: lat
+            # 17: lon
+            # 18: alt
+            # 19: fix
+            # 20: sats_used
+            # 21: sats_tot
+            # 22: sats_gps
+            # 23: sats_glo
+            # 24: sats_gal
+            # 25: sats_bei
+            # 26-30: UTC (5 bytes: H, M, S, D, Mo)
+            # 31: UTC Year (H)
+            # 32: BatMV (H)
+            # 33: PM1 (H)
+            # 34: PM25 (H)
+            # 35: PM10 (H)
+            # 36: Ozone (h)
+            # 37: SHT_RH (H)
+            # 38: MS_P (I)
+            # 39: MS_T (h)
+            # 40: GDK (H)
+            # 41: Heat_Bat (B)
+            # 42: Heat_Brd (B)
+            # 43: P_Alt (f)
+            # 44: K_Alt (f)
+            # 45: K_Roll (f)
+            # 46: K_Pitch (f)
+
             row = [
-                u_ts, "?" , fields[0], fields[1], fields[2], # TS, Seq(skipped), Uptime, Status, CO2
-                fields[3], fields[4], fields[5], # Acc X Y Z
+                u_ts, "?" , fields[0], fields[1], fields[2], # TS, Seq, Uptime, Stat, CO2
+                fields[3], fields[4], fields[5], # Acc
                 fields[6], fields[7], fields[8], # Gyro
                 fields[9], fields[10], fields[11], # Mag
-                fields[12], fields[13], fields[14], fields[15], # Temps (Brd, Ext, SHT, Bat)
-                fields[16], fields[17], fields[18], # GPS Lat, Lon, Alt
-                fields[19], fields[20], # Fix, Sats Used
-                fields[32], # Bat MV (Index jump due to UTC bytes?)
-                # Wait, unpacking "6B" (UTC) takes 6 items in tuple
-                # Let's count indices carefully.
-                
-                # 0: I (upt)
-                # 1: H (stat)
-                # 2: H (co2)
-                # 3,4,5: 3i (acc)
-                # 6,7,8: 3i (gyro)
-                # 9,10,11: 3f (mag)
-                # 12: h (brd)
-                # 13: h (ext)
-                # 14: h (sht)
-                # 15: h (bat_t)
-                # 16,17,18: 2i f (lat, lon, alt)
-                # 19: B (fix)
-                # 20: B (used)
-                # 21: B (tot)
-                # 22-26: 5B (sats_view)
-                # 27-32: 6B (UTC) -> items 27,28,29,30,31,32
-                # 33: H (bat_mv)
-                # 34: H (pm1)
-                # 35: H (pm25)
-                # 36: H (pm10)
-                # 37: h (ozone)
-                # 38: H (sht_rh)
-                # 39: I (ms5611_p)
-                # 40: h (ms_t)
-                # 41: H (gdk)
-                # 42: B (h_bat)
-                # 43: B (h_brd)
-                # 44: f (p_alt)
-                # 45: f (k_alt)
-                # 46: f (k_roll)
-                # 47: f (k_pitch)
-                
+                fields[12], fields[13], fields[14], fields[15], # Temps
+                fields[16], fields[17], f"{fields[18]:.2f}", # Location
+                fields[19], fields[20], # Fix, Sats
+                fields[32], # BatMV
+                fields[33], fields[34], fields[35], fields[36], # Air (PM1, PM25, PM10, Oz)
+                fields[37], fields[38], fields[39], fields[40], # Env (RH, Press, T_Baro, Rad)
+                fields[41], fields[42], # Heaters
+                f"{fields[43]:.2f}", f"{fields[44]:.2f}", f"{fields[45]:.2f}", f"{fields[46]:.2f}" # Fusion
             ]
             
-            # Correct Mapping
-            # CSV: BatMV is after Sats
-            bat_mv = fields[33]
-            pm1 = fields[34]; pm25=fields[35]; pm10=fields[36]; ozone=fields[37]
-            hum=fields[38]; press=fields[39]; t_baro=fields[40]
-            rad=fields[41]
-            heat_bat=fields[42]; heat_brd=fields[43]
+            # Explicit Variables (for GUI updates if needed)
+            bat_mv = fields[32]
+            pm1=fields[33]; pm25=fields[34]; pm10=fields[35]; ozone=fields[36]
+            hum=fields[37]; press=fields[38]; t_baro=fields[39]
+            rad=fields[40]
+            heat_bat=fields[41]; heat_brd=fields[42]
             
             row_full = [
                 u_ts, "SEQ?", fields[0], f"0x{fields[1]:04X}", fields[2],

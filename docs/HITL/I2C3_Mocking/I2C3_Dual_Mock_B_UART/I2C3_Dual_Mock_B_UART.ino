@@ -33,7 +33,13 @@
 // Mock State
 float co2 = 400;
 float mcp_temp = 25.0;
-float lat = 35.0, lon_val = 127.0, alt = 100.0;
+int32_t lat_e7 = 350000000, lon_e7 = 1270000000;
+float alt = 100.0;
+uint8_t fix_type = 1, sats = 8;
+uint8_t sats_gps = 5, sats_glonass = 2, sats_galileo = 1, sats_beidou = 0;
+uint8_t utc_hour = 12, utc_min = 0, utc_sec = 0;
+uint8_t utc_day = 1, utc_month = 1;
+uint16_t utc_year = 2026;
 float pm25 = 10;
 
 // --- ESP-NOW Handler ---
@@ -42,9 +48,21 @@ void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData, in
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
   co2 = pkt->co2;
   mcp_temp = pkt->temp_c; // using ambient for TC
-  lat = pkt->lat_e7 / 10000000.0;
-  lon_val = pkt->lon_e7 / 10000000.0;
+  lat_e7 = pkt->lat_e7;
+  lon_e7 = pkt->lon_e7;
   alt = pkt->alt_m;
+  fix_type = pkt->fix_type;
+  sats = pkt->sats;
+  sats_gps = pkt->sats_gps;
+  sats_glonass = pkt->sats_glonass;
+  sats_galileo = pkt->sats_galileo;
+  sats_beidou = pkt->sats_beidou;
+  utc_hour = pkt->utc_hour;
+  utc_min = pkt->utc_min;
+  utc_sec = pkt->utc_sec;
+  utc_day = pkt->utc_day;
+  utc_month = pkt->utc_month;
+  utc_year = pkt->utc_year;
   pm25 = pkt->pm2_5;
 
   // LED Heartbeat
@@ -82,12 +100,83 @@ void onRequest1() {
 }
 
 // --- UART Logic ---
+String calculateNMEAChecksum(String content) {
+  int sum = 0;
+  for (int i = 0; i < content.length(); i++) {
+    sum ^= content.charAt(i);
+  }
+  String hex = String(sum, HEX);
+  hex.toUpperCase();
+  if (hex.length() < 2) hex = "0" + hex;
+  return hex;
+}
+
+void sendNMEASentence(String talker, String content) {
+  String chk = calculateNMEAChecksum(content);
+  GPS_SERIAL.print("$");
+  GPS_SERIAL.print(talker);
+  GPS_SERIAL.print(content);
+  GPS_SERIAL.print("*");
+  GPS_SERIAL.println(chk);
+}
+
+void sendGSV(const char* talker, uint8_t total_sats) {
+  String gsv = "GSV,1,1,";
+  gsv += String(total_sats);
+  gsv += ",,,,,,,,,,,,,,,,";
+  sendNMEASentence(String(talker), gsv);
+}
+
 void runGPSMock() {
   static uint32_t last_gps = 0;
   if(millis() - last_gps > 1000) {
-    // Generate NMEA GPGGA
-    // Simply print generic
-    GPS_SERIAL.println("$GPGGA,120000.00,3500.0000,N,12700.0000,E,1,10,1.0,100.0,M,0.0,M,,*NN");
+    // Convert coordinates to NMEA format
+    double lat_deg = lat_e7 / 10000000.0;
+    int lat_d = (int)abs(lat_deg);
+    double lat_m = (abs(lat_deg) - lat_d) * 60.0;
+    char lat_str[15];
+    sprintf(lat_str, "%02d%07.4f", lat_d, lat_m);
+    char lat_dir = (lat_e7 >= 0) ? 'N' : 'S';
+
+    double lon_deg = lon_e7 / 10000000.0;
+    int lon_d = (int)abs(lon_deg);
+    double lon_m = (abs(lon_deg) - lon_d) * 60.0;
+    char lon_str[15];
+    sprintf(lon_str, "%03d%07.4f", lon_d, lon_m);
+    char lon_dir = (lon_e7 >= 0) ? 'E' : 'W';
+
+    // Format UTC time
+    char time_str[12];
+    sprintf(time_str, "%02d%02d%02d.00", utc_hour, utc_min, utc_sec);
+
+    char date_str[8];
+    int year_2digit = utc_year % 100;
+    sprintf(date_str, "%02d%02d%02d", utc_day, utc_month, year_2digit);
+
+    // Send RMC
+    String rmc = "RMC,";
+    rmc += String(time_str) + ",A,";
+    rmc += String(lat_str) + "," + lat_dir + ",";
+    rmc += String(lon_str) + "," + lon_dir + ",";
+    rmc += "0.0,0.0,";
+    rmc += String(date_str) + ",,,A";
+    sendNMEASentence("GP", rmc);
+
+    // Send GGA
+    String gga = "GGA,";
+    gga += String(time_str) + ",";
+    gga += String(lat_str) + "," + lat_dir + ",";
+    gga += String(lon_str) + "," + lon_dir + ",";
+    gga += String(fix_type) + "," + String(sats) + ",1.0,";
+    gga += String(alt, 1) + ",M,0.0,M,,";
+    sendNMEASentence("GP", gga);
+
+    // Send GSV for each GNSS
+    if (sats_gps > 0) sendGSV("GP", sats_gps);
+    if (sats_glonass > 0) sendGSV("GL", sats_glonass);
+    if (sats_galileo > 0) sendGSV("GA", sats_galileo);
+    if (sats_beidou > 0) sendGSV("GB", sats_beidou);
+
     last_gps = millis();
   }
 }
