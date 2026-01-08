@@ -526,42 +526,6 @@ typedef struct __attribute__((packed)) {
 - **컴파일러**: arm-none-eabi-gcc
 - **링커 스크립트**: STM32G431CBUx_FLASH.ld
 
-### 컴파일 플래그
-```ini
-[env:genericSTM32G431CB]
-platform = ststm32
-board = genericSTM32G431CB
-framework = stm32cube
-extra_scripts = pre:platformio_build.py
-
-build_unflags = -mfpu=fpv5-sp-d16
-
-build_flags =
-    -DBAT_DIVIDER_NUM=2
-    -DBAT_DIVIDER_DEN=1
-    -DUSE_HAL_DRIVER
-    -DSTM32G431xx
-    -DSTM32_THREAD_SAFE_STRATEGY=4
-    -IMiddlewares/Third_Party/FreeRTOS/Source/include
-    -IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
-    -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
-```
-
-### FPU 설정
-```python
-# platformio_build.py
-env.Append(
-    CCFLAGS=[
-        "-mfpu=fpv4-sp-d16",
-        "-mfloat-abi=hard"
-    ],
-    LINKFLAGS=[
-        "-mfpu=fpv4-sp-d16",
-        "-mfloat-abi=hard"
-    ]
-)
-```
-
 ### 디렉토리 구조
 ```
 stm32_spaceballoon/
