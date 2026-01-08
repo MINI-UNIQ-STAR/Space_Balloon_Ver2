@@ -673,9 +673,6 @@ void dwt_delay_us(uint32_t us);
 - **구현**: `services/swd_debug_probe.c`
 - **주의**: 비행 시 비활성화 (기본 환경에서는 비활성)
 
-### UART4 디버그 로그
-- **용도**: 실시간 디버그 메시지 출력
-- **구현**: `services/uart4_debug_log.c`
 
 ### 건강 상태 플래그
 ```c
