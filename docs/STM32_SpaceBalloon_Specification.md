@@ -596,27 +596,6 @@ stm32_spaceballoon/
 └── Makefile                         # GNU Make 지원
 ```
 
-### 빌드 명령
-```bash
-# PlatformIO 빌드
-pio run
-
-# 디버그 환경 빌드
-pio run -e genericSTM32G431CB_debug
-
-# 업로드
-pio run -t upload
-
-# 클린
-pio run -t clean
-```
-
-### 메모리 사용량 (빌드 결과)
-```
-RAM:   [===       ]  27.3% (사용: 8940 bytes, 전체: 32768 bytes)
-Flash: [====      ]  40.0% (사용: 52440 bytes, 전체: 131072 bytes)
-```
-
 ---
 
 ## 소프트웨어 아키텍처
