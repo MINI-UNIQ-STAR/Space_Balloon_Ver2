@@ -32,7 +32,7 @@
 #define LORA_IRQ  26
 
 // LoRa frequency (Korea: 920.9 MHz)
-#define LORA_FREQ 920.9E6
+#define LORA_FREQ 915E6
 
 // ===== Timing Configuration =====
 #define SD_WRITE_INTERVAL_MS   1000   // 1 second
@@ -399,7 +399,7 @@ void setup() {
   LoRa.setPins(LORA_CS, LORA_RST, LORA_IRQ);
   
   if (LoRa.begin(LORA_FREQ)) {
-    LoRa.setSpreadingFactor(9);
+    LoRa.setSpreadingFactor(11);
     LoRa.setSignalBandwidth(125E3);
     LoRa.setCodingRate4(5);
     Serial.printf("[LoRa] Initialized at %.1f MHz\n", LORA_FREQ / 1E6);

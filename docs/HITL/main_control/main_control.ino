@@ -21,11 +21,11 @@ HitlStatePacket sim_state;
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 esp_now_peer_info_t peerInfo;
 
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+void OnDataSent(const wifi_tx_info_t *info, esp_now_send_status_t status) {
   // Debug
 }
 
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len) {
   // Handle Feedback from Mocks (Heaters, Resets) if implemented
   if (len == sizeof(HitlFeedbackPacket)) {
     HitlFeedbackPacket *fb = (HitlFeedbackPacket*)incomingData;

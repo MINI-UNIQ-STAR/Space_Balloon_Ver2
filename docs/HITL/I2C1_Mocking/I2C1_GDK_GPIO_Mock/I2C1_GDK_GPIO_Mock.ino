@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <esp_now.h>
 #include <WiFi.h>
-#include "../common/hitl_protocol.h"
+#include "hitl_protocol.h"
 
 // --- Configuration: Node B (ESP32 Standard) ---
 // I2C Port 0 (Wire) -> GDK101
@@ -42,7 +42,7 @@ float mock_bat = 16000.0; // mV
 float t1 = 25.0, t2 = 30.0; // OneWire Temps
 
 // --- ESP-NOW Handler ---
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len) {
   if (len != sizeof(HitlStatePacket)) return;
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
   gdk_rad = pkt->radiation;

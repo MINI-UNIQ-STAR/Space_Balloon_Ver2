@@ -43,7 +43,7 @@ float current_temp_1 = 25.0;
 float current_temp_2 = 30.0;
 
 // --- ESP-NOW Callback ---
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len) {
   if (len != sizeof(HitlStatePacket)) return;
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
   

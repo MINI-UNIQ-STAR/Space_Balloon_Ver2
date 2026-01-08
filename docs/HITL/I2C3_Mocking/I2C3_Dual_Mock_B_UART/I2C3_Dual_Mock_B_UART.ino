@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <esp_now.h>
 #include <WiFi.h>
-#include "../common/hitl_protocol.h"
+#include "hitl_protocol.h"
 
 // --- Configuration: Node D (LoRa32 #3 - Spare) ---
 // I2C Port 0 (Wire) -> CM1107N
@@ -37,7 +37,7 @@ float lat = 35.0, lon_val = 127.0, alt = 100.0;
 float pm25 = 10;
 
 // --- ESP-NOW Handler ---
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+void OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *incomingData, int len) {
   if (len != sizeof(HitlStatePacket)) return;
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
   co2 = pkt->co2;
