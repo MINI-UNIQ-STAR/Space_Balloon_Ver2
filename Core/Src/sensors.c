@@ -293,17 +293,25 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
 #ifndef HOST_TEST_MODE
     int16_t data_raw[3];
     uint8_t idx;
+    int32_t ret_xl, ret_gy;
     
-    /* Read Accel */
-    lsm6dsv16x_acceleration_raw_get(&lsm_ctx, data_raw);
+    /* Read Accel with explicit error check */
+    ret_xl = lsm6dsv16x_acceleration_raw_get(&lsm_ctx, data_raw);
+    if (ret_xl != 0) {
+        /* I2C error - don't update values, FDIR will detect timeout */
+        return;
+    }
     /* Convert to m/s^2 * 1000 */
     for (idx = 0U; idx < 3U; idx++) {
         float mg = lsm6dsv16x_from_fs2_to_mg(data_raw[idx]);
         accel[idx] = (int32_t)(mg * 9.8f); 
     }
     
-    /* Read Gyro */
-    lsm6dsv16x_angular_rate_raw_get(&lsm_ctx, data_raw);
+    /* Read Gyro with explicit error check */
+    ret_gy = lsm6dsv16x_angular_rate_raw_get(&lsm_ctx, data_raw);
+    if (ret_gy != 0) {
+        return;
+    }
     for (idx = 0U; idx < 3U; idx++) {
          float mdps = lsm6dsv16x_from_fs2000_to_mdps(data_raw[idx]);
          /* rad/s * 1000. 1 mdps = 0.00001745 rad/s.
@@ -311,10 +319,7 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
          gyro[idx] = (int32_t)(mdps * 0.01745f);
     }
     
-    /* Report Success if we got here (drivers usually return 0 on success, ignoring for now as previous code did, 
-       but strictly we should check. Assuming HAL I2C didn't timeout hard within the driver calls above) */
-    // Ideally check return values:
-    // if (ret_xl == 0 && ret_gy == 0)
+    /* Only report success if both reads succeeded */
     FDIR_ReportSuccess(SENSOR_ID_IMU);
 #else
     accel[0] = 0; accel[1] = 0; accel[2] = 9810;
@@ -325,11 +330,19 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
 
 void Sensors_Read_Mag(float mag[3]) {
 #ifndef HOST_TEST_MODE
-    // Driver `StartMeasurement` does SM.
-    MLX90393_StartMeasurement(&mlx_ctx);
-    // Delay needed? Mock instant.
-    MLX90393_ReadMeasurement(&mlx_ctx, &mag[0], &mag[1], &mag[2]);
-    FDIR_ReportSuccess(SENSOR_ID_MAG);
+    int32_t ret;
+    
+    /* Start measurement with explicit error check */
+    ret = MLX90393_StartMeasurement(&mlx_ctx);
+    if (ret != 0) {
+        return;
+    }
+    
+    /* Read measurement with explicit error check */
+    ret = MLX90393_ReadMeasurement(&mlx_ctx, &mag[0], &mag[1], &mag[2]);
+    if (ret == 0) {
+        FDIR_ReportSuccess(SENSOR_ID_MAG);
+    }
 #else
     mag[0] = 0.0f; mag[1] = 0.0f; mag[2] = 0.0f;
     FDIR_ReportSuccess(SENSOR_ID_MAG);
@@ -506,11 +519,11 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     *fix = xa_ctx.data.fix_type;
     *sats = xa_ctx.data.sats_used;
     *sats_view = xa_ctx.data.sats_view_total;
-    /* Parsing per-system sats logic not implemented in driver wrapper yet, mocking: */
-    *sats_gps = *sats;
-    *sats_glonass = 0U;
-    *sats_galileo = 0U;
-    *sats_beidou = 0U;
+    /* Per-GNSS satellite counts from GSV parsing */
+    *sats_gps = xa_ctx.data.sats_gps;
+    *sats_glonass = xa_ctx.data.sats_glonass;
+    *sats_galileo = xa_ctx.data.sats_galileo;
+    *sats_beidou = xa_ctx.data.sats_beidou;
     
     /* UTC Time from GPS */
     *utc_hour = xa_ctx.data.utc_hour;

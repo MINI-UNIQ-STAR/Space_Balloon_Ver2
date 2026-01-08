@@ -83,10 +83,29 @@ bool XA1110_ParseSentence(xa1110_ctx_t *ctx, char *sentence) {
              }
         } break;
         
-        // GSV for Sat Counts... complicated logic, skipping for now as not minimal requirement.
-        // We can parse GSV to count Total Sats and Per-System count by Talker ID.
-        // XA1110 uses GP, GL, GA, GB talkers.
-        // minmea_talker_id() can return 'GP', 'GL' etc.
+        case MINMEA_SENTENCE_GSV: {
+            struct minmea_sentence_gsv frame;
+            if (minmea_parse_gsv(&frame, sentence)) {
+                char talker[3];
+                if (minmea_talker_id(talker, sentence)) {
+                    // Assign satellite count based on Talker ID
+                    // GP=GPS, GL=GLONASS, GA=Galileo, GB=BeiDou
+                    if (talker[0] == 'G' && talker[1] == 'P') {
+                        ctx->data.sats_gps = (uint8_t)frame.total_sats;
+                    } else if (talker[0] == 'G' && talker[1] == 'L') {
+                        ctx->data.sats_glonass = (uint8_t)frame.total_sats;
+                    } else if (talker[0] == 'G' && talker[1] == 'A') {
+                        ctx->data.sats_galileo = (uint8_t)frame.total_sats;
+                    } else if (talker[0] == 'G' && talker[1] == 'B') {
+                        ctx->data.sats_beidou = (uint8_t)frame.total_sats;
+                    }
+                    // Update total visible satellites
+                    ctx->data.sats_view_total = ctx->data.sats_gps + 
+                        ctx->data.sats_glonass + ctx->data.sats_galileo + 
+                        ctx->data.sats_beidou;
+                }
+            }
+        } break;
         
         default:
             return false;

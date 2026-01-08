@@ -480,11 +480,11 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     *fix = xa_ctx.data.fix_type;
     *sats = xa_ctx.data.sats_used;
     *sats_view = xa_ctx.data.sats_view_total;
-    /* Parsing per-system sats logic not implemented in driver wrapper yet, mocking: */
-    *sats_gps = *sats;
-    *sats_glonass = 0U;
-    *sats_galileo = 0U;
-    *sats_beidou = 0U;
+    /* Per-GNSS satellite counts from GSV parsing */
+    *sats_gps = xa_ctx.data.sats_gps;
+    *sats_glonass = xa_ctx.data.sats_glonass;
+    *sats_galileo = xa_ctx.data.sats_galileo;
+    *sats_beidou = xa_ctx.data.sats_beidou;
     
     /* UTC Time from GPS */
     *utc_hour = xa_ctx.data.utc_hour;

@@ -1,0 +1,8 @@
+msbuild ??? 17.14.23+b0019275e(.NET Framework??
+
+  Building Custom Rule C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/CMakeLists.txt
+  test_main.c
+  pid.c
+  unity.c
+  ??????????? ??????...
+  test_pid_runner.vcxproj -> C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_test\Debug\test_pid_runner.exe
