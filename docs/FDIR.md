@@ -165,6 +165,22 @@ if (abs(gps_alt - last_alt) > 500.0f) {  // 500m 이상 점프
 
 ### 복구 시퀀스
 
+**⚠️ 현재 구현 상태 (Core/Src/sensors.c:238-246)**
+
+```c
+void Sensors_Reset(SensorID_t id) {
+#ifdef UNIT_TEST
+    printf("FDIR: Resetting Sensor ID %d\n", id);
+#endif
+    // TODO: Implementation for HW:
+    // 1. DeInit / ReInit Driver
+    // 2. Power Cycle if GPIO attached
+    // if (id == SENSOR_ID_PMS) PMS_Init(&pms_ctx); ...
+}
+```
+
+**✅ 설계된 복구 시퀀스 (구현 예정)**
+
 ```c
 void Sensors_Reset(SensorID_t id) {
     switch(id) {
@@ -176,10 +192,65 @@ void Sensors_Reset(SensorID_t id) {
             // L2: 소프트 리셋
             XA1110_Init(&xa_ctx);
             break;
-        // ...
+
+        case SENSOR_ID_IMU:
+            // L3: P-MOS 전원 사이클
+            HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(50);
+            HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_SET);
+            // L2: 드라이버 재초기화
+            LSM6DSV16X_Init(&lsm_ctx);
+            break;
+
+        case SENSOR_ID_BARO:
+            // L3: P-MOS 전원 사이클
+            HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(50);
+            HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_SET);
+            // L2: 드라이버 재초기화
+            MS5611_Init(&ms_ctx);
+            break;
+
+        case SENSOR_ID_PMS:
+            // L3: SET 핀 토글 (하드 리셋)
+            HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_RESET);
+            HAL_Delay(200);
+            HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_SET);
+            // L2: 드라이버 재초기화
+            PMS3003_Init(&pms_ctx);
+            break;
+
+        case SENSOR_ID_SHT:
+            // L3: P-MOS 전원 사이클
+            HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_SET); // P-MOS: HIGH=OFF
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_RESET); // LOW=ON
+            // L2: 드라이버 재초기화
+            SHT31_Init(&sht_ctx);
+            break;
+
+        case SENSOR_ID_RAD:
+            // L3: P-MOS 전원 사이클
+            HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_SET);
+            // L2: 드라이버 재초기화
+            GDK101_Init(&gdk_ctx);
+            break;
+
+        default:
+            // 기본 동작: I2C 버스 복구 시도
+            if (id == SENSOR_ID_MAG || id == SENSOR_ID_IMU) {
+                BSP_I2C1_Recovery();
+            } else {
+                BSP_I2C3_Recovery();
+            }
+            break;
     }
 }
 ```
+
+> **참고**: 현재 펌웨어는 FDIR 감지 및 상태 머신은 완전히 구현되었으나, `Sensors_Reset()` 함수의 실제 하드웨어 제어 로직은 아직 구현되지 않았습니다. HITL 시뮬레이션에서는 소프트웨어 복구 시퀀스만 검증되었습니다.
 
 ---
 

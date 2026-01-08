@@ -13,6 +13,9 @@
 // Mock State for Simulation
 // static float mock_altitude_bsp = 100.0f; // Unused warning
 
+// Forward declaration of private helper functions
+static void BSP_Delay_us(uint32_t us);
+
 void BSP_Init(void) {
     // Hardware Init is mostly done in main.c (HAL_Init, SystemClock, MX_...)
     // Here we can do specific board level setup if needed
@@ -171,5 +174,110 @@ uint16_t BSP_ADC_Read_Battery_mV(void) {
     return 0;
 #else
     return 4200;
+#endif
+}
+
+// --- I2C Bus Recovery Implementation ---
+
+/**
+ * @brief I2C1 Bus Recovery using 9-Clock Pulse method
+ * @note Implements I2C bus recovery by:
+ *       1. Disabling I2C peripheral
+ *       2. Reconfiguring SCL as GPIO output
+ *       3. Generating 9 clock pulses (100 kHz)
+ *       4. Reconfiguring SCL back to I2C alternate function
+ *       5. Re-enabling I2C peripheral
+ */
+void BSP_I2C1_Recovery(void) {
+#ifndef UNIT_TEST
+    // I2C1: PA15 (SCL), PB9 (SDA)
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    // Step 1: Disable I2C peripheral
+    HAL_I2C_DeInit(&hi2c1);
+
+    // Step 2: Configure SCL (PA15) as GPIO Output (Open-Drain)
+    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // Step 3: Generate 9 clock pulses (100 kHz = 10us period, 5us high, 5us low)
+    for (int i = 0; i < 9; i++) {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET); // SCL Low
+        BSP_Delay_us(5);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);   // SCL High
+        BSP_Delay_us(5);
+    }
+
+    // Step 4: Reconfigure SCL back to I2C alternate function
+    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1; // Check from main.h or ioc
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // Step 5: Re-enable I2C peripheral
+    HAL_I2C_Init(&hi2c1);
+
+    // Small delay for stabilization
+    HAL_Delay(10);
+#endif
+}
+
+/**
+ * @brief I2C3 Bus Recovery using 9-Clock Pulse method
+ */
+void BSP_I2C3_Recovery(void) {
+#ifndef UNIT_TEST
+    // I2C3: PA8 (SCL), PB5 (SDA)
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    // Step 1: Disable I2C peripheral
+    HAL_I2C_DeInit(&hi2c3);
+
+    // Step 2: Configure SCL (PA8) as GPIO Output (Open-Drain)
+    GPIO_InitStruct.Pin = GPIO_PIN_8;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // Step 3: Generate 9 clock pulses
+    for (int i = 0; i < 9; i++) {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); // SCL Low
+        BSP_Delay_us(5);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);   // SCL High
+        BSP_Delay_us(5);
+    }
+
+    // Step 4: Reconfigure SCL back to I2C alternate function
+    GPIO_InitStruct.Pin = GPIO_PIN_8;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF2_I2C3; // Check from main.h or ioc
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // Step 5: Re-enable I2C peripheral
+    HAL_I2C_Init(&hi2c3);
+
+    // Small delay for stabilization
+    HAL_Delay(10);
+#endif
+}
+
+/**
+ * @brief Microsecond delay helper
+ * @param us Delay in microseconds
+ * @note Uses DWT cycle counter for precise timing
+ */
+static void BSP_Delay_us(uint32_t us) {
+#ifndef UNIT_TEST
+    uint32_t start = DWT->CYCCNT;
+    uint32_t cycles = us * (SystemCoreClock / 1000000U);
+    while ((DWT->CYCCNT - start) < cycles);
 #endif
 }

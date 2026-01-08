@@ -238,11 +238,112 @@ void Sensors_Init_UART(void) {
 void Sensors_Reset(SensorID_t id) {
 #ifdef UNIT_TEST
     printf("FDIR: Resetting Sensor ID %d\n", id);
+    return;
 #endif
-    // Implementation for HW:
-    // 1. DeInit / ReInit Driver
-    // 2. Power Cycle if GPIO attached
-    // if (id == SENSOR_ID_PMS) PMS_Init(&pms_ctx); ...
+
+#ifndef UNIT_TEST
+    switch(id) {
+        case SENSOR_ID_GPS:
+            // L3: Hard Reset (PA9: GPS_nRST - active low)
+            HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
+            HAL_Delay(50);
+            // L2: Soft Reset - Reinitialize driver
+            XA1110_Init(&xa_ctx);
+            break;
+
+        case SENSOR_ID_IMU:
+            // L3: P-MOS Power Cycle (PB13: LSM_RST)
+            HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(50);
+            HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_SET);
+            HAL_Delay(50);
+            // L2: I2C bus recovery
+            BSP_I2C1_Recovery();
+            break;
+
+        case SENSOR_ID_MAG:
+            // L3: P-MOS Power Cycle (PB14: MLX_nRST - active low for this sensor)
+            HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(50);
+            HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_SET);
+            HAL_Delay(50);
+            // L2: I2C bus recovery
+            BSP_I2C1_Recovery();
+            break;
+
+        case SENSOR_ID_BARO:
+            // L3: P-MOS Power Cycle (PA5: MS_RST)
+            HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(50);
+            HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_SET);
+            HAL_Delay(50);
+            // L2: I2C bus recovery
+            BSP_I2C3_Recovery();
+            break;
+
+        case SENSOR_ID_PMS:
+            // L3: SET Pin Toggle (PB10: PMS_SET - active high)
+            HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_RESET);
+            HAL_Delay(200);  // PMS3003 needs longer delay
+            HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_SET);
+            HAL_Delay(100);
+            // L2: No driver reinit needed for UART sensor
+            break;
+
+        case SENSOR_ID_SHT:
+            // L3: P-MOS Power Cycle (PB11: SHT_RST - P-MOS: HIGH=OFF, LOW=ON)
+            HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_SET);  // Turn OFF
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_RESET); // Turn ON
+            HAL_Delay(50);
+            // L2: I2C bus recovery
+            BSP_I2C3_Recovery();
+            break;
+
+        case SENSOR_ID_RAD:
+            // L3: P-MOS Power Cycle (PB2: GDK_RST)
+            HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_SET);
+            HAL_Delay(50);
+            // L2: I2C bus recovery
+            BSP_I2C1_Recovery();
+            break;
+
+        case SENSOR_ID_CO2:
+            // L3: P-MOS Power Cycle (PB0: CM1107N_RST)
+            HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_SET);
+            HAL_Delay(50);
+            // L2: I2C bus recovery
+            BSP_I2C3_Recovery();
+            break;
+
+        case SENSOR_ID_EXT_TEMP:
+            // L3: P-MOS Power Cycle (PA4: MCP_RST)
+            HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_RESET);
+            HAL_Delay(100);
+            HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_SET);
+            HAL_Delay(50);
+            // L2: I2C bus recovery
+            BSP_I2C3_Recovery();
+            break;
+
+        default:
+            // For unknown sensors, try I2C bus recovery based on which bus they're on
+            if (id == SENSOR_ID_MAG || id == SENSOR_ID_IMU || id == SENSOR_ID_RAD) {
+                // Downside sensors on I2C1
+                BSP_I2C1_Recovery();
+            } else {
+                // Upside sensors on I2C3
+                BSP_I2C3_Recovery();
+            }
+            break;
+    }
+#endif
 }
 
 SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {

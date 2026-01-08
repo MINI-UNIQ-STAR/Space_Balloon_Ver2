@@ -95,6 +95,18 @@ void BSP_Delay(uint32_t Delay);
  */
 uint16_t BSP_ADC_Read_Battery_mV(void);
 
+/**
+ * @brief I2C1 Bus Recovery (9-Clock Pulse)
+ * @note Implements clock stretching recovery by generating 9 clock pulses on SCL line
+ */
+void BSP_I2C1_Recovery(void);
+
+/**
+ * @brief I2C3 Bus Recovery (9-Clock Pulse)
+ * @note Implements clock stretching recovery by generating 9 clock pulses on SCL line
+ */
+void BSP_I2C3_Recovery(void);
+
 #ifdef __cplusplus
 }
 #endif
