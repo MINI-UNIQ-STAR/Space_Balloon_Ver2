@@ -98,9 +98,9 @@
 | 3 | GDK101 | 방사선 (γ선) | I2C1 | 0x18 | gdk101_service.c |
 | 4 | DS18B20 x2 | 온도 (배터리/보드) | 1-Wire (PB15) | - | aux_sensors_service.c |
 | 5 | XA1110 | GPS | UART1 (9600) | NMEA | gps_service.c |
-| 6 | SEN0321 | 오존 (O3) | I2C1 | 0x73 | ozone_service.c |
-| 7 | SHT31-D | 온습도 | I2C1 | 0x44 | sht31_service.c |
-| 8 | MS5611 | 기압/온도 | I2C1 | 0x77 | ms5611_service.c |
+| 6 | SEN0321 | 오존 (O3) | I2C3 | 0x73 | ozone_service.c |
+| 7 | SHT31-D | 온습도 | I2C3 | 0x44 | sht31_service.c |
+| 8 | MS5611 | 기압/온도 | I2C3 | 0x77 | ms5611_service.c |
 | 9 | MCP9600 | 열전대 (K-type) | I2C3 | 0x60 | mcp9600_service.c |
 | 10 | CM1107N | CO2 농도 | I2C3 | 0x31 | co2_service.c |
 | 11 | PMS3003 | 미세먼지 (PM1.0/2.5/10) | UART2 (9600) | - | pms3003_service.c |
