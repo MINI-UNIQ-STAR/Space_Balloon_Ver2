@@ -1,9 +1,9 @@
 # STM32 성층권 풍선 센서 플랫폼 사양서
 
-**버전:** Rev 3.2 (텔레메트리 구조 검증 완료)
+**버전:** Rev 3.5 (코드-문서 일관성 종합 검토)
 **날짜:** 2026-01-08
 **MCU:** STM32G431CBU6 (Cortex-M4F @ 170MHz)
-**RTOS:** FreeRTOS (Thread-Safe Strategy 4)
+**구조:** Bare-metal (Super Loop + HAL)
 
 ---
 
@@ -37,18 +37,18 @@
 ┌─────────────────────────────────────────────────────┐
 │            STM32G431CBU6 (170MHz)                   │
 │  ┌──────────────────────────────────────────────┐   │
-│  │         FreeRTOS Kernel                      │   │
+│  │         Bare-metal (Super Loop)              │   │
 │  ├──────────────────────────────────────────────┤   │
-│  │  Services Layer                              │   │
-│  │  - GPS Service                               │   │
-│  │  - IMU/Mag/Sensors Services                  │   │
-│  │  - Health Monitor Service                    │   │
-│  │  - Heater Service (PID)                      │   │
-│  │  - Telemetry Service (50Hz)                  │   │
-│  │  - Altitude Kalman Filter                    │   │
+│  │  Application Layer (app.c)                   │   │
+│  │  - Sensors_Read_All()                        │   │
+│  │  - PID Heater Control                        │   │
+│  │  - Kalman Filter (Altitude)                  │   │
+│  │  - FDIR (Fault Detection)                    │   │
+│  │  - Telemetry (50Hz)                          │   │
+│  │  - XCP Calibration Protocol                  │   │
 │  ├──────────────────────────────────────────────┤   │
-│  │  Drivers Layer                               │   │
-│  │  - I2C Recovery, UART RX/TX, 1-Wire          │   │
+│  │  BSP/Drivers Layer (bsp.c, sensors.c)        │   │
+│  │  - I2C/UART/1-Wire Drivers                   │   │
 │  │  - Sensor Codecs, Reset Lines Control        │   │
 │  └──────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────┘
@@ -75,11 +75,11 @@
 | FPU | fpv4-sp-d16 (hard float ABI) |
 
 ### 주변장치 사용
-- **I2C1**: Downside 센서 보드 (LSM6DSV16X, MLX90393, GDK101, SEN0321, SHT31-D, MS5611)
-- **I2C3**: Upside 센서 보드 (CM1107N, MCP9600)
-- **UART1**: XA1110 GPS 모듈 (9600 baud)
+- **I2C1**: Downside 센서 보드 (LSM6DSV16X, MLX90393, GDK101)
+- **I2C3**: Upside 센서 보드 (CM1107N, MCP9600, SEN0321, SHT31-D, MS5611)
+- **UART1**: XA1110 GPS 모듈 (115200 baud)
 - **UART2**: PMS3003 미세먼지 센서 (9600 baud)
-- **UART3**: LoRa32 텔레메트리 출력
+- **UART3**: LoRa32 텔레메트리 출력 (115200 baud)
 - **ADC1_IN2 (PA1)**: 배터리 전압 측정
 - **TIM3_CH1 (PA6)**: 배터리 히터 PWM (Kapton 필름)
 - **TIM8_CH1 (PC6)**: 보드 히터 PWM (Minibulb)
@@ -91,19 +91,19 @@
 
 ### 전체 센서 목록 (11종)
 
-| # | 센서 모델 | 측정 항목 | 인터페이스 | 주소/설정 | 서비스 모듈 |
+| # | 센서 모델 | 측정 항목 | 인터페이스 | 주소/설정 | 구현 파일 |
 |---|-----------|-----------|------------|-----------|-------------|
 | 1 | LSM6DSV16X | 6축 IMU (가속도/자이로) | I2C1 | 0x6B | sensors.c |
-| 2 | MLX90393 | 3축 자기계 | I2C1 | 0x0C | mag_service.c |
-| 3 | GDK101 | 방사선 (γ선) | I2C1 | 0x18 | gdk101_service.c |
-| 4 | DS18B20 x2 | 온도 (배터리/보드) | 1-Wire (PB15) | - | aux_sensors_service.c |
-| 5 | XA1110 | GPS | UART1 (9600) | NMEA | gps_service.c |
-| 6 | SEN0321 | 오존 (O3) | I2C3 | 0x73 | ozone_service.c |
-| 7 | SHT31-D | 온습도 | I2C3 | 0x44 | sht31_service.c |
-| 8 | MS5611 | 기압/온도 | I2C3 | 0x77 | ms5611_service.c |
-| 9 | MCP9600 | 열전대 (K-type) | I2C3 | 0x60 | mcp9600_service.c |
-| 10 | CM1107N | CO2 농도 | I2C3 | 0x31 | co2_service.c |
-| 11 | PMS3003 | 미세먼지 (PM1.0/2.5/10) | UART2 (9600) | - | pms3003_service.c |
+| 2 | MLX90393 | 3축 자기계 | I2C1 | 0x0C | sensors.c |
+| 3 | GDK101 | 방사선 (γ선) | I2C1 | 0x18 | sensors.c |
+| 4 | DS18B20 x2 | 온도 (배터리/보드) | 1-Wire (PB15) | - | sensors.c |
+| 5 | XA1110 | GPS | UART1 (9600) | NMEA | sensors.c |
+| 6 | SEN0321 | 오존 (O3) | I2C3 | 0x70 | sensors.c |
+| 7 | SHT31-D | 온습도 | I2C3 | 0x44 | sensors.c |
+| 8 | MS5611 | 기압/온도 | I2C3 | 0x77 | sensors.c |
+| 9 | MCP9600 | 열전대 (K-type) | I2C3 | 0x60 | sensors.c |
+| 10 | CM1107N | CO2 농도 | I2C3 | 0x31 | sensors.c |
+| 11 | PMS3003 | 미세먼지 (PM1.0/2.5/10) | UART2 (9600) | - | sensors.c |
 
 ### 센서별 상세 사양
 
@@ -149,7 +149,7 @@
 - **출력 포맷**:
   - 온도: °C x100 (int16_t)
   - 습도: %RH x100 (uint16_t)
-- **리셋 제어**: PB13 (SHT_RST) - P-MOS (HIGH=OFF, LOW=ON)
+- **리셋 제어**: PB11 (SHT_RST) - P-MOS (HIGH=OFF, LOW=ON)
 
 #### 8. MS5611 (기압계)
 - **측정 범위**: 10-1200 mbar
@@ -180,33 +180,33 @@
 ### I2C 버스 구성
 
 #### I2C1 (Downside Board)
-- **핀**: PA14 (SDA), PA15 (SCL)
+- **핀**: PB9 (SDA), PA15 (SCL)
 - **속도**: 400kHz (Fast Mode)
-- **센서**: LSM6DSV16X, MLX90393, GDK101, SEN0321, SHT31-D, MS5611
+- **센서**: LSM6DSV16X, MLX90393, GDK101
 - **복구 메커니즘**:
   - SCL 클럭 펄스 생성 (9회)
   - 소프트웨어 리셋 시퀀스
-  - 구현: `drivers/i2c_recovery.c`
+  - 구현: `Core/Src/i2c.c`
 
 #### I2C3 (Upside Board)
 - **핀**: PB5 (SDA), PA8 (SCL)
 - **속도**: 400kHz (Fast Mode)
-- **센서**: CM1107N, MCP9600
+- **센서**: CM1107N, MCP9600, SEN0321, SHT31-D, MS5611
 - **복구 메커니즘**: I2C1과 동일
 
 ### UART 구성
 
 #### UART1 (GPS)
 - **핀**: PC4 (TX), PA10 (RX)
-- **속도**: 9600 baud, 8N1
+- **속도**: 115200 baud, 8N1
 - **DMA**: RX DMA 사용 (DMA1_Channel1)
-- **파싱**: `services/nmea_parser.c`
+- **파싱**: `Core/Src/sensors.c` (XA1110 드라이버)
 
 #### UART2 (PMS3003)
 - **핀**: PA2 (TX), PA3 (RX)
 - **속도**: 9600 baud, 8N1
 - **DMA**: RX DMA 사용 (DMA1_Channel3)
-- **파싱**: `drivers/pms_parser.c`
+- **파싱**: `Core/Src/sensors.c` (PMS3003 드라이버)
 
 #### UART3 (텔레메트리)
 - **핀**: PC10 (TX), PC11 (RX)
@@ -219,7 +219,7 @@
   - LOW 출력: Open-drain
   - 읽기: Input pull-up
 - **타이밍**: 표준 1-Wire 프로토콜
-- **구현**: `drivers/ds18b20.c`
+- **구현**: `Core/Src/sensors.c` (DS18B20 드라이버)
 
 ---
 
@@ -231,28 +231,28 @@
 
 | 센서 | 리셋 라인 | GPIO 핀 | 초기 상태 | 제어 |
 |------|-----------|---------|-----------|------|
-| LSM6DSV16X | LSM_RST | PB11 | LOW | reset_lines.c |
-| MLX90393 | MLX_RST | PB14 | HIGH | reset_lines.c |
-| CM1107N | CO2_RST | PB0 | LOW | reset_lines.c |
-| MS5611 | MS_RST | PA5 | LOW | reset_lines.c |
-| MCP9600 | MCP_RST | PA4 | LOW | reset_lines.c |
-| SHT31-D | SHT_RST | PB13 | - | reset_lines.c |
-| PMS3003 | PMS_SET | PB10 | HIGH | reset_lines.c |
-| Sensor Board | SEN_RST | PB1 | - | reset_lines.c |
+| LSM6DSV16X | LSM_RST | PB13 | LOW | bsp.c |
+| MLX90393 | MLX_RST | PB14 | HIGH | bsp.c |
+| CM1107N | CM1107N_RST | PB0 | LOW | bsp.c |
+| MS5611 | MS_RST | PA5 | LOW | bsp.c |
+| MCP9600 | MCP_RST | PA4 | LOW | bsp.c |
+| SHT31-D | SHT_RST | PB11 | - | bsp.c |
+| GDK101 | GDK_RST | PB2 | - | bsp.c |
+| PMS3003 | PMS_SET | PB10 | HIGH | bsp.c |
+| Sensor Board | SEN_RST | PB1 | - | bsp.c |
 
 ### 전원 제어 API
 ```c
-// drivers/reset_lines.h
-bool reset_line_pulse(reset_line_t line, uint32_t low_ms, uint32_t high_ms, uint32_t low2_ms);
-bool reset_line_set(reset_line_t line, bool level_high);
-bool reset_line_pulse_high_low_high(reset_line_t line, uint32_t high_ms, uint32_t low_ms, uint32_t high2_ms);
+// Core/Inc/bsp.h
+void BSP_Init(void);
+void BSP_Sensor_PowerOn(void);  // 리셋 라인 해제 (GPIO SET)
 ```
 
 ### 배터리 모니터링
 - **ADC 채널**: ADC1_IN2 (PA1)
-- **분압비**: 2:1 (설정: BAT_DIVIDER_NUM=2, BAT_DIVIDER_DEN=1)
+- **분압비**: 6:1 (raw * 3300 / 4096 * 6)
 - **출력**: mV (uint16_t)
-- **구현**: `drivers/battery_adc.c`
+- **구현**: `Core/Src/bsp.c` (BSP_ADC_Read_Battery_mV)
 
 ---
 
@@ -264,22 +264,36 @@ bool reset_line_pulse_high_low_high(reset_line_t line, uint32_t high_ms, uint32_
   - 일반 센서: 2000ms
   - PMS3003: 3000ms (느린 응답 고려)
 - **복구 시도**: 최대 5회
-- **구현**: `services/health_monitor_service.c`
+- **구현**: `Core/Src/fdir.c`
 
 ### 감시 대상
 ```c
+// Core/Inc/fdir.h
 typedef struct {
-    bool ever_updated;      // 최소 1회 업데이트 여부
-    uint8_t attempts;       // 복구 시도 횟수
-    bool permfail;          // 영구 실패 플래그
-} health_state_t;
+    uint32_t last_valid_update_ms;
+    uint32_t error_count;
+    uint32_t recovery_count;
+    FdirState_t state;
+    bool enabled;
+} SensorHealth_t;
+
+typedef struct {
+    SensorHealth_t imu;
+    SensorHealth_t baro;
+    SensorHealth_t gps;
+    SensorHealth_t co2;
+    SensorHealth_t pms;
+    SensorHealth_t sht;
+    SensorHealth_t rad;
+    SensorHealth_t ext_temp;
+} SystemHealth_t;
 ```
 
 각 센서별 상태 추적:
 - GPS (UART1)
 - PMS3003 (UART2)
-- I2C1 센서들 (LSM, MLX, GDK, SEN, SHT, MS)
-- I2C3 센서들 (CO2, MCP)
+- I2C1 센서들 (LSM, MLX, GDK)
+- I2C3 센서들 (SHT, MS, CO2, MCP, SEN0321)
 - DS18B20 온도 센서
 
 ### 자동 복구 절차
@@ -321,28 +335,33 @@ typedef struct {
 
 ### PID 제어 알고리즘
 ```c
-// services/heater_service.c
-float error = target_temp - current_temp;
-float p_term = Kp * error;
-float i_term = Ki * integral_err;  // Anti-windup 적용
-float d_term = Kd * (error - last_error) / dt;
-float output = p_term + i_term + d_term;  // PWM duty 출력
+// Core/Src/pid.c
+float PID_Update(PID_HandleTypeDef *hpid, float measurement, float dt) {
+    float error = hpid->Target - measurement;
+    hpid->IntegratedError += error * dt;  // Anti-windup by MaxOutput
+    float p_term = hpid->Kp * error;
+    float i_term = hpid->Ki * hpid->IntegratedError;
+    float d_term = hpid->Kd * (error - hpid->LastError) / dt;
+    float output = p_term + i_term + d_term;
+    hpid->LastError = error;
+    return (output > hpid->MaxOutput) ? hpid->MaxOutput : 
+           (output < 0) ? 0 : output;
+}
 ```
 
 ### 제어 주기
-- **업데이트 주기**: 1Hz (1000ms)
+- **업데이트 주기**: 50Hz (20ms, App_Loop 내에서 호출)
 - **안전 장치**: 온도 센서 실패 시 히터 자동 OFF
 
 ### API
 ```c
-// services/heater_service.h
-void heater_bat_set_target(float temp_c);
-float heater_bat_get_target(void);
-float heater_bat_get_duty(void);
+// Core/Inc/pid.h
+void PID_Init(PID_HandleTypeDef *hpid, float Kp, float Ki, float Kd, float MaxOutput);
+float PID_Update(PID_HandleTypeDef *hpid, float measurement, float dt);
 
-void heater_board_set_target(float temp_c);
-float heater_board_get_target(void);
-float heater_board_get_duty(void);
+// Core/Inc/actuators.h
+void Actuators_SetHeater_Battery(float duty_percent);
+void Actuators_SetHeater_Board(float duty_percent);
 ```
 
 ---
@@ -354,18 +373,21 @@ float heater_board_get_duty(void);
 - **동기화**: GPS 1PPS 신호 기준
 - **프로토콜**: 바이너리 프레이밍
 - **페이로드 크기**: 116 바이트 (packed struct)
-- **전체 프레임**: 130 바이트 (헤더 12 + 페이로드 116 + CRC 2)
+- **전체 프레임**: 132 바이트 (헤더 14 + 페이로드 116 + CRC 2)
 - **CRC**: CRC16-CCITT-FALSE 체크섬
 - **출력**: UART3 → LoRa32 모듈
 - **RF 설정**: 915 MHz, SF11, BW 125kHz, CR 4/5 (장거리 전송 최적화)
 
 ### 프레임 구조
 ```c
-// services/telemetry_frame.h
+// Core/Inc/telemetry.h
 typedef struct __attribute__((packed)) {
     uint8_t magic[2];           // 0xA5, 0x5A
+    uint8_t version;            // 프로토콜 버전 (1)
+    uint8_t msg_type;           // 메시지 타입 (0x01=heartbeat, 0x02=sensor snapshot)
+    uint16_t payload_len;       // 페이로드 길이 (바이트)
     uint16_t seq;               // 시퀀스 번호
-    uint16_t payload_len;       // 페이로드 길이
+    uint32_t timestamp_ms;      // 시스템 타임스탬프 (ms)
     telemetry_payload_sensor_snapshot_t payload;
     uint16_t crc16;             // CRC16 체크섬
 } telemetry_frame_t;
@@ -450,8 +472,8 @@ typedef struct __attribute__((packed)) {
   4. 1PPS 신호 손실 시 free-running 모드로 전환
 
 ### 구현
-- **서비스**: `services/telemetry_service.c`
-- **프레이밍**: `services/telemetry_frame.c`
+- **텔레메트리 전송**: `Core/Src/telemetry.c`
+- **프레임 정의**: `Core/Inc/telemetry.h`
 - **1PPS 캡처**: `drivers/pps_capture.c`
 
 ---
@@ -474,19 +496,21 @@ typedef struct __attribute__((packed)) {
 | PA8 | I2C3_SCL | AF OD | I2C3 클럭 | CM1107N, MCP9600 |
 | PA9 | GPS_nRST | GPIO Output | GPS 리셋 | XA1110 nRST |
 | PA10 | USART1_RX | AF PP | GPS RX | XA1110 TX |
-| PA14 | I2C1_SDA | AF OD | I2C1 데이터 | Downside 센서 |
 | PA15 | I2C1_SCL | AF OD | I2C1 클럭 | Downside 센서 |
 | **포트 B** |
-| PB0 | CO2_RST | GPIO Output | CO2 센서 리셋 | CM1107N RST |
+| PB0 | CM1107N_RST | GPIO Output | CO2 센서 리셋 | CM1107N RST |
+| PB1 | SEN_RST | GPIO Output | 센서 보드 리셋 | Sensor Board |
+| PB2 | GDK_RST | GPIO Output | 방사선 센서 리셋 | GDK101 RST |
+| PB9 | I2C1_SDA | AF OD | I2C1 데이터 | Downside 센서 |
 | PC6 | TIM8_CH1 | AF PP | 보드 히터 PWM | Minibulb |
 | PB4 | GPS_PPS | EXTI4 (Rising) | GPS 1PPS 입력 | XA1110 1PPS |
 | PB5 | I2C3_SDA | AF OD | I2C3 데이터 | CM1107N, MCP9600 |
 | PB6 | LSM_INT | EXTI6 (Rising) | IMU 인터럽트 | LSM6DSV16X INT |
 | PB7 | MLX_INT | EXTI7 (Rising) | 자기계 인터럽트 | MLX90393 INT |
 | PB10 | PMS_SET | GPIO Output | PMS3003 제어 | PMS3003 SET |
-| PB11 | LSM_RST | GPIO Output | IMU 리셋 | LSM6DSV16X RST |
+| PB11 | SHT_RST | GPIO Output | SHT31 리셋 | SHT31 RST |
 | PB12 | GPS_INT | EXTI12 (Rising) | GPS 인터럽트 | XA1110 INT |
-| PB13 | SHT_RST | GPIO Output | SHT31 리셋 | SHT31 RST |
+| PB13 | LSM_RST | GPIO Output | IMU 리셋 | LSM6DSV16X RST |
 | PB14 | MLX_nRST | GPIO Output | 자기계 리셋 | MLX90393 nRST |
 | PB15 | DS18B20_DQ | GPIO (재구성) | 1-Wire 데이터 | DS18B20 x2 |
 | **포트 C** |
@@ -528,92 +552,105 @@ typedef struct __attribute__((packed)) {
 
 ### 디렉토리 구조
 ```
-stm32_spaceballoon/
+spaceballoon_stm32_lora32/
 ├── Core/
-│   ├── Inc/
-│   │   ├── app/
-│   │   │   └── board_pins.h         # 핀 매핑 정의
-│   │   ├── drivers/                 # 드라이버 헤더
-│   │   ├── services/                # 서비스 헤더
-│   │   ├── main.h
-│   │   ├── FreeRTOSConfig.h
-│   │   └── stm32g4xx_hal_conf.h
-│   └── Src/
-│       ├── app/
-│       │   └── app.c                # 애플리케이션 진입점
-│       ├── drivers/                 # 하드웨어 드라이버
-│       ├── services/                # 고수준 서비스
+│   ├── Inc/                         # 모든 헤더 파일 (플랫 구조)
+│   │   ├── telemetry.h              # 텔레메트리 프레임/페이로드 정의
+│   │   ├── sensors.h                # 센서 API
+│   │   ├── fdir.h                   # FDIR 모듈
+│   │   ├── kalman.h                 # 칼만 필터
+│   │   ├── app.h                    # 애플리케이션 진입점
+│   │   ├── bsp.h                    # 보드 지원 패키지
+│   │   ├── main.h                   # HAL 초기화
+│   │   └── stm32g4xx_hal_conf.h     # HAL 설정
+│   └── Src/                         # 모든 소스 파일 (플랫 구조)
+│       ├── app.c                    # 애플리케이션 진입점
+│       ├── sensors.c                # 센서 드라이버
+│       ├── telemetry.c              # 텔레메트리 전송
+│       ├── fdir.c                   # FDIR 구현
+│       ├── kalman.c                 # 칼만 필터
 │       ├── main.c                   # HAL 초기화
 │       └── stm32g4xx_it.c           # 인터럽트 핸들러
 ├── Drivers/
 │   ├── CMSIS/
 │   └── STM32G4xx_HAL_Driver/
-├── Middlewares/
-│   └── Third_Party/
-│       └── FreeRTOS/
-├── reference/
+├── HostSim/                         # SITL 시뮬레이션 환경
+├── test/                            # 단위/통합 테스트
+├── docs/                            # 문서
+├── reference/                       # 참조 자료
 │   └── STM32G431/
-│       └── pin_mapping_stm32g431_2026-01-03.csv
-├── platformio.ini                   # PlatformIO 설정
-├── platformio_build.py              # 빌드 스크립트
+├── CMakeLists.txt                   # CMake 빌드 설정
 ├── STM32G431CBUx_FLASH.ld          # 링커 스크립트
-└── Makefile                         # GNU Make 지원
+└── README.md                        # 프로젝트 개요
 ```
 
 ---
 
 ## 소프트웨어 아키텍처
 
-### 서비스 초기화 순서
+### 초기화 순서
 ```c
-// Core/Src/app/app.c - app_init()
-void app_init(void) {
-    gps_service_init();           // GPS UART 초기화
-    aux_sensors_service_init();   // DS18B20, 배터리 ADC
-    air_quality_service_init();   // PMS3003
-    co2_service_init();           // CM1107N
-    ozone_service_init();         // SEN0321
-    heater_service_init();        // 히터 PID 제어
-    gdk101_service_init();        // 방사선 센서
-    sht31_service_init();         // 온습도 센서
-    ms5611_service_init();        // 기압 센서
-    imu_service_init();           // LSM6DSV16X
-    mag_service_init();           // MLX90393
-    mcp9600_service_init();       // 열전대
-    alt_kf_service_init();        // 칼만 필터
-    uart4_debug_log_init();       // 디버그 로그
-    swd_debug_probe_init();       // SWD 프로브
-    health_monitor_service_init();// 헬스 모니터
-    telemetry_service_init();     // 텔레메트리
+// Core/Src/app.c - App_Init()
+void App_Init(void) {
+    BSP_Init();                   // 보드 지원 패키지 (GPIO, UART, I2C)
+    Sensors_Init();               // 모든 센서 초기화 (I2C1, I2C3, UART, 1-Wire)
+    
+    // PID 히터 제어
+    PID_Init(&hpid_bat, 1000.0f, 10.0f, 0.0f, 100.0f);  // 배터리
+    hpid_bat.Target = 10.0f;      // 목표 온도 10°C
+    PID_Init(&hpid_brd, 500.0f, 5.0f, 0.0f, 100.0f);    // 보드
+    hpid_brd.Target = 5.0f;       // 목표 온도 5°C
+    
+    KF_Init(&hkf, 0.02f, 0.5f, 0.3f);  // 칼만 필터 (50Hz)
+    XCP_Init();                   // XCP 캘리브레이션 프로토콜
+    Actuators_Init();             // 히터 PWM
+    FDIR_Init();                  // 고장 감지/복구
+    
+    // 텔레메트리 헤더 초기화
+    telem_frame.magic[0] = 0xA5;
+    telem_frame.magic[1] = 0x5A;
+    telem_frame.version = 1;
+    telem_frame.msg_type = 0x02;  // Sensor Snapshot
 }
 ```
 
-### 메인 루프 실행 순서
+### 메인 루프 (20ms 주기)
 ```c
-// Core/Src/app/app.c - app_tick()
-void app_tick(uint32_t now_ms) {
-    // 지연 민감 경로 우선
-    gps_service_tick(now_ms);
-    imu_service_tick(now_ms);
-    uart4_debug_log_tick(now_ms);
-    swd_debug_probe_tick(now_ms);
-    telemetry_service_tick(now_ms);
-
-    // 센서 / 느린 서비스 (I2C/UART 블로킹 가능)
-    aux_sensors_service_tick(now_ms);
-    ms5611_service_tick(now_ms);
-    sht31_service_tick(now_ms);
-    mcp9600_service_tick(now_ms);
-    mag_service_tick(now_ms);
-    gdk101_service_tick(now_ms);
-    co2_service_tick(now_ms);
-    ozone_service_tick(now_ms);
-    air_quality_service_tick(now_ms);
-    heater_service_tick(now_ms);
-    alt_kf_service_tick(now_ms);
-
-    // 헬스 모니터 마지막 (최신 타임스탬프 관찰)
-    health_monitor_service_tick(now_ms);
+// Core/Src/app.c - App_Loop()
+void App_Loop(void) {
+    // 1. 센서 데이터 수집
+    Sensors_Read_All(&telem_frame.payload);
+    Sensors_Read_GPS(...);
+    Sensors_Read_Battery(...);
+    Sensors_Read_BoardTemp(...);
+    
+    // 2. FDIR 처리
+    FDIR_UpdateTemperature(ext_temp);
+    FDIR_UpdateGPSAltitude(gps_alt);
+    FDIR_UpdateBaroAltitude(baro_alt);
+    
+    // 3. 자세 추정 (Quaternion → Euler)
+    Sensors_Read_SFLP(quat);
+    telem_frame.payload.kf_roll_deg = roll;
+    telem_frame.payload.kf_pitch_deg = pitch;
+    
+    // 4. PID 히터 제어
+    heater_battery_cmd = PID_Update(&hpid_bat, bat_temp, 0.02f);
+    heater_board_cmd = PID_Update(&hpid_brd, brd_temp, 0.02f);
+    Actuators_SetHeater_Battery(heater_battery_cmd);
+    Actuators_SetHeater_Board(heater_board_cmd);
+    
+    // 5. 칼만 필터 업데이트
+    KF_Predict(&hkf);
+    KF_Update_Altitude(&hkf, baro_alt);
+    telem_frame.payload.kf_alt_m = hkf.x[0];
+    
+    // 6. 상태 플래그 및 텔레메트리 전송
+    telem_frame.payload.status_flags = FDIR_GetStatusFlags();
+    telem_frame.seq++;
+    XCP_UpdateMeasurements();
+    Telemetry_Send(&telem_frame);
+    FDIR_Update();
 }
 ```
 
@@ -624,63 +661,58 @@ void app_tick(uint32_t now_ms) {
 ### 칼만 필터 기반 고도 융합
 - **입력**:
   - MS5611 기압계 고도
-  - XA1110 GPS 고도
 - **출력**:
-  - 융합 고도 (kf_alt_m)
-  - 자세 추정 (roll, pitch)
-- **구현**: `services/alt_kf_service.c`
+  - 필터링된 고도 (kf_alt_m)
+  - 수직 속도 추정 (hkf.x[1])
+- **발산 보호**: `KF_CheckDivergence()` - 공분산 > 10000 또는 NaN 시 리셋
+- **구현**: `Core/Src/kalman.c`, `Core/Inc/kalman.h`
 
-### I2C 버스 복구
-```c
-// drivers/i2c_recovery.c
-bool i2c_recovery_attempt(I2C_TypeDef *i2c);
-```
-- SCL 라인에 9개 클럭 펄스 생성
-- SDA 라인 상태 확인
-- I2C 주변장치 재초기화
+### 자세 추정 (SFLP)
+- **입력**: LSM6DSV16X SFLP 쿼터니언 출력
+- **출력**: Roll, Pitch (도)
+- **변환**: Quaternion → Euler (atan2, asin)
+- **구현**: `Core/Src/app.c` App_Loop() 내
 
-### UART RX 폴링
+### I2C 통신 (BSP 추상화)
 ```c
-// drivers/uart_rx_poll.c
-uint16_t uart_rx_poll(UART_HandleTypeDef *huart, uint8_t *buf, uint16_t capacity);
+// Core/Inc/bsp.h
+int32_t BSP_I2C1_WriteReg(uint16_t DevAddr, uint16_t Reg, uint8_t *pData, uint16_t Len);
+int32_t BSP_I2C1_ReadReg(uint16_t DevAddr, uint16_t Reg, uint8_t *pData, uint16_t Len);
+int32_t BSP_I2C3_WriteReg(uint16_t DevAddr, uint16_t Reg, uint8_t *pData, uint16_t Len);
+int32_t BSP_I2C3_ReadReg(uint16_t DevAddr, uint16_t Reg, uint8_t *pData, uint16_t Len);
 ```
-- DMA 기반 원형 버퍼
-- 데이터 손실 없는 수신
 
-### NMEA 파서
+### UART 통신
 ```c
-// services/nmea_parser.c
-bool nmea_parse_line(const char *line, nmea_sentence_t *out);
+// Core/Src/usart.c
+int32_t BSP_UART_Write(uint8_t *pData, uint16_t Len);
+int32_t BSP_UART_Read(uint8_t *pData, uint16_t Len);
 ```
-- GGA, GSA, GSV, RMC, VTG 메시지 지원
-- CRC 검증
-
-### DWT 고정밀 딜레이
-```c
-// drivers/dwt_delay.c
-void dwt_delay_us(uint32_t us);
-```
-- Cortex-M4 DWT 사이클 카운터 사용
-- µs 단위 정밀 딜레이
 
 ---
 
 ## 디버그 기능
 
-### SWD 디버그 프로브
-- **활성화**: `SWD_DEBUG_PROBE_ENABLE=1` 빌드 플래그
-- **용도**: Watch/Live Expressions (지상 디버그 전용)
-- **구현**: `services/swd_debug_probe.c`
-- **주의**: 비행 시 비활성화 (기본 환경에서는 비활성)
+### XCP 캘리브레이션 프로토콜
+- **용도**: DAQ 측정 데이터 실시간 모니터링
+- **구현**: `Core/Src/xcp.c`, `Core/Inc/xcp.h`
+- **API**: `XCP_Init()`, `XCP_UpdateMeasurements()`
 
-
-### 건강 상태 플래그
+### FDIR 상태 플래그
 ```c
-// services/health_monitor_service.h
-typedef struct {
-    uint32_t sensor_health_flags;  // 비트 플래그
-    uint32_t ext_flags;            // 확장 플래그
-} health_status_t;
+// Core/Inc/fdir.h
+#define STATUS_SYS_OK         (1 << 0)
+#define STATUS_GPS_WARN       (1 << 1)
+#define STATUS_BARO_WARN      (1 << 2)
+#define STATUS_IMU_WARN       (1 << 3)
+#define STATUS_TEMP_WARN      (1 << 4)
+#define STATUS_HEATER_ACTIVE  (1 << 5)
+#define STATUS_LOW_BATTERY    (1 << 6)
+#define STATUS_FDIR_RECOVERY  (1 << 7)
+#define STATUS_ALT_JUMP       (1 << 8)
+#define STATUS_RANGE_ERROR    (1 << 9)
+
+uint16_t FDIR_GetStatusFlags(void);  // 텔레메트리에 포함
 ```
 
 ---
@@ -708,8 +740,8 @@ typedef struct {
 - LSM6DSV16X, MLX90393, GDK101, DS18B20, XA1110, SEN0321, SHT31-D, MS5611, MCP9600, CM1107N, PMS3003
 
 ### 소프트웨어
-- [FreeRTOS Documentation](https://www.freertos.org/Documentation/RTOS_book.html)
-- [PlatformIO STM32 Platform](https://docs.platformio.org/en/latest/platforms/ststm32.html)
+- [STM32Cube HAL Documentation](https://www.st.com/en/embedded-software/stm32cubeg4.html)
+- [CMake Build System](https://cmake.org/documentation/)
 
 ### 프로젝트 파일
 - `reference/STM32G431/pin_mapping_stm32g431_2026-01-03.csv`
@@ -736,11 +768,11 @@ typedef struct {
                                   ┌──────▼──────┐                ┌──────▼──────┐
                                   │ I2C1 Mock   │                │ I2C3 Mock   │
                                   │ (ESP32)     │                │ (ESP32)     │
-                                  ├─────────────┤                ├─────────────┤
-                                  │ LSM6DSV16X  │                │ CM1107N     │
-                                  │ MLX90393    │                │ MCP9600     │
-                                  │ GDK101      │                │             │
-                                  │ SHT31-D     │                │             │
+                                   ├─────────────┤                ├─────────────┤
+                                   │ LSM6DSV16X  │                │ CM1107N     │
+                                   │ MLX90393    │                │ MCP9600     │
+                                   │ GDK101      │                │ SHT31-D     │
+                                   │             │                │ MS5611      │
                                   └─────────────┘                └─────────────┘
 ```
 
@@ -761,10 +793,12 @@ typedef struct {
 
 | 버전 | 날짜 | 변경 사항 |
 |------|------|-----------|
-| Rev 3.2 | 2026-01-08 | 텔레메트리 구조 검증 (116바이트 페이로드), HITL/SITL/Python 일관성 확보 |
-| Rev 3.1 | 2026-01-06 | GPS UTC 시간 필드 추가, Multi-GNSS 위성 카운트 |
-| Rev 3.0 | 2026-01-03 | 구현 기반 사양서 재작성, PlatformIO 빌드 완료 |
-| Rev 2.2 | - | 원본 사양서 (PDF) |
+| Rev 3.5 | 2026-01-08 | 최종 검증: I2C1 SDA 핀(PB9), UART1 보레이트(115200), 센서 테이블, PID/KF/FDIR API, BSP 경로 |
+| Rev 3.4 | 2026-01-08 | 아키텍처/핀맵 일치: App_Init/App_Loop, Bare-metal 구조, GPIO 핀 할당(LSM_RST/SHT_RST/GDK_RST) |
+| Rev 3.3 | 2026-01-08 | 프레임 구조(version/msg_type/timestamp), I2C 버스 할당, 디렉토리 구조 |
+| Rev 3.2 | 2026-01-08 | 텔레메트리 116바이트 페이로드, HITL/SITL/Python 일관성 |
+| Rev 3.1 | 2026-01-06 | GPS UTC 시간 필드, Multi-GNSS 위성 카운트 |
+| Rev 3.0 | 2026-01-03 | 구현 기반 사양서 재작성 |
 
 ---
 
