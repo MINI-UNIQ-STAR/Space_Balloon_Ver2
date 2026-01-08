@@ -71,9 +71,9 @@ void test_pid_d_term(void) {
     
     // Step 2: Meas=8, Error=2
     // Derivative = (2 - 5) / 1 = -3
-    // Output = 1 * -3 = -3
+    // Output = 1 * -3 = -3 -> Clamped to 0 (heater can't go negative)
     float out2 = PID_Update(&hpid, 8.0f, 1.0f);
-    TEST_ASSERT_FLOAT_WITHIN(0.0001f, -3.0f, out2);
+    TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.0f, out2);
 }
 
 // Test Output Clamping (0 to Max)
@@ -93,6 +93,26 @@ void test_pid_clamping(void) {
     TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.0f, out2);
 }
 
+// Test Anti-windup: I-term should NOT accumulate when output is saturated
+void test_pid_anti_windup(void) {
+    PID_HandleTypeDef hpid;
+    PID_Init(&hpid, 100.0f, 1.0f, 0.0f, 50.0f); // Kp=100, Max=50
+    hpid.Target = 100.0f;
+    
+    // Step 1: Meas=0 -> Error=100 -> P=10000 -> Saturated at 50!
+    // Output tentative = 10000 > Max, so I-term should NOT accumulate
+    PID_Update(&hpid, 0.0f, 1.0f);
+    float ie1 = hpid.IntegratedError;
+    
+    // Step 2: Still saturated, I-term should still NOT accumulate
+    PID_Update(&hpid, 0.0f, 1.0f);
+    float ie2 = hpid.IntegratedError;
+    
+    // Anti-windup verification: I-term should not have grown
+    TEST_ASSERT_FLOAT_WITHIN(0.0001f, ie1, ie2);
+    TEST_ASSERT_FLOAT_WITHIN(0.0001f, 0.0f, ie1); // Should be 0
+}
+
 int main(void) {
     UnityBegin();
     
@@ -101,6 +121,7 @@ int main(void) {
     RUN_TEST(test_pid_i_term);
     RUN_TEST(test_pid_d_term);
     RUN_TEST(test_pid_clamping);
+    RUN_TEST(test_pid_anti_windup);
     
     return UnityEnd();
 }
