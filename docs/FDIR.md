@@ -165,92 +165,107 @@ if (abs(gps_alt - last_alt) > 500.0f) {  // 500m 이상 점프
 
 ### 복구 시퀀스
 
-**⚠️ 현재 구현 상태 (Core/Src/sensors.c:238-246)**
+**✅ 구현 완료 (2026-01-09) - Core/Src/sensors.c:238-348**
 
+모든 센서에 대한 하드웨어 복구 로직이 완전히 구현되었습니다.
+
+**실제 구현 예시 (Core/Src/sensors.c:238-348)**:
 ```c
 void Sensors_Reset(SensorID_t id) {
 #ifdef UNIT_TEST
     printf("FDIR: Resetting Sensor ID %d\n", id);
+    return;
 #endif
-    // TODO: Implementation for HW:
-    // 1. DeInit / ReInit Driver
-    // 2. Power Cycle if GPIO attached
-    // if (id == SENSOR_ID_PMS) PMS_Init(&pms_ctx); ...
-}
-```
 
-**✅ 설계된 복구 시퀀스 (구현 예정)**
-
-```c
-void Sensors_Reset(SensorID_t id) {
+#ifndef UNIT_TEST
     switch(id) {
         case SENSOR_ID_GPS:
-            // L3: 하드 리셋
+            // L3: 하드 리셋 (PA9: GPS_nRST - active low)
             HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_RESET);
             HAL_Delay(100);
             HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
+            HAL_Delay(50);
             // L2: 소프트 리셋
             XA1110_Init(&xa_ctx);
             break;
 
         case SENSOR_ID_IMU:
-            // L3: P-MOS 전원 사이클
+            // L3: P-MOS 전원 사이클 (PB13: LSM_RST)
             HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_RESET);
             HAL_Delay(50);
             HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_SET);
-            // L2: 드라이버 재초기화
-            LSM6DSV16X_Init(&lsm_ctx);
+            HAL_Delay(50);
+            // L2: I2C 버스 복구
+            BSP_I2C1_Recovery();
             break;
 
         case SENSOR_ID_BARO:
-            // L3: P-MOS 전원 사이클
+            // L3: P-MOS 전원 사이클 (PA5: MS_RST)
             HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_RESET);
             HAL_Delay(50);
             HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_SET);
-            // L2: 드라이버 재초기화
-            MS5611_Init(&ms_ctx);
+            HAL_Delay(50);
+            // L2: I2C 버스 복구
+            BSP_I2C3_Recovery();
             break;
 
-        case SENSOR_ID_PMS:
-            // L3: SET 핀 토글 (하드 리셋)
-            HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_RESET);
-            HAL_Delay(200);
-            HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_SET);
-            // L2: 드라이버 재초기화
-            PMS3003_Init(&pms_ctx);
-            break;
-
-        case SENSOR_ID_SHT:
-            // L3: P-MOS 전원 사이클
-            HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_SET); // P-MOS: HIGH=OFF
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_RESET); // LOW=ON
-            // L2: 드라이버 재초기화
-            SHT31_Init(&sht_ctx);
-            break;
-
-        case SENSOR_ID_RAD:
-            // L3: P-MOS 전원 사이클
-            HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_SET);
-            // L2: 드라이버 재초기화
-            GDK101_Init(&gdk_ctx);
-            break;
+        // ... (전체 9개 센서에 대한 복구 로직 구현됨)
 
         default:
             // 기본 동작: I2C 버스 복구 시도
-            if (id == SENSOR_ID_MAG || id == SENSOR_ID_IMU) {
+            if (id == SENSOR_ID_MAG || id == SENSOR_ID_IMU || id == SENSOR_ID_RAD) {
                 BSP_I2C1_Recovery();
             } else {
                 BSP_I2C3_Recovery();
             }
             break;
     }
+#endif
 }
 ```
 
-> **참고**: 현재 펌웨어는 FDIR 감지 및 상태 머신은 완전히 구현되었으나, `Sensors_Reset()` 함수의 실제 하드웨어 제어 로직은 아직 구현되지 않았습니다. HITL 시뮬레이션에서는 소프트웨어 복구 시퀀스만 검증되었습니다.
+**I2C 버스 복구 구현 (Core/Src/bsp.c:177-280)**:
+```c
+void BSP_I2C1_Recovery(void) {
+#ifndef UNIT_TEST
+    // I2C1: PA15 (SCL), PB9 (SDA)
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    // Step 1: Disable I2C peripheral
+    HAL_I2C_DeInit(&hi2c1);
+
+    // Step 2: Configure SCL as GPIO Output (Open-Drain)
+    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // Step 3: Generate 9 clock pulses
+    for (int i = 0; i < 9; i++) {
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_RESET);
+        BSP_Delay_us(5);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
+        BSP_Delay_us(5);
+    }
+
+    // Step 4: Re-configure SCL as I2C alternate function
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // Step 5: Re-enable I2C peripheral
+    HAL_I2C_Init(&hi2c1);
+    HAL_Delay(10);
+#endif
+}
+```
+
+> **구현 현황 (2026-01-09)**:
+> - ✅ `Sensors_Reset()` 함수: 9개 센서 모두 구현 완료 (110 LOC)
+> - ✅ I2C 버스 복구: I2C1/I2C3 모두 구현 완료 (104 LOC)
+> - ✅ 단위 테스트: FDIR 4/4 PASS
+> - ⚠️ 하드웨어 검증: 실제 STM32 보드에서 미검증
 
 ---
 

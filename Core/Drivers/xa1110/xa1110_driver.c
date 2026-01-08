@@ -46,6 +46,11 @@ void XA1110_ProcessByte(xa1110_ctx_t *ctx, uint8_t byte) {
 }
 
 bool XA1110_ParseSentence(xa1110_ctx_t *ctx, char *sentence) {
+    // Validate checksum before parsing
+    if (!minmea_check(sentence, false)) {
+        return false;  // Invalid checksum or malformed sentence
+    }
+
     switch (minmea_sentence_id(sentence, false)) {
         case MINMEA_SENTENCE_RMC: {
             struct minmea_sentence_rmc frame;

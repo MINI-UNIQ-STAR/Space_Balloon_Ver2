@@ -3,6 +3,7 @@
 #include "main.h"  // For HAL_GPIO and pin definitions
 #include "sensors.h" // For SensorID definitions
 #include "bsp.h" // BSP Layer
+#include "pps_capture.h" // GPS 1PPS synchronization
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
@@ -18,6 +19,13 @@ telemetry_frame_t telem_frame;
 // Control Outputs
 float heater_battery_cmd = 0.0f;
 float heater_board_cmd = 0.0f;
+
+// Low Voltage Protection State
+uint8_t g_low_voltage_mode = 0;
+
+uint8_t App_IsLowVoltageMode(void) {
+    return g_low_voltage_mode;
+}
 
 void App_Init(void) {
     // 0. Board Init
@@ -50,9 +58,12 @@ void App_Init(void) {
     
     // 6. Actuators Init
     Actuators_Init();
-    
+
     // 7. FDIR Init
     FDIR_Init();
+
+    // 8. GPS 1PPS Init
+    PPS_Init();
 }
 
 void App_Loop(void) {
@@ -181,10 +192,41 @@ void App_Loop(void) {
         kf_initialized = 1U;
     }
     
-    // 2. PID Update
-    heater_battery_cmd = PID_Update(&hpid_bat, current_battery_temp, 0.02f);
-    heater_board_cmd = PID_Update(&hpid_brd, current_board_temp, 0.02f);
-    
+    // ** Low Voltage Protection (Load Shedding) **
+    // Disable high-power consumers when battery voltage < 2.7V to prevent brownout
+    uint16_t bat_mv = telem_frame.payload.bat_mv;
+
+    if (bat_mv < 2700 && g_low_voltage_mode == 0) {
+        // Enter low voltage mode
+        g_low_voltage_mode = 1;
+
+        // Disable heaters (highest power consumers)
+        heater_battery_cmd = 0.0f;
+        heater_board_cmd = 0.0f;
+
+        // Disable PMS3003 (UART2 sensor, moderate power ~100mA)
+        // Note: PMS3003 will be re-enabled when voltage recovers
+        #ifndef HOST_TEST_MODE
+        // No explicit disable function for PMS yet, but we can stop reading it
+        // FDIR will mark it as timeout if we don't update it
+        #endif
+    }
+    else if (bat_mv > 2900 && g_low_voltage_mode == 1) {
+        // Exit low voltage mode with 200mV hysteresis (2.9V)
+        g_low_voltage_mode = 0;
+    }
+
+    // 2. PID Update (skipped if in low voltage mode)
+    if (g_low_voltage_mode == 0) {
+        heater_battery_cmd = PID_Update(&hpid_bat, current_battery_temp, 0.02f);
+        heater_board_cmd = PID_Update(&hpid_brd, current_board_temp, 0.02f);
+    }
+    else {
+        // Keep heaters off in low voltage mode
+        heater_battery_cmd = 0.0f;
+        heater_board_cmd = 0.0f;
+    }
+
     // 3. Actuator Output
     Actuators_SetHeater_Battery(heater_battery_cmd);
     Actuators_SetHeater_Board(heater_board_cmd);

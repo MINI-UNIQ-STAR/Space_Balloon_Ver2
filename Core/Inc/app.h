@@ -14,6 +14,10 @@ extern telemetry_frame_t telem_frame;
 extern float heater_battery_cmd;
 extern float heater_board_cmd;
 
+// Low Voltage Protection
+extern uint8_t g_low_voltage_mode;
+uint8_t App_IsLowVoltageMode(void);
+
 void App_Init(void);
 void App_Loop(void);
 

@@ -29,7 +29,11 @@
       "Bash(where gcc:*)",
       "Bash(./build_test/test_drivers_runner.exe:*)",
       "Bash(./build_test/test_fdir_runner.exe:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(test:*)",
+      "Bash(./test/test_fdir/test_fdir.exe:*)",
+      "Bash(./test/test_kalman/test_kalman.exe:*)",
+      "Bash(./test/test_pid/test_pid.exe:*)"
     ]
   }
 }
