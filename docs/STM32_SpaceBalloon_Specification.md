@@ -1,7 +1,7 @@
 # STM32 성층권 풍선 센서 플랫폼 사양서
 
-**버전:** Rev 3.1 (GPS UTC 시간 추가)
-**날짜:** 2026-01-06
+**버전:** Rev 3.2 (텔레메트리 구조 검증 완료)
+**날짜:** 2026-01-08
 **MCU:** STM32G431CBU6 (Cortex-M4F @ 170MHz)
 **RTOS:** FreeRTOS (Thread-Safe Strategy 4)
 
@@ -353,7 +353,9 @@ float heater_board_get_duty(void);
 - **전송 속도**: 50Hz (20ms 간격)
 - **동기화**: GPS 1PPS 신호 기준
 - **프로토콜**: 바이너리 프레이밍
-- **CRC**: CRC16 체크섬
+- **페이로드 크기**: 116 바이트 (packed struct)
+- **전체 프레임**: 130 바이트 (헤더 12 + 페이로드 116 + CRC 2)
+- **CRC**: CRC16-CCITT-FALSE 체크섬
 - **출력**: UART3 → LoRa32 모듈
 - **RF 설정**: 915 MHz, SF11, BW 125kHz, CR 4/5 (장거리 전송 최적화)
 
@@ -819,6 +821,8 @@ typedef struct {
 
 | 버전 | 날짜 | 변경 사항 |
 |------|------|-----------|
+| Rev 3.2 | 2026-01-08 | 텔레메트리 구조 검증 (116바이트 페이로드), HITL/SITL/Python 일관성 확보 |
+| Rev 3.1 | 2026-01-06 | GPS UTC 시간 필드 추가, Multi-GNSS 위성 카운트 |
 | Rev 3.0 | 2026-01-03 | 구현 기반 사양서 재작성, PlatformIO 빌드 완료 |
 | Rev 2.2 | - | 원본 사양서 (PDF) |
 

@@ -4,7 +4,8 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-STM32G4-green.svg)
-![Simulation](https://img.shields.io/badge/simulation-HostSim-orange.svg)
+![Simulation](https://img.shields.io/badge/simulation-HostSim%20%7C%20HITL-orange.svg)
+![Telemetry](https://img.shields.io/badge/telemetry-116%20bytes-purple.svg)
 
 ---
 
@@ -17,7 +18,8 @@
 - [빌드 방법](#-빌드-방법)
   - [실제 하드웨어 빌드](#실제-하드웨어-빌드)
   - [호스트 시뮬레이션 빌드](#호스트-시뮬레이션-빌드)
-- [실행 방법](#-실행-방법)
+- [테스트 및 실행](#-테스트-및-실행)
+- [HITL 시뮬레이션](#-hitl-시뮬레이션)
 - [텔레메트리 프로토콜](#-텔레메트리-프로토콜)
 - [센서 목록](#-센서-목록)
 
@@ -263,7 +265,34 @@ CRC16: 0xABCD
 
 ---
 
-## 📡 텔레메트리 프로토콜
+## � HITL 시뮤레이션
+
+**HITL (Hardware-In-The-Loop)** 테스트를 통해 실제 STM32와 ESP32 Mock 보드를 연결하여 비행 시나리오를 검증합니다.
+
+### HITL 구성
+- **Main Control (ESP32-C3)**: PC와 통신, ESP-NOW 브로드캐스트
+- **I2C Mock Nodes (4개)**: 센서 에뮬레이션 (LSM6DSV16X, GPS, 기압계 등)
+- **Python Dashboard**: `docs/HITL/sensor_sender.py`
+
+### 실행 방법
+```powershell
+cd docs\HITL
+python sensor_sender.py
+```
+
+> 자세한 내용은 [docs/HITL/README.md](docs/HITL/README.md) 참조
+
+---
+
+## �📡 텔레메트리 프로토콜
+
+### 프레임 크기
+| 구성 요소 | 크기 |
+|----------|------|
+| **페이로드** | 116 바이트 |
+| **헤더** | 12 바이트 |
+| **CRC** | 2 바이트 |
+| **전체 프레임** | **130 바이트** |
 
 ### 프레임 및 페이로드 구조 (C Struct)
 
@@ -385,3 +414,7 @@ MIT License
 - RS41 라디오존데 데이터: [SondeHub](https://sondehub.org/)
 - STM32 HAL: STMicroelectronics
 - LSM6DSV16X 드라이버: ST MEMS Drivers
+
+---
+
+**마지막 업데이트:** 2026-01-08

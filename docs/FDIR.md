@@ -293,5 +293,5 @@ FDIR 메커니즘은 HITL(Hardware-In-The-Loop) 시뮬레이션을 통해 검증
 ## 참고 문서
 
 - [FMEA.md](FMEA.md) - 고장 모드 영향 분석
-- [README.md](README.md) - 프로젝트 개요
-- [telemetry.h](Core/Inc/telemetry.h) - 텔레메트리 프로토콜
+- [HITL/README.md](HITL/README.md) - HITL 시뮬레이션 시스템
+- [telemetry.h](../Core/Inc/telemetry.h) - 텔레메트리 프로토콜 (116 바이트)

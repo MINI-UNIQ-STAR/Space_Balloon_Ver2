@@ -227,7 +227,7 @@ FMEA(Failure Mode and Effects Analysis)는 잠재적 고장 모드를 식별하�
 | CRC/체크섬 | S-05, S-07, C-02 |
 | WDT | W-01, W-02 |
 | 정적 메모리 | W-03 |
-| HITL 시뮬레이션 | W-02, W-04, S-01~S-13 |
+| HITL 시뮬레이션 | W-02, W-04, S-01~S-13 (자세한 내용: [HITL/README.md](HITL/README.md)) |
 
 ### 운용 완화
 

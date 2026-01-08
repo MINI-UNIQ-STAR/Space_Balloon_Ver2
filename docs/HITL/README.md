@@ -59,3 +59,22 @@ Dual I2C 모드에서는 하나의 보드에서 나온 두 쌍의 SDA/SCL을 STM
 ## 🔎 연결 확인 (Connection Verification)
 *   **Heartbeat LED**: 각 Mock 노드는 Main Control로부터 패킷을 수신할 때마다 **내장 LED (GPIO 2)**를 토글(깜빡임)합니다.
 *   LED가 빠르게 깜빡인다면(10Hz), Main Control과의 무선 연결이 정상적으로 수립된 것입니다.
+
+---
+
+## 📦 프로토콜 일관성 (Protocol Consistency)
+
+모든 HITL 컴포넌트는 동일한 데이터 구조를 사용합니다:
+
+| 프로토콜 | 파일 | 페이로드 크기 |
+|---------|------|-------------|
+| HITL State | `common/hitl_protocol.h` | 96 바이트 (ESP-NOW) |
+| STM32 Telemetry | `Core/Inc/telemetry.h` | **116 바이트** |
+| Python Parser | `sensor_sender.py` | **116 바이트** (검증 완료) |
+
+### 핵심 검증 사항
+*   **UTC Year**: `uint16_t` (2바이트) - 모든 파일에서 동일
+*   **Multi-GNSS**: GPS/GLONASS/Galileo/BeiDou 위성 수 - 7바이트
+*   **Python TELEM_FMT**: `<IHH3i3i3fhhhhiifBBBBBBB5BHHHHHhHIhHBBffff`
+
+> ⚠️ **주의**: `hitl_protocol.h`는 ESP-NOW 시뮬레이션용이며, `telemetry.h`와 다른 구조입니다.
