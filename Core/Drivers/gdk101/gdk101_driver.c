@@ -11,7 +11,10 @@ int32_t GDK101_Init(gdk101_ctx_t *ctx) {
     // Just read status to check connection
     uint8_t status;
     bool vib;
-    return GDK101_Read_Status(ctx, &status, &vib);
+    if (GDK101_Read_Status(ctx, &status, &vib) != 0) {
+        return GDK101_I2C_ERR;
+    }
+    return GDK101_OK;
 }
 
 int32_t GDK101_Reset(gdk101_ctx_t *ctx) {

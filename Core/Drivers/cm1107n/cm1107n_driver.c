@@ -1,4 +1,5 @@
 #include "cm1107n_driver.h"
+#include "main.h" // For HAL_Delay
 
 int32_t CM1107N_Init(cm1107n_ctx_t *ctx) {
     if (!ctx->address) ctx->address = CM1107N_I2C_ADDR;
@@ -19,12 +20,12 @@ int32_t CM1107N_ReadCO2(cm1107n_ctx_t *ctx, uint16_t *co2_ppm) {
     // Wait for sensor processing (Manual says >20ms or just read?)
     // Blocking for simplicity as requested, or rely on I2C stretching if supported.
     // Usually need a small delay.
-    // #ifndef UNIT_TEST
-    // HAL_Delay(20); 
-    // #endif
-    // If we want non-blocking, we need state machine. 
-    // But let's assume standard I2C read works or check later.
-    // Let's add header "main.h" for HAL_Delay if we enable it.
+    #ifdef HAL_Delay
+    HAL_Delay(20); 
+    #elif defined(HOST_TEST_MODE)
+    // In host test, HAL_Delay is mocked
+    HAL_Delay(20);
+    #endif
     
     // I2C Read: Read 8 bytes.
     // We pass 0 as register/dummy.

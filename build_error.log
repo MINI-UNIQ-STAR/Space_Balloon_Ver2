@@ -1,0 +1,44 @@
+msbuild 踰꾩쟾 17.14.23+b0019275e(.NET Framework??
+
+  sensors_copy.c
+  crcutil.c
+  肄붾뱶瑜??앹꽦?섍퀬 ?덉뒿?덈떎...
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_drivers\sensors_copy.c(565,1): error C1070: 'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_drivers\sensors_copy.c' ?뚯씪?먯꽌 #if/#endif ?띿씠 吏앹씠 留욎? ?딆뒿?덈떎. [C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\test_drivers_runner.vcxproj]
+  Building Custom Rule C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/CMakeLists.txt
+  test_main.c
+  mock_dependencies.c
+  fdir.c
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\fdir.c(1,1): warning C4819: ?꾩옱 肄붾뱶 ?섏씠吏(949)?먯꽌 ?쒖떆?????녿뒗 臾몄옄媛 ?뚯씪???ㅼ뼱 ?덉뒿?덈떎. ?곗씠?곌? ?먯떎?섏? ?딄쾶 ?섎젮硫??대떦 ?뚯씪???좊땲肄붾뱶 ?뺤떇?쇰줈 ??ν븯??떆?? [C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\test_fdir_runner.vcxproj]
+  unity.c
+  肄붾뱶瑜??앹꽦?섍퀬 ?덉뒿?덈떎...
+  test_fdir_runner.vcxproj -> C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\Debug\test_fdir_runner.exe
+  Building Custom Rule C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/CMakeLists.txt
+  test_mission.c
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_integration\test_mission.c(42,5): warning C4013: 'MockSensors_ClearStats'??媛) ?뺤쓽?섏? ?딆븯?듬땲?? extern? int?뺤쓣 諛섑솚?섎뒗 寃껋쑝濡?媛꾩＜?⑸땲?? [C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\test_integration_runner.vcxproj]
+  app.c
+  actuators.c
+  fdir.c
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\fdir.c(1,1): warning C4819: ?꾩옱 肄붾뱶 ?섏씠吏(949)?먯꽌 ?쒖떆?????녿뒗 臾몄옄媛 ?뚯씪???ㅼ뼱 ?덉뒿?덈떎. ?곗씠?곌? ?먯떎?섏? ?딄쾶 ?섎젮硫??대떦 ?뚯씪???좊땲肄붾뱶 ?뺤떇?쇰줈 ??ν븯??떆?? [C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\test_integration_runner.vcxproj]
+  kalman.c
+  pid.c
+  telemetry.c
+  xcp.c
+  mock_sensors.c
+  mock_hal.c
+  minmea.c
+  unity.c
+  肄붾뱶瑜??앹꽦?섍퀬 ?덉뒿?덈떎...
+app.obj : error LNK2019: BSP_InitApp_Init ?⑥닔?먯꽌 李몄“?섎뒗 ?뺤씤?????녿뒗 ?몃? 湲고샇 [C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\test_integration_runner.vcxproj]
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\Debug\test_integration_runner.exe : fatal error LNK1120: 1媛쒖쓽 ?뺤씤?????녿뒗 ?몃? 李몄“?낅땲?? [C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\test_integration_runner.vcxproj]
+  Building Custom Rule C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/CMakeLists.txt
+  test_main.c
+  kalman.c
+  unity.c
+  肄붾뱶瑜??앹꽦?섍퀬 ?덉뒿?덈떎...
+  test_kalman_runner.vcxproj -> C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\Debug\test_kalman_runner.exe
+  Building Custom Rule C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/CMakeLists.txt
+  test_main.c
+  pid.c
+  unity.c
+  肄붾뱶瑜??앹꽦?섍퀬 ?덉뒿?덈떎...
+  test_pid_runner.vcxproj -> C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build\Debug\test_pid_runner.exe

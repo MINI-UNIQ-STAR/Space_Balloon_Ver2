@@ -330,9 +330,36 @@ void writeBufferToSd() {
 void sendLoRaPacket() {
   if (latestFrameLen == 0) return;
   
+  // CSMA: Check if channel is free
+  // Basic CAD using parsePacket (non-blocking if size > 0)
+  // Or check RSSI noise floor if needed. 
+  // Simple approach: Check if we are receiving a packet right now.
+  // parsePacket() returns non-zero if packet is found.
+  // Note: Standard LoRa library puts into RX mode after parsing.
+  // We need to be careful not to interrupt ongoing RX logic in generic loop.
+  // But here we are in loop(), so we can check.
+  
+  int packetSize = LoRa.parsePacket();
+  if (packetSize > 0) {
+     Serial.printf("[LoRa] Channel Busy (RX %d bytes), Skipping TX to avoid collision\n", packetSize);
+     // We can process it or just ignore to avoid TX collision. 
+     // Ideally process it, but loop() handles RX generally.
+     // Just skip TX this round.
+     return;
+  }
+  
   LoRa.beginPacket();
   LoRa.write(latestFrame, latestFrameLen);
   LoRa.endPacket();
+  // Put back to RX mode is handled by LoRa.begin() or explicit receive? 
+  // LoRa library automatically goes to standby after TX. 
+  // We should call LoRa.parsePacket() in loop to go back to RX or set receive callback.
+  // The loop() uses parsePacket logic implicitly? No, main loop uses 'Serial2' for input, 
+  // but this node is RX for Telemetry (Gateway). 
+  // Actually, wait, this code is 'LoRa32 v2.1 Telemetry Receiver'.
+  // It RECEIVES from UART (STM32) and TRANSMITS via LoRa (to Ground).
+  // Is it also receiving LoRa? Usually yes, for Command Uplink.
+  // If so, CSMA is important.
   
   loraTxCount++;
   

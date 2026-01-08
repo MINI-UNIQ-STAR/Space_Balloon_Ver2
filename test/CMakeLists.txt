@@ -85,7 +85,7 @@ add_executable(test_drivers_runner
     test_drivers/mock_hal.c
     test_drivers/sensors_copy.c
     ../Core/Src/fdir.c
-    ../Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c
+    test_drivers/mock_lsm6dsv16x.c
     ../Core/Drivers/mlx90393/mlx90393_driver.c
     ../Core/Drivers/xa1110/xa1110_driver.c
     ../Core/Drivers/minmea/minmea.c
