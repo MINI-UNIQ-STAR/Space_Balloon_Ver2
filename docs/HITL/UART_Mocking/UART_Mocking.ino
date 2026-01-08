@@ -55,6 +55,27 @@ String calculateNMEAChecksum(String content) {
   return hex;
 }
 
+/* Helper: Send NMEA sentence with checksum */
+void sendNMEASentence(String talker, String content) {
+  String chk = calculateNMEAChecksum(content);
+  GPS_SERIAL.print("$");
+  GPS_SERIAL.print(talker);
+  GPS_SERIAL.print(content);
+  GPS_SERIAL.print("*");
+  GPS_SERIAL.println(chk);
+}
+
+/* Helper: Send GSV (Satellites in View) Message */
+void sendGSV(const char* talker, uint8_t total_sats) {
+  // Simple GSV: 1 message showing total satellites
+  // Format: GSV,num_msgs,msg_num,total_sats,sat_info...
+  // Minimal implementation without individual satellite details
+  String gsv = "GSV,1,1,";
+  gsv += String(total_sats);
+  gsv += ",,,,,,,,,,,,,,,,";  // Empty sat info fields (4 sats x 4 fields each)
+  sendNMEASentence(String(talker), gsv);
+}
+
 /* Helper: Send PMS3003 Data */
 void sendPMSFrame(uint16_t pm1, uint16_t pm25, uint16_t pm10) {
   uint8_t buffer[32];
@@ -91,44 +112,72 @@ void sendPMSFrame(uint16_t pm1, uint16_t pm25, uint16_t pm10) {
 
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   if (len != sizeof(HitlStatePacket)) return;
-  
+
   HitlStatePacket *pkt = (HitlStatePacket*)incomingData;
-  
-  // 1. Generate NMEA $GPGGA using pkt data
-  // data: lat_e7, lon_e7, alt_m
-  
+
+  // Convert GPS coordinates to NMEA format
   double lat_deg = pkt->lat_e7 / 10000000.0;
   int lat_d = (int)abs(lat_deg);
   double lat_m = (abs(lat_deg) - lat_d) * 60.0;
   char lat_str[15];
   sprintf(lat_str, "%02d%07.4f", lat_d, lat_m);
   char lat_dir = (pkt->lat_e7 >= 0) ? 'N' : 'S';
-  
+
   double lon_deg = pkt->lon_e7 / 10000000.0;
   int lon_d = (int)abs(lon_deg);
   double lon_m = (abs(lon_deg) - lon_d) * 60.0;
   char lon_str[15];
   sprintf(lon_str, "%03d%07.4f", lon_d, lon_m);
   char lon_dir = (pkt->lon_e7 >= 0) ? 'E' : 'W';
-  
-  // Time from timestamp? Mocking 120000.00
-  String nmea = "GPGGA,120000.00,";
-  nmea += String(lat_str) + "," + lat_dir + ",";
-  nmea += String(lon_str) + "," + lon_dir + ",";
-  nmea += String(pkt->fix_type) + "," + String(pkt->sats) + ",1.0,";
-  nmea += String(pkt->alt_m, 1) + ",M,0.0,M,,";
-  
-  String chk = calculateNMEAChecksum(nmea);
-  GPS_SERIAL.print("$");
-  GPS_SERIAL.print(nmea);
-  GPS_SERIAL.print("*");
-  GPS_SERIAL.println(chk);
-  
-  // 2. Generate PMS Frame
-  sendPMSFrame(pkt->pm2_5, pkt->pm2_5, pkt->pm2_5); // Using PM2.5 for all for simplicity if others not in struct
-  
+
+  // Format UTC time (HHMMSS.SS)
+  char time_str[12];
+  sprintf(time_str, "%02d%02d%02d.00", pkt->utc_hour, pkt->utc_min, pkt->utc_sec);
+
+  // Format UTC date (DDMMYY)
+  char date_str[8];
+  int year_2digit = pkt->utc_year % 100;
+  sprintf(date_str, "%02d%02d%02d", pkt->utc_day, pkt->utc_month, year_2digit);
+
+  // 1. Send RMC (Recommended Minimum - includes time/date)
+  String rmc = "RMC,";
+  rmc += String(time_str) + ",A,";  // Time, Status=Active
+  rmc += String(lat_str) + "," + lat_dir + ",";
+  rmc += String(lon_str) + "," + lon_dir + ",";
+  rmc += "0.0,0.0,";  // Speed over ground, Course over ground
+  rmc += String(date_str) + ",,,A";  // Date, Magnetic variation, Mode
+  sendNMEASentence("GP", rmc);
+
+  // 2. Send GGA (Fix Data)
+  String gga = "GGA,";
+  gga += String(time_str) + ",";
+  gga += String(lat_str) + "," + lat_dir + ",";
+  gga += String(lon_str) + "," + lon_dir + ",";
+  gga += String(pkt->fix_type) + "," + String(pkt->sats) + ",1.0,";
+  gga += String(pkt->alt_m, 1) + ",M,0.0,M,,";
+  sendNMEASentence("GP", gga);
+
+  // 3. Send GSV Messages (Satellites in View) for each GNSS system
+  if (pkt->sats_gps > 0) {
+    sendGSV("GP", pkt->sats_gps);  // GPS
+  }
+  if (pkt->sats_glonass > 0) {
+    sendGSV("GL", pkt->sats_glonass);  // GLONASS
+  }
+  if (pkt->sats_galileo > 0) {
+    sendGSV("GA", pkt->sats_galileo);  // Galileo
+  }
+  if (pkt->sats_beidou > 0) {
+    sendGSV("GB", pkt->sats_beidou);  // BeiDou
+  }
+
+  // 4. Generate PMS Frame
+  sendPMSFrame(pkt->pm2_5, pkt->pm2_5, pkt->pm2_5);
+
   // Debug
-  // Serial.printf("Updated GPS: %f, %f, %f\n", lat_deg, lon_deg, pkt->alt_m);
+  // Serial.printf("GPS: %s %s | Time: %s %s | Sats: GP=%d GL=%d GA=%d GB=%d\n",
+  //               lat_str, lon_str, time_str, date_str,
+  //               pkt->sats_gps, pkt->sats_glonass, pkt->sats_galileo, pkt->sats_beidou);
 }
 
 void loop() {

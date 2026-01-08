@@ -300,10 +300,12 @@ void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uin
     if (*pm2_5 == 0) *pm2_5 = 15;
 }
 
-void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
+void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
                       uint8_t *sats, uint8_t *sats_view,
                       uint8_t *sats_gps, uint8_t *sats_glonass,
-                      uint8_t *sats_galileo, uint8_t *sats_beidou) {
+                      uint8_t *sats_galileo, uint8_t *sats_beidou,
+                      uint8_t *utc_hour, uint8_t *utc_min, uint8_t *utc_sec,
+                      uint8_t *utc_day, uint8_t *utc_month, uint16_t *utc_year) {
     // Mock: Feed NMEA data if fix is 0 (just to verify parsing on host)
     if (xa_ctx.data.fix_type == 0) {
         const char *sim_gga = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
@@ -316,10 +318,21 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     *fix = xa_ctx.data.fix_type;
     *sats = xa_ctx.data.sats_used;
     *sats_view = xa_ctx.data.sats_view_total;
-    // Parsing per-system sats logic not implemented in driver wrapper yet, mocking:
-    *sats_gps = *sats;
-    // ...
-    
+
+    // Per-GNSS satellite counts from GSV parsing
+    *sats_gps = xa_ctx.data.sats_gps;
+    *sats_glonass = xa_ctx.data.sats_glonass;
+    *sats_galileo = xa_ctx.data.sats_galileo;
+    *sats_beidou = xa_ctx.data.sats_beidou;
+
+    // UTC Time from GPS
+    *utc_hour = xa_ctx.data.utc_hour;
+    *utc_min = xa_ctx.data.utc_min;
+    *utc_sec = xa_ctx.data.utc_sec;
+    *utc_day = xa_ctx.data.utc_day;
+    *utc_month = xa_ctx.data.utc_month;
+    *utc_year = xa_ctx.data.utc_year;
+
     // Check Health: if fix is valid or data coming
     FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_GPS);
 }

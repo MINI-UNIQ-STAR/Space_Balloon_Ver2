@@ -4,7 +4,32 @@
       "Bash(pio run:*)",
       "WebSearch",
       "WebFetch(domain:docs.platformio.org)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(cmake:*)",
+      "Bash(make:*)",
+      "Bash(tee:*)",
+      "Bash(ls:*)",
+      "Bash(./test_drivers_runner.exe:*)",
+      "Bash(./test_integration_runner.exe:*)",
+      "Bash(./test_pid_runner.exe)",
+      "Bash(./test_kalman_runner.exe)",
+      "Bash(./test_fdir_runner.exe:*)",
+      "Bash(./test_host.exe:*)",
+      "Bash(mingw32-make)",
+      "Bash(cat:*)",
+      "Bash(cmd //c build_host.bat)",
+      "Bash(for file in docs/HITL/GPIO_Mocking/hitl_protocol.h docs/HITL/I2C1_Mocking/I2C1_Dual_Mock/hitl_protocol.h docs/HITL/I2C1_Mocking/I2C1_GDK_GPIO_Mock/hitl_protocol.h docs/HITL/I2C3_Mocking/I2C3_Dual_Mock_A/hitl_protocol.h docs/HITL/I2C3_Mocking/I2C3_Dual_Mock_B_UART/hitl_protocol.h docs/HITL/main_control/hitl_protocol.h)",
+      "Bash(do cp docs/HITL/common/hitl_protocol.h \"$file\")",
+      "Bash(done)",
+      "Bash(./build_test/test_integration_runner.exe)",
+      "Bash(./check_inc.exe)",
+      "Bash(test/check_inc.exe)",
+      "Bash(gcc:*)",
+      "Bash(./check_sizes.exe:*)",
+      "Bash(where gcc:*)",
+      "Bash(./build_test/test_drivers_runner.exe:*)",
+      "Bash(./build_test/test_fdir_runner.exe:*)",
+      "Bash(find:*)"
     ]
   }
 }

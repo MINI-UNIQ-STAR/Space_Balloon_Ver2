@@ -41,9 +41,14 @@ typedef struct {
     uint8_t gps_sats_in_view_glonass;
     uint8_t gps_sats_in_view_galileo;
     uint8_t gps_sats_in_view_beidou;
-    uint8_t reserved2;
-    uint8_t reserved3;
-    uint8_t reserved4;
+
+    // GPS UTC Time
+    uint8_t gps_utc_hour;
+    uint8_t gps_utc_min;
+    uint8_t gps_utc_sec;
+    uint8_t gps_utc_day;
+    uint8_t gps_utc_month;
+    uint16_t gps_utc_year;
 
     uint16_t bat_mv;            // ADC PA1
 

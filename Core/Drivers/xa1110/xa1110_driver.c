@@ -74,18 +74,6 @@ bool XA1110_ParseSentence(xa1110_ctx_t *ctx, char *sentence) {
                 ctx->data.lon_deg_e7 = minmea_rescale(&frame.longitude, 10000000);
             }
         } break;
-        
-        // IMP-10 Optimization: Skip GSA/GSV to save cycles
-        /* 
-        case MINMEA_SENTENCE_GSA: {
-            struct minmea_sentence_gsa frame;
-            if (minmea_parse_gsa(&frame, sentence)) {
-                ctx->data.fix_mode = frame.mode;
-                ctx->data.pdop_e2 = minmea_rescale(&frame.pdop, 100);
-                ctx->data.hdop_e2 = minmea_rescale(&frame.hdop, 100);
-                ctx->data.vdop_e2 = minmea_rescale(&frame.vdop, 100);
-            }
-        } break;
 
         case MINMEA_SENTENCE_GSV: {
             struct minmea_sentence_gsv frame;
@@ -98,13 +86,12 @@ bool XA1110_ParseSentence(xa1110_ctx_t *ctx, char *sentence) {
                     else if (talker[0] == 'G' && talker[1] == 'A') ctx->data.sats_galileo = frame.total_sats;
                     else if (talker[0] == 'G' && talker[1] == 'B') ctx->data.sats_beidou = frame.total_sats;
                 }
-                
+
                 // Update total visible
-                ctx->data.sats_view_total = ctx->data.sats_gps + ctx->data.sats_glonass + 
+                ctx->data.sats_view_total = ctx->data.sats_gps + ctx->data.sats_glonass +
                                           ctx->data.sats_galileo + ctx->data.sats_beidou;
             }
         } break;
-        */
         
         default:
             return false;

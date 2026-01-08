@@ -18,6 +18,20 @@ typedef struct __attribute__((packed)) {
   uint8_t fix_type;
   uint8_t sats;
 
+  // Multi-GNSS Satellite Counts
+  uint8_t sats_gps;
+  uint8_t sats_glonass;
+  uint8_t sats_galileo;
+  uint8_t sats_beidou;
+
+  // GPS UTC Time
+  uint8_t utc_hour;
+  uint8_t utc_min;
+  uint8_t utc_sec;
+  uint8_t utc_day;
+  uint8_t utc_month;
+  uint16_t utc_year;
+
   // Environment
   float   temp_c;      // SHT31, MS5611, DS18B20 (Internal/Ambient)
   float   ext_temp_c;  // MCP9600 (Thermocouple)

@@ -13,7 +13,7 @@
 | **IMU** | accel_mps2_x1000[3], gyro_rads_x1000[3] |
 | **자기계** | mag_uT[3] |
 | **온도** | board/external/sht31/bat _temp_c_x100 |
-| **GPS** | lat/lon_e7, alt_m, fix, sats, UTC |
+| **GPS** | lat/lon_e7, alt_m, fix, sats_used/total, UTC |
 | **공기질** | pm1/25/10, ozone_ppb |
 | **기압** | ms5611_press_pa, rh_x100 |
 | **방사선** | gdk101_usvh_x100 |
@@ -32,5 +32,9 @@ timestamp_ms, ...payload, crc16
 |------|------|------|
 | **#pragma pack** | ⭐⭐⭐⭐⭐ | 정렬 보장 |
 | **x100/x1000** | ⭐⭐⭐⭐⭐ | 정수 전송 |
+
+## 최근 개선사항
+- ✅ **GPS 위성 수 필드 추가**: `gps_sats_used`/`gps_sats_total` (IMP-09)
+- ✅ **SD 카드 타임스탬프 GPS 동기화**: 파일명에 UTC 시간 반영
 
 ## 종합: ⭐⭐⭐⭐⭐ (5/5)

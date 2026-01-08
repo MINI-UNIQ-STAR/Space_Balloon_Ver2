@@ -28,6 +28,10 @@ typedef enum {
 | 항목 | 점수 | 비고 |
 |------|------|------|
 | **ID 열거** | ⭐⭐⭐⭐⭐ | FDIR 연동 |
-| **GPS API** | ⭐⭐⭐⭐⭐ | Multi-GNSS 지원 |
+| **GPS API** | ⭐⭐⭐⭐⭐ | Multi-GNSS GSA/GSV 지원 |
+
+## 최근 개선사항
+- ✅ **Multi-GNSS 지원 확장**: GPS/GLONASS/Galileo/BeiDou 위성 수 추적 (IMP-09)
+- ✅ **위성 수 텔레메트리 추가**: `gps_sats_total`/`gps_sats_used` 필드 추가
 
 ## 종합: ⭐⭐⭐⭐⭐ (5/5)
