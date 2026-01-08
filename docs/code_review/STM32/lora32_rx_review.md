@@ -70,13 +70,14 @@ uint16_t crc16_ccitt_false(data, len) // Poly 0x1021, Init 0xFFFF
 ## 장점
 - ✅ **완전한 프레임 파싱** (Magic → Header → Payload → CRC)
 - ✅ **GPS UTC 시간** ISO 8601 포맷 (`YYYY-MM-DDTHH:MM:SS`)
+- ✅ **Multi-GNSS 통계 저장** (GPS, GLONASS, Galileo, BeiDou 개별 위성 수)
 - ✅ **x100/x1000 스케일** 자동 변환
 - ✅ **LoRa SF11** 장거리 설정
 - ✅ **UART 버퍼 확장** (1KB, SD 쓰기 중 손실 방지)
 
 ## 개선 권장
-- ⚠️ LoRa 채널 충돌 검사 없음 (CSMA 권장)
-- ⚠️ SD 파일 로테이션 없음 (용량 초과 시)
+- ⚠️ SD 파일 로테이션 없음 (용량 초과 시) - **(IMP-02) SD 관리 기능 추가됨**
+- ⚠️ LoRa 채널 충돌 검사 없음 (CSMA/LBT 권장) - **(IMP-02) CSMA/LBT (Listen Before Talk) 구현 완료**
 
 ---
 

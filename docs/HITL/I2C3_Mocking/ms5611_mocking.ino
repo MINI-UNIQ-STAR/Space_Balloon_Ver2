@@ -19,6 +19,41 @@ uint32_t last_update_ms = 0;
 // Internal Buffer
 float current_temp = 25.0;
 float current_press = 101300.0;
+uint32_t current_D1 = 0;
+uint32_t current_D2 = 0;
+uint8_t pending_conversion = 0; // 0=None, 1=D1(Press), 2=D2(Temp)
+
+// Coefficients
+const uint16_t C[7] = {0, 40127, 36924, 23317, 23282, 33464, 28312};
+
+void updateRawValues() {
+  // 1. Calculate D2 (Temp)
+  // TEMP = 2000 + dT * C6 / 2^23
+  // dT = (TEMP - 2000) * 2^23 / C6
+  int32_t temp_c_100 = (int32_t)(current_temp * 100);
+  int64_t dT = ((int64_t)temp_c_100 - 2000) * 8388608LL / C[6];
+  current_D2 = (uint32_t)(dT + ((int64_t)C[5] << 8));
+  
+  // 2. Calculate D1 (Pressure)
+  // OFF = C2 * 2^16 + (C4 * dT) / 2^7
+  // SENS = C1 * 2^15 + (C3 * dT) / 2^8
+  // P = (D1 * SENS / 2^21 - OFF) / 2^15
+  // D1 = (P * 2^15 + OFF) * 2^21 / SENS
+  
+  int64_t OFF = ((int64_t)C[2] << 16) + (((int64_t)C[4] * dT) >> 7);
+  int64_t SENS = ((int64_t)C[1] << 15) + (((int64_t)C[3] * dT) >> 8);
+  
+  int32_t P = (int32_t)current_press;
+  
+  // Inverse: D1 = (P * 32768 + OFF) * 2097152 / SENS
+  // Note: Large numbers, need int64.
+  // P*2^15 + OFF will be around (100000*32768 + 2e9) ~ 5e9 (fits in int64)
+  // Then * 2^21 -> 1e16 (fits in int64, max is 9e18)
+  
+  int64_t numerator = ((int64_t)P * 32768LL + OFF) * 2097152LL;
+  if(SENS != 0) current_D1 = (uint32_t)(numerator / SENS);
+  else current_D1 = 0;
+}
 
 // --- ESP-NOW Callback ---
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
@@ -37,6 +72,16 @@ volatile uint8_t last_cmd = 0;
 void onReceive(int len) {
   if (len > 0) {
     last_cmd = Wire.read();
+    
+    // Check conversion commands
+    // D1 (Pressure): 0x40, 0x42, 0x44, 0x46, 0x48 (OSR)
+    // D2 (Temp): 0x50, 0x52, 0x54, 0x56, 0x58 (OSR)
+    if ((last_cmd & 0xF0) == 0x40) {
+        pending_conversion = 1; // D1
+    } else if ((last_cmd & 0xF0) == 0x50) {
+        pending_conversion = 2; // D2
+    }
+    
     while (Wire.available()) Wire.read();
   }
 }
@@ -57,12 +102,12 @@ void onRequest() {
      
      static uint16_t prom[8] = {
          0x0000, // C0 (Reserved)
-         40127,  // C1
-         36924,  // C2
-         23317,  // C3
-         23282,  // C4
-         33464,  // C5
-         28312,  // C6
+         C[1],  // C1
+         C[2],  // C2
+         C[3],  // C3
+         C[4],  // C4
+         C[5],  // C5
+         C[6],  // C6
          0x0000  // C7 (CRC will be inserted)
      };
      
@@ -93,24 +138,14 @@ void onRequest() {
   }
   // 2. ADC Read (0x00)
   else if (last_cmd == 0x00) {
-    // Return 3 bytes (24-bit raw)
-    // MS5611 Raw logic is complex (dT calculation).
-    // For simple mock, we just return a fluctuating value?
-    // Or we should inverse calculate D1/D2 from Temp/Pressure.
-    // Given the STM32 driver just reads raw and computes,
-    // if we send constant raw, it will read constant T/P.
-    // Let's emulate a "reasonable" raw value.
-    // D1 (Pressure) ~ 8,000,000
-    // D2 (Temp) ~ 8,000,000
+    uint32_t adc_val = 0;
+    if (pending_conversion == 1) adc_val = current_D1;
+    else if (pending_conversion == 2) adc_val = current_D2;
+    else adc_val = 0; // Should not happen or Reset?
     
-    // Simplification: Return fixed/dynamic bytes based on mock_press?
-    // Let's just return a constant for now to pass init.
-    // If strict physical simulation needed, we need C1-C6 and D1/D2 math.
-    
-    // Just return semi-random variations or static
-    Wire.write(0x80);
-    Wire.write(0x00);
-    Wire.write(0x00);
+    Wire.write((adc_val >> 16) & 0xFF);
+    Wire.write((adc_val >> 8) & 0xFF);
+    Wire.write(adc_val & 0xFF);
   }
   else {
     Wire.write(0x00);
@@ -139,5 +174,6 @@ void setup() {
 }
 
 void loop() {
+  updateRawValues();
   delay(10);
 }

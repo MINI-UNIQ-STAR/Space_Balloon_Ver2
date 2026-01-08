@@ -4,6 +4,10 @@
 #include "mock_hal.h"
 #include "app.h"
 #include "sensors.h"
+#include "sensors.h"
+// #include "mock_sensors.h" // File not found in include path
+
+extern void MockSensors_ClearStats(void);
 
 // --- Simulation State ---
 typedef struct {
@@ -13,6 +17,18 @@ typedef struct {
 } SimState_t;
 
 SimState_t sim_state = {0.0f, 0.0f, 25.0f};
+
+// --- Mock BSP ---
+// BSP_Init required by App_Init()
+void BSP_Init(void) {
+    // Mock implementation
+}
+void BSP_Sensor_PowerOn(void) {}
+void BSP_Delay(uint32_t Delay) {}
+uint32_t BSP_GetTick(void) { return 0; }
+// UART Stubs used by Telemetry?
+int32_t BSP_UART_Write(uint8_t *pData, uint16_t Len) { return 0; }
+int32_t BSP_UART_Read(uint8_t *pData, uint16_t Len) { return 0; }
 
 // --- Helper Functions ---
 void Sim_UpdatePhysics(float dt_s) {

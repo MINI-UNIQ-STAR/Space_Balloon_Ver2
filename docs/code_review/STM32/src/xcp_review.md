@@ -15,7 +15,8 @@
 | `XCP_UpdateMeasurements()` | DAQ 업데이트 |
 
 ## 현재 상태
-- ⚠️ **스텁 구현** (최소 기능)
+- ✅ **기본 기능 구현됨 (IMP-05)**
+- Connect, Short_Upload, Short_Download 지원
 - ✅ PID/Kalman 핸들 접근 준비
 
 ## 평가
@@ -27,4 +28,4 @@
 
 ## 종합: ⭐⭐⭐ (3/5)
 
-**향후 확장 예정 스텁.**
+**기본 XCP 프로토콜(Connect, Upload, Download) 구현 완료 (IMP-05).**

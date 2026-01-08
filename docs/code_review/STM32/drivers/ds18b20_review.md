@@ -35,4 +35,4 @@ int16_t DS18B20_ReadTemp_x100(uint8_t sensor_idx);
 
 ## 종합: ⭐⭐⭐⭐⭐ (5/5)
 
-**완전한 1-Wire 프로토콜 스택 포함.**
+**완전한 1-Wire 프로토콜 스택 포함. MSVC 호환성 패치 완료.**

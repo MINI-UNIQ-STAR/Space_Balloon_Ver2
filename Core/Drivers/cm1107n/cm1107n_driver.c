@@ -17,15 +17,8 @@ int32_t CM1107N_ReadCO2(cm1107n_ctx_t *ctx, uint16_t *co2_ppm) {
     // Let's use write_reg with cmd[0] as reg, and cmd[1..3] as data.
     if (ctx->write(ctx->handle, cmd[0], &cmd[1], 3) != 0) return -1;
     
-    // Wait for sensor processing (Manual says >20ms or just read?)
-    // Blocking for simplicity as requested, or rely on I2C stretching if supported.
-    // Usually need a small delay.
-    #ifdef HAL_Delay
-    HAL_Delay(20); 
-    #elif defined(HOST_TEST_MODE)
-    // In host test, HAL_Delay is mocked
+    // Wait for sensor processing (Datasheet requirement ~20ms)
     HAL_Delay(20);
-    #endif
     
     // I2C Read: Read 8 bytes.
     // We pass 0 as register/dummy.

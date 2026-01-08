@@ -33,11 +33,11 @@ void OnDataRecv(...) {
 
 | 센서 | 레지스터 | 응답 |
 |------|----------|------|
-| LSM6DSV16X | 0x0F (WHO_AM_I) | 0x70 |
+| LSM6DSV16X | 0x0F (WHO_AM_I) | 0x70 / R/W Registers (IMP-03) |
 | MLX90393 | - | 0x00 (Status) |
 
 ---
 
 ## 평가: ⭐⭐⭐⭐ (4/5)
 
-**듀얼 I2C Mock. 완전한 레지스터 맵 확장 권장.**
+**듀얼 I2C Mock. LSM6DSV16X 레지스터 맵(256B) 확장 완료 (IMP-03).**

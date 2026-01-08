@@ -139,9 +139,10 @@ main_control.ino ─ESP-NOW─┬─► I2C1_Dual_Mock (LSM+MLX)
 
 | 항목 | 우선순위 | 설명 |
 |------|----------|------|
-| XCP 완성 | 낮음 | 캘리브레이션 스텁 확장 |
-| LoRa CSMA | 낮음 | 채널 충돌 방지 |
-| HIL 레지스터 맵 | 중간 | IMU/Baro Mock 확장 |
+| XCP 완성 | 완료 | [IMP-05] 캘리브레이션 스텁 및 명령어(Connect/Upload/Download) 구현 |
+| LoRa CSMA | 완료 | [IMP-01] LBT(Listen Before Talk) 로직 적용 |
+| HIL 레지스터 맵 | 완료 | [IMP-03] LSM6DSV16X / [IMP-04] MS5611 Mock 고도화 |
+| SIL/MSVC 호환성 | 완료 | [IMP-06] 빌드 경고 및 링커 에러 전체 해결 |
 
 ---
 
@@ -158,4 +159,4 @@ main_control.ino ─ESP-NOW─┬─► I2C1_Dual_Mock (LSM+MLX)
 
 ---
 
-*생성일: 2026-01-08T11:25 KST*
+*생성일: 2026-01-08T11:25 KST (Updated: 13:40 KST)*

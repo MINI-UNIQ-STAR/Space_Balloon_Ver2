@@ -348,30 +348,6 @@ C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/D
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/gdk101/gdk101_driver.c.s
 .PHONY : C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/gdk101/gdk101_driver.c.s
 
-C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.obj: C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj
-.PHONY : C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.obj
-
-# target to build an object file
-C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj
-.PHONY : C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj
-
-C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.i: C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.i
-.PHONY : C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.i
-
-# target to preprocess a source file
-C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.i
-.PHONY : C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.i
-
-C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.s: C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.s
-.PHONY : C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.s
-
-# target to generate assembly for a file
-C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.s
-.PHONY : C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.s
-
 C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mcp9600/mcp9600_driver.obj: C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mcp9600/mcp9600_driver.c.obj
 .PHONY : C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mcp9600/mcp9600_driver.obj
 
@@ -819,6 +795,30 @@ test_drivers/mock_hal.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/test_drivers/mock_hal.c.s
 .PHONY : test_drivers/mock_hal.c.s
 
+test_drivers/mock_lsm6dsv16x.obj: test_drivers/mock_lsm6dsv16x.c.obj
+.PHONY : test_drivers/mock_lsm6dsv16x.obj
+
+# target to build an object file
+test_drivers/mock_lsm6dsv16x.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.obj
+.PHONY : test_drivers/mock_lsm6dsv16x.c.obj
+
+test_drivers/mock_lsm6dsv16x.i: test_drivers/mock_lsm6dsv16x.c.i
+.PHONY : test_drivers/mock_lsm6dsv16x.i
+
+# target to preprocess a source file
+test_drivers/mock_lsm6dsv16x.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.i
+.PHONY : test_drivers/mock_lsm6dsv16x.c.i
+
+test_drivers/mock_lsm6dsv16x.s: test_drivers/mock_lsm6dsv16x.c.s
+.PHONY : test_drivers/mock_lsm6dsv16x.s
+
+# target to generate assembly for a file
+test_drivers/mock_lsm6dsv16x.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\test_drivers_runner.dir\build.make CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.s
+.PHONY : test_drivers/mock_lsm6dsv16x.c.s
+
 test_drivers/sensors_copy.obj: test_drivers/sensors_copy.c.obj
 .PHONY : test_drivers/sensors_copy.obj
 
@@ -1057,9 +1057,6 @@ help:
 	@echo ... C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/gdk101/gdk101_driver.obj
 	@echo ... C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/gdk101/gdk101_driver.i
 	@echo ... C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/gdk101/gdk101_driver.s
-	@echo ... C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.obj
-	@echo ... C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.i
-	@echo ... C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.s
 	@echo ... C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mcp9600/mcp9600_driver.obj
 	@echo ... C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mcp9600/mcp9600_driver.i
 	@echo ... C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mcp9600/mcp9600_driver.s
@@ -1114,6 +1111,9 @@ help:
 	@echo ... test_drivers/mock_hal.obj
 	@echo ... test_drivers/mock_hal.i
 	@echo ... test_drivers/mock_hal.s
+	@echo ... test_drivers/mock_lsm6dsv16x.obj
+	@echo ... test_drivers/mock_lsm6dsv16x.i
+	@echo ... test_drivers/mock_lsm6dsv16x.s
 	@echo ... test_drivers/sensors_copy.obj
 	@echo ... test_drivers/sensors_copy.i
 	@echo ... test_drivers/sensors_copy.s

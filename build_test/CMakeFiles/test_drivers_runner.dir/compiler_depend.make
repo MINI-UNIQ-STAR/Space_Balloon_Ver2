@@ -90,23 +90,6 @@ CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2
   C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/vadefs.h \
   C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/gdk101/gdk101_driver.h
 
-CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj: C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stddef.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdint.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/_mingw.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/_mingw_mac.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/_mingw_secapi.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/corecrt.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/crtdefs.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/math.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/sec_api/string_s.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/stddef.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/stdint.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/string.h \
-  C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/vadefs.h \
-  C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.h
-
 CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mcp9600/mcp9600_driver.c.obj: C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mcp9600/mcp9600_driver.c \
   C:/Users/hyuns/.gemini/tools/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stddef.h \
   C:/Users/hyuns/.gemini/tools/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdint.h \
@@ -422,6 +405,8 @@ CMakeFiles/test_drivers_runner.dir/unity_minimal/unity.c.obj: C:/Users/hyuns/Des
   C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/unity_minimal/unity.h
 
 
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.h:
+
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Inc/fdir.h:
 
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/fdir.c:
@@ -439,12 +424,6 @@ C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/I
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Inc/pid.h:
 
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Inc/main.h:
-
-C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/test_drivers/mock_hal.c:
-
-C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/stdio.h:
-
-C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/sec_api/stdio_s.h:
 
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/ds18b20/ownet.c:
 
@@ -491,6 +470,10 @@ C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/sdks/_ming
 C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/_mingw_mac.h:
 
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/ds18b20/ownet.h:
+
+C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/test_drivers/mock_hal.c:
+
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/stdio.h:
 
 C:/Users/hyuns/.gemini/tools/mingw/mingw64/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stddef.h:
 
@@ -548,12 +531,6 @@ C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/swprintf.i
 
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/ds18b20/ds18b20_driver.h:
 
-C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c:
-
-C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/math.h:
-
-C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.h:
-
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/ds18b20/owhal_mock.c:
 
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mcp9600/mcp9600_driver.c:
@@ -590,6 +567,8 @@ C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/errno.h:
 
 C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/malloc.h:
 
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/math.h:
+
 C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/pthread_time.h:
 
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/minmea/minmea.h:
@@ -597,3 +576,5 @@ C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/D
 C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mlx90393/mlx90393_driver.c:
 
 C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/corecrt_stdio_config.h:
+
+C:/Users/hyuns/.gemini/tools/mingw/mingw64/x86_64-w64-mingw32/include/sec_api/stdio_s.h:

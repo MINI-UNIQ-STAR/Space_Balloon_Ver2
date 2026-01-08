@@ -1,0 +1,63 @@
+Change Dir: 'C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/build_host'
+
+Run Build Command(s): "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Current/Bin/amd64/MSBuild.exe" test_drivers_runner.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+msbuild 踰꾩쟾 17.14.23+b0019275e(.NET Framework??
+鍮뚮뱶 ?쒖옉: 2026-01-08 ?ㅽ썑 1:30:09
+
+1 ?몃뱶??"C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\test_drivers_runner.vcxproj" ?꾨줈?앺듃(湲곕낯 ????낅땲??
+"C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\test_drivers_runner.vcxproj"(1) ?꾨줈?앺듃媛 1 ?몃뱶?먯꽌 "C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\ZERO_CHECK.vcxproj"(2)??瑜? 鍮뚮뱶?섍퀬 ?덉뒿?덈떎(湲곕낯 ???.
+PrepareForBuild:
+  援ъ“??異쒕젰???ъ슜?????덉뒿?덈떎. 而댄뙆?쇰윭 吏꾨떒???쒖떇? ?ㅻ쪟 怨꾩링 援ъ“瑜?諛섏쁺?⑸땲?? ?먯꽭???댁슜? https://aka.ms/cpp/structured-output??李몄“?섏꽭??
+InitializeBuildStatus:
+  "AlwaysCreate"??媛) 吏?뺣릺?덇린 ?뚮Ц??"x64\Debug\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild"??瑜? 留뚮뱾怨??덉뒿?덈떎.
+  "x64\Debug\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild"???곌껐(touching)?섍퀬 ?덉뒿?덈떎.
+CustomBuild:
+  紐⑤뱺 異쒕젰??理쒖떊 ?곹깭?낅땲??
+FinalizeBuildStatus:
+  "x64\Debug\ZERO_CHECK\ZERO_CHECK.tlog\unsuccessfulbuild" ?뚯씪????젣?섍퀬 ?덉뒿?덈떎.
+  "x64\Debug\ZERO_CHECK\ZERO_CHECK.tlog\ZERO_CHECK.lastbuildstate"???곌껐(touching)?섍퀬 ?덉뒿?덈떎.
+"C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\ZERO_CHECK.vcxproj" ?꾨줈?앺듃瑜?鍮뚮뱶?덉뒿?덈떎(湲곕낯 ???.
+PrepareForBuild:
+  援ъ“??異쒕젰???ъ슜?????덉뒿?덈떎. 而댄뙆?쇰윭 吏꾨떒???쒖떇? ?ㅻ쪟 怨꾩링 援ъ“瑜?諛섏쁺?⑸땲?? ?먯꽭???댁슜? https://aka.ms/cpp/structured-output??李몄“?섏꽭??
+InitializeBuildStatus:
+  "AlwaysCreate"??媛) 吏?뺣릺?덇린 ?뚮Ц??"test_drivers_runner.dir\Debug\test_dri.5434C82A.tlog\unsuccessfulbuild"??瑜? 留뚮뱾怨??덉뒿?덈떎.
+  "test_drivers_runner.dir\Debug\test_dri.5434C82A.tlog\unsuccessfulbuild"???곌껐(touching)?섍퀬 ?덉뒿?덈떎.
+CustomBuild:
+  紐⑤뱺 異쒕젰??理쒖떊 ?곹깭?낅땲??
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe /c /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\unity_minimal /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\HostSim\mock_inc /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Inc /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_fdir /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\lsm6dsv16x /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\cm1107n /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\ds18b20 /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\gdk101 /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\mcp9600 /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\minmea /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\mlx90393 /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\ms5611 /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\pms3003 /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\sen0321 /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\sht31 /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\..\Core\Drivers\xa1110 /IC:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_drivers /Zi /nologo /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D HOST_TEST_MODE /D UNIT_TEST /D "CMAKE_INTDIR=\"Debug\"" /RTC1 /MDd /std:c11 /Fo"test_drivers_runner.dir\Debug\\" /Fd"test_drivers_runner.dir\Debug\vc143.pdb" /external:W3 /TC /errorReport:queue C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Drivers\gdk101\gdk101_driver.c
+  gdk101_driver.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\link.exe /OUT:"C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\Debug\test_drivers_runner.exe" /INCREMENTAL /ILK:"test_drivers_runner.dir\Debug\test_drivers_runner.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/build_host/Debug/test_drivers_runner.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/build_host/Debug/test_drivers_runner.lib" /MACHINE:X64  /machine:x64 test_drivers_runner.dir\Debug\test_main.obj
+  test_drivers_runner.dir\Debug\mock_hal.obj
+  test_drivers_runner.dir\Debug\sensors_copy.obj
+  test_drivers_runner.dir\Debug\fdir.obj
+  test_drivers_runner.dir\Debug\mock_lsm6dsv16x.obj
+  test_drivers_runner.dir\Debug\mlx90393_driver.obj
+  test_drivers_runner.dir\Debug\xa1110_driver.obj
+  test_drivers_runner.dir\Debug\minmea.obj
+  test_drivers_runner.dir\Debug\gdk101_driver.obj
+  test_drivers_runner.dir\Debug\ms5611_driver.obj
+  test_drivers_runner.dir\Debug\sht31_driver.obj
+  test_drivers_runner.dir\Debug\pms3003_driver.obj
+  test_drivers_runner.dir\Debug\sen0321_driver.obj
+  test_drivers_runner.dir\Debug\mcp9600_driver.obj
+  test_drivers_runner.dir\Debug\cm1107n_driver.obj
+  test_drivers_runner.dir\Debug\ds18b20_driver.obj
+  test_drivers_runner.dir\Debug\ds18b20.obj
+  test_drivers_runner.dir\Debug\ownet.obj
+  test_drivers_runner.dir\Debug\owhal_mock.obj
+  test_drivers_runner.dir\Debug\crcutil.obj
+  test_drivers_runner.dir\Debug\unity.obj
+  test_drivers_runner.vcxproj -> C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\Debug\test_drivers_runner.exe
+FinalizeBuildStatus:
+  "test_drivers_runner.dir\Debug\test_dri.5434C82A.tlog\unsuccessfulbuild" ?뚯씪????젣?섍퀬 ?덉뒿?덈떎.
+  "test_drivers_runner.dir\Debug\test_dri.5434C82A.tlog\test_drivers_runner.lastbuildstate"???곌껐(touching)?섍퀬 ?덉뒿?덈떎.
+"C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\test_drivers_runner.vcxproj" ?꾨줈?앺듃瑜?鍮뚮뱶?덉뒿?덈떎(湲곕낯 ???.
+
+鍮뚮뱶?덉뒿?덈떎.
+    寃쎄퀬 0媛?
+    ?ㅻ쪟 0媛?
+
+寃쎄낵 ?쒓컙: 00:00:00.53
+

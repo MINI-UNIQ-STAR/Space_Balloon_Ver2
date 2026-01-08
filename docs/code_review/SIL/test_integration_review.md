@@ -20,8 +20,11 @@ add_executable(test_integration_runner
     ../Core/Src/kalman.c
     ../Core/Src/pid.c
     ../Core/Src/telemetry.c
+    ../Core/Src/telemetry.c
+    ../Core/Src/xcp.c
     ../HostSim/mock_sensors.c
     ../HostSim/mock_hal.c
+    ../test_integration/bsp.c # (Stubbed inside test_mission.c currently)
 )
 ```
 

@@ -8,12 +8,20 @@
 // 4. Read 2 bytes
 
 int32_t GDK101_Init(gdk101_ctx_t *ctx) {
-    // Just read status to check connection
+    // 1. Reset Sensor
+    if (GDK101_Reset(ctx) != 0) {
+        return GDK101_RESET_ERR;
+    }
+    
+    // 2. Check Connection via Status
+    // Note: Reset might require time to recover, typical GDK101 doesn't specify long boot time,
+    // but we can assume immediate readiness or add small delay if called from BSP.
     uint8_t status;
     bool vib;
     if (GDK101_Read_Status(ctx, &status, &vib) != 0) {
         return GDK101_I2C_ERR;
     }
+    
     return GDK101_OK;
 }
 

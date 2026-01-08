@@ -294,7 +294,7 @@ void createNewLogFile() {
   if (logFile) {
     // CSV header with ALL actual values including GPS UTC time
     logFile.println("rx_ms,seq,ts_ms,status,"
-                    "gps_datetime,lat_deg,lon_deg,alt_m,fix,sats,"
+                    "gps_datetime,lat_deg,lon_deg,alt_m,fix,sats,sats_gps,sats_gl,sats_ga,sats_gb,"
                     "accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,"
                     "mag_x,mag_y,mag_z,"
                     "board_temp,ext_temp,sht_temp,bat_temp,"
@@ -355,7 +355,13 @@ void writeBufferToSd() {
     float gps_alt = f32le(p + 60);
     uint8_t gps_fix = p[64];
     uint8_t gps_sats = p[65];
+    uint8_t gps_sats = p[65];
     // sat_view fields: 66-72 (7 bytes)
+    // Offset 67=total, 68=gps, 69=glo, 70=gal, 71=bei
+    uint8_t sats_gps = p[68];
+    uint8_t sats_gl = p[69];
+    uint8_t sats_ga = p[70];
+    uint8_t sats_gb = p[71];
     
     // GPS UTC Time (offset 73-79: hour, min, sec, day, month, year[2])
     uint8_t utc_hour = p[73];
@@ -423,8 +429,8 @@ void writeBufferToSd() {
     // GPS datetime in ISO 8601 format: YYYY-MM-DDTHH:MM:SS
     logFile.printf("%04u-%02u-%02uT%02u:%02u:%02u,",
                    utc_year, utc_month, utc_day, utc_hour, utc_min, utc_sec);
-    logFile.printf("%.7f,%.7f,%.2f,%u,%u,",
-                   lat_deg, lon_deg, gps_alt, gps_fix, gps_sats);
+    logFile.printf("%.7f,%.7f,%.2f,%u,%u,%u,%u,%u,%u,",
+                   lat_deg, lon_deg, gps_alt, gps_fix, gps_sats, sats_gps, sats_gl, sats_ga, sats_gb);
     logFile.printf("%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,",
                    accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z);
     logFile.printf("%.2f,%.2f,%.2f,",

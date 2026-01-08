@@ -128,20 +128,20 @@ CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/fdir.c.s"
 	C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\fdir.c -o CMakeFiles\test_drivers_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Src\fdir.c.s
 
-CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj: CMakeFiles/test_drivers_runner.dir/flags.make
-CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj: CMakeFiles/test_drivers_runner.dir/includes_C.rsp
-CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj: C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c
-CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj: CMakeFiles/test_drivers_runner.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj"
-	C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj -MF CMakeFiles\test_drivers_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Drivers\lsm6dsv16x\lsm6dsv16x_reg.c.obj.d -o CMakeFiles\test_drivers_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Drivers\lsm6dsv16x\lsm6dsv16x_reg.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Drivers\lsm6dsv16x\lsm6dsv16x_reg.c
+CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.obj: CMakeFiles/test_drivers_runner.dir/flags.make
+CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.obj: CMakeFiles/test_drivers_runner.dir/includes_C.rsp
+CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.obj: C:/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/test/test_drivers/mock_lsm6dsv16x.c
+CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.obj: CMakeFiles/test_drivers_runner.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build_test\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.obj"
+	C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.obj -MF CMakeFiles\test_drivers_runner.dir\test_drivers\mock_lsm6dsv16x.c.obj.d -o CMakeFiles\test_drivers_runner.dir\test_drivers\mock_lsm6dsv16x.c.obj -c C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_drivers\mock_lsm6dsv16x.c
 
-CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.i"
-	C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Drivers\lsm6dsv16x\lsm6dsv16x_reg.c > CMakeFiles\test_drivers_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Drivers\lsm6dsv16x\lsm6dsv16x_reg.c.i
+CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.i"
+	C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_drivers\mock_lsm6dsv16x.c > CMakeFiles\test_drivers_runner.dir\test_drivers\mock_lsm6dsv16x.c.i
 
-CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.s"
-	C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Drivers\lsm6dsv16x\lsm6dsv16x_reg.c -o CMakeFiles\test_drivers_runner.dir\C_\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\Core\Drivers\lsm6dsv16x\lsm6dsv16x_reg.c.s
+CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.s"
+	C:\Users\hyuns\.gemini\tools\mingw\mingw64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\test_drivers\mock_lsm6dsv16x.c -o CMakeFiles\test_drivers_runner.dir\test_drivers\mock_lsm6dsv16x.c.s
 
 CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mlx90393/mlx90393_driver.c.obj: CMakeFiles/test_drivers_runner.dir/flags.make
 CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mlx90393/mlx90393_driver.c.obj: CMakeFiles/test_drivers_runner.dir/includes_C.rsp
@@ -389,7 +389,7 @@ test_drivers_runner_OBJECTS = \
 "CMakeFiles/test_drivers_runner.dir/test_drivers/mock_hal.c.obj" \
 "CMakeFiles/test_drivers_runner.dir/test_drivers/sensors_copy.c.obj" \
 "CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/fdir.c.obj" \
-"CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj" \
+"CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.obj" \
 "CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mlx90393/mlx90393_driver.c.obj" \
 "CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/xa1110/xa1110_driver.c.obj" \
 "CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/minmea/minmea.c.obj" \
@@ -414,7 +414,7 @@ test_drivers_runner.exe: CMakeFiles/test_drivers_runner.dir/test_drivers/test_ma
 test_drivers_runner.exe: CMakeFiles/test_drivers_runner.dir/test_drivers/mock_hal.c.obj
 test_drivers_runner.exe: CMakeFiles/test_drivers_runner.dir/test_drivers/sensors_copy.c.obj
 test_drivers_runner.exe: CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Src/fdir.c.obj
-test_drivers_runner.exe: CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/lsm6dsv16x/lsm6dsv16x_reg.c.obj
+test_drivers_runner.exe: CMakeFiles/test_drivers_runner.dir/test_drivers/mock_lsm6dsv16x.c.obj
 test_drivers_runner.exe: CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/mlx90393/mlx90393_driver.c.obj
 test_drivers_runner.exe: CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/xa1110/xa1110_driver.c.obj
 test_drivers_runner.exe: CMakeFiles/test_drivers_runner.dir/C_/Users/hyuns/Desktop/project/SpaceBalloon_2.0/spaceballoon_stm32_lora32/Core/Drivers/minmea/minmea.c.obj

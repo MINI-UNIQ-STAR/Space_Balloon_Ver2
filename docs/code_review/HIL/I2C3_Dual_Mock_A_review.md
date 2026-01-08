@@ -26,9 +26,11 @@ if (ms_byte == 0x00) {
   Wire.write(0x80); Wire.write(0x00); Wire.write(0x00);
 } else if (ms_byte >= 0xA0) {
   // PROM Read: 2 bytes
-  Wire.write(0x00); Wire.write(0x00);
+  // PROM Read: 2 bytes (C1-C6 implemented)
+  Wire.write(prom[idx] >> 8); Wire.write(prom[idx] & 0xFF);
 }
 ```
+**ADC 역산 로직 추가 (IMP-04)**: `mock_temp`/`mock_press` → `D1`/`D2` 변환 제공.
 
 ### SHT31
 ```c
@@ -41,4 +43,4 @@ Wire1.write(buf, 6);
 
 ## 평가: ⭐⭐⭐⭐ (4/5)
 
-**듀얼 I2C Mock. PROM 계수 정교화 권장.**
+**듀얼 I2C Mock. MS5611 역산 로직 및 PROM 계수 구현 완료 (IMP-04).**
