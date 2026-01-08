@@ -131,7 +131,7 @@ FMEA(Failure Mode and Effects Analysis)는 잠재적 고장 모드를 식별하�
 
 ## 전력 서브시스템 FMEA
 
-### 배터리 (4S LiPo)
+### 배터리 (1S Li-ion)
 
 | ID | 고장 모드 | 원인 | 영향 | S | O | D | RPN | 완화 조치 |
 |----|----------|------|------|---|---|---|-----|----------|
@@ -242,5 +242,33 @@ FMEA(Failure Mode and Effects Analysis)는 잠재적 고장 모드를 식별하�
 ## 참고 문서
 
 - [FDIR.md](FDIR.md) - 결함 감지/복구 설계
-- [README.md](README.md) - 프로젝트 개요
-- [sensors.h](Core/Inc/sensors.h) - 센서 정의
+- [STM32_SpaceBalloon_Specification.md](STM32_SpaceBalloon_Specification.md) - 시스템 사양서
+- [Core/Inc/fdir.h](../Core/Inc/fdir.h) - FDIR 구현 헤더
+- [Core/Src/fdir.c](../Core/Src/fdir.c) - FDIR 구현
+
+---
+
+## FDIR 타임아웃 설정 (코드 기준)
+
+| 센서 | 타임아웃 (ms) | 최대 복구 시도 |
+|------|--------------|----------------|
+| IMU (LSM6DSV16X) | 100 | 2 |
+| 자기계 (MLX90393) | 500 | 2 |
+| 기압계 (MS5611) | 1000 | 2 |
+| GPS (XA1110) | 5000 | 3 |
+| 미세먼지 (PMS3003) | 5000 | 1 |
+| CO2 (CM1107N) | 5000 | 1 |
+| 온습도 (SHT31) | 3000 | 2 |
+| 방사선 (GDK101) | 3000 | 2 |
+| 외부온도 (MCP9600) | 3000 | 2 |
+
+### 온도 기반 보호 임계값
+
+| 센서 | 최저 동작 온도 | 최고 동작 온도 |
+|------|--------------|----------------|
+| PMS3003 | -10°C | +60°C |
+| CM1107N | -5°C | +50°C |
+| GDK101 | -20°C | +60°C |
+| MCP9600 | -90°C | +250°C |
+
+> **참고**: 히스테리시스 5°C 적용 (온도 복구 시 min_temp + 5°C 이상에서 재활성화)
