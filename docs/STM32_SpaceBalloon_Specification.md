@@ -474,7 +474,7 @@ typedef struct __attribute__((packed)) {
 ### 구현
 - **텔레메트리 전송**: `Core/Src/telemetry.c`
 - **프레임 정의**: `Core/Inc/telemetry.h`
-- **1PPS 캡처**: `drivers/pps_capture.c`
+- **1PPS 캡처**: `Core/Src/pps_capture.c`, `Core/Inc/pps_capture.h` ✅ **구현 완료** (2026-01-09)
 
 ---
 
@@ -802,6 +802,6 @@ uint16_t FDIR_GetStatusFlags(void);  // 텔레메트리에 포함
 
 ---
 
-**문서 작성**: 박현수
+**문서 작성**: Hyeonsu Park
 **프로젝트**: STM32 성층권 풍선 센서 플랫폼
 **Repository**: C:\Users\hyuns\Desktop\stm32_spaceballoon

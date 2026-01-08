@@ -38,7 +38,11 @@
       "Bash(\"C:\\\\Users\\\\hyuns\\\\.gemini\\\\tools\\\\mingw\\\\mingw64\\\\bin\\\\gcc.exe\" -DHOST_TEST_MODE -I ../../Core/Inc -I ../../HostSim/mock_inc -I ../../test/unity_minimal -o test_low_voltage.exe test_main.c ../../test/unity_minimal/unity.c -lm)",
       "Bash(./test_low_voltage.exe:*)",
       "Bash(\"C:\\\\Users\\\\hyuns\\\\.gemini\\\\tools\\\\mingw\\\\mingw64\\\\bin\\\\gcc.exe\" -DHOST_TEST_MODE -I ../../Core/Inc -I ../../Core/Drivers/xa1110 -I ../../Core/Drivers/minmea -I ../../HostSim/mock_inc -I ../../test/unity_minimal -o test_gps_checksum.exe test_main.c ../../Core/Drivers/xa1110/xa1110_driver.c ../../Core/Drivers/minmea/minmea.c ../../test/unity_minimal/unity.c -lm)",
-      "Bash(./test_gps_checksum.exe:*)"
+      "Bash(./test_gps_checksum.exe:*)",
+      "Bash(if [ -f test_host.exe ])",
+      "Bash(then echo \"SITL executable exists\")",
+      "Bash(else echo \"SITL executable NOT found\")",
+      "Bash(fi)"
     ]
   }
 }
