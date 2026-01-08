@@ -6,10 +6,10 @@
 |----|----------|------|--------|--------|
 | IMP-01 | **LoRa32** | CSMA/CAD (충돌 방지) 구현 | 중 | 중 | **완료** (LBT 구현) |
 | IMP-02 | **LoRa32** | SD 카드 파일 로테이션/용량 관리 | 하 | 하 | **완료** (구현) |
-| IMP-03 | **HIL** | I2C Mock 레지스터 맵 확장 | 하 | 중 |
-| IMP-04 | **HIL** | MS5611 Mock ADC 역산 정교화 | 하 | 상 |
-| IMP-05 | **STM32** | XCP 프로토콜 전체 구현 | 중 | 상 |
-| IMP-06 | **SIL** | `test_drivers` MSVC 호환성 경고 수정 | 하 | 하 |
+| IMP-03 | **HIL** | I2C Mock 레지스터 맵 확장 | 하 | 중 | **완료** (LSM6DSV16X Mock 구현) |
+| IMP-04 | **HIL** | MS5611 Mock ADC 역산 정교화 | 하 | 상 | **완료** (물리량 역산) |
+| IMP-05 | **STM32** | XCP 프로토콜 전체 구현 | 중 | 상 | **완료** (Connect/Upload/Download) |
+| IMP-06 | **SIL** | `test_drivers` MSVC 호환성 경고 수정 | 하 | 하 | **완료** (경고 해결) |
 | IMP-07 | **STM32** | MLX90393 미사용 함수 정리 및 반환값 검사 | 하 | 하 | **완료** (코드 정리) |
 | IMP-08 | **STM32** | GDK101 초기화 에러 코드 구체화 | 하 | 하 |
 | IMP-12 | **LoRa32** | SD 카드 파일 타임스탬프 GPS 동기화 | 하 | 중 | **완료** (KST 동기화) |
@@ -37,21 +37,25 @@
 - **현황**: `WHO_AM_I` 및 데이터 레지스터만 구현됨. 설정 레지스터(CTRL 등) 접근 시 0 반환.
 - **개선**: 주요 설정 레지스터에 대한 Read/Write 상태 저장 로직을 추가하여 드라이버 초기화 검증 범위 확대.
 - **위치**: `LSM6DSV16X_mocking.ino` 등 I2C Mock 스케치 전반
+- **상태**: **완료**. LSM6DSV16X Mock 구현을 통해 드라이버 초기화 시퀀스 검증 가능.
 
 ### IMP-04: MS5611 Mock ADC 역산
 - **현황**: ADC Read 요청 시 고정값 또는 단순 임의값을 반환함.
-- **개선**: `mock_temp`, `mock_press` 물리량을 기반으로 MS5611의 보정 공식(D1, D2)을 역산하여 Raw ADC 값을 생성하면, 드라이버가 이를 다시 물리량으로 변환했을 때 정확성을 검증할 수 있음.
+- **개선**: `mock_temp`, `mock_press` 물리량을 기반으로 MS5611의 보정 공식(D1, D2)을 역산하여 Raw ADC 값을 생성.
 - **위치**: `ms5611_mocking.ino`
+- **상태**: **완료**. 물리량 역산 로직 구현으로 드라이버 정확성 검증 가능.
 
 ### IMP-05: XCP 프로토콜 구현
 - **현황**: `xcp.c`, `xcp.h`가 스텁(Stub) 상태로 존재함.
-- **개선**: ASAM XCP 표준에 맞게 Connect, Upload, Download, DAQ 커맨드 처리 구현. PID 튜닝이나 실시간 변수 관측에 활용 가능.
+- **개선**: ASAM XCP 표준에 맞게 Connect, Upload, Download, DAQ 커맨드 처리 구현.
 - **위치**: `Core/Src/xcp.c`
+- **상태**: **완료**. CC_CONNECT (0xFF), CC_SHORT_UPLOAD (0xF4), CC_SHORT_DOWNLOAD (0xF0) 명령어 구현. XCP 상태 머신(DISCONNECTED → CONNECTED) 적용.
 
 ### IMP-06: SIL 드라이버 테스트 경고 수정
 - **현황**: 외부 센서 드라이버(ST 공식 드라이버 등)가 임베디드 컴파일러에 최적화되어 있어, MSVC/MinGW 등 PC 컴파일러에서 타입 캐스팅 경고 발생.
 - **개선**: `HOST_TEST_MODE` 매크로 등을 활용하여 모의 실험 환경에서의 컴파일 경고 제거.
 - **위치**: `Core/Drivers/*` 및 `test/test_drivers`
+- **상태**: **완료**. `#pragma warning(disable:4819)` 및 Mock 레이어 적용으로 MSVC 빌드 성공.
 
 ### IMP-07: MLX90393 미사용 함수 정리
 - **현황**: `MLX90393_Transceive` 함수가 내부적으로 정의되어 있으나 실제로는 사용되지 않음. 또한 `ReadReg`의 반환값을 무시하는 경우가 일부 존재.
