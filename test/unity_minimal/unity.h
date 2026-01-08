@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <stdint.h>
 
 // Colors
 #define RED   "\x1B[31m"
@@ -14,6 +15,9 @@ extern int tests_failed;
 
 void UnityBegin(void);
 int UnityEnd(void);
+
+#define UNITY_BEGIN() UnityBegin()
+#define UNITY_END() UnityEnd()
 
 // Boolean Assertions
 #define TEST_ASSERT(condition) \
@@ -51,6 +55,36 @@ int UnityEnd(void);
             return; \
         } \
     } while (0)
+
+// Byte/uint8 Assertions
+#define TEST_ASSERT_EQUAL_UINT8(expected, actual) \
+    do { \
+        unsigned char e = (unsigned char)(expected); \
+        unsigned char a = (unsigned char)(actual); \
+        if (e != a) { \
+            printf(RED "FAIL: Expected %u but got %u at %s:%d" RESET "\n", \
+                   (unsigned int)e, (unsigned int)a, __FILE__, __LINE__); \
+            tests_failed++; \
+            return; \
+        } \
+    } while (0)
+
+// Int32 Assertions
+#define TEST_ASSERT_EQUAL_INT32(expected, actual) \
+    do { \
+        int32_t e = (int32_t)(expected); \
+        int32_t a = (int32_t)(actual); \
+        if (e != a) { \
+            printf(RED "FAIL: Expected %ld but got %ld at %s:%d" RESET "\n", \
+                   (long)e, (long)a, __FILE__, __LINE__); \
+            tests_failed++; \
+            return; \
+        } \
+    } while (0)
+
+// Float Equality (with small epsilon)
+#define TEST_ASSERT_EQUAL_FLOAT(expected, actual) \
+    TEST_ASSERT_FLOAT_WITHIN(0.00001f, expected, actual)
 
 #define RUN_TEST(test_func) \
     do { \
