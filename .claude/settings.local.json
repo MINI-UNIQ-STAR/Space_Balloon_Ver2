@@ -42,7 +42,11 @@
       "Bash(if [ -f test_host.exe ])",
       "Bash(then echo \"SITL executable exists\")",
       "Bash(else echo \"SITL executable NOT found\")",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(claude mcp add:*)",
+      "Bash(where:*)",
+      "Bash(echo:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }
