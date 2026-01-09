@@ -35,10 +35,14 @@ void App_Init(void) {
     Sensors_Init();
 
     // 2. Thermal PID Init
-    // Heater max output 100.0 (percent)
-    PID_Init(&hpid_bat, 1000.0f, 10.0f, 0.0f, 100.0f); // Kp, Ki, Kd, Max
+    // ** Power Budget Tuning (2026-01-09) **
+    // Battery Heater: Kapton 7.2W @ 5V, limited to 60% duty (HEATER_BATT_MAX_DUTY)
+    // Kp scaled down from 1000 → 400 to account for duty cycle limit
+    // MaxOutput set to 60.0 to match power budget (redundant with app.c limiter, but safer)
+    PID_Init(&hpid_bat, 400.0f, 6.0f, 0.0f, 60.0f); // Kp, Ki, Kd, Max
     hpid_bat.Target = 10.0f; // Maintain 10C
-    
+
+    // Board Heater: Minibulb ~4W @ 5V, no limit yet (pending hardware test)
     PID_Init(&hpid_brd, 500.0f, 5.0f, 0.0f, 100.0f);
     hpid_brd.Target = 5.0f; // Maintain 5C
     
@@ -220,6 +224,18 @@ void App_Loop(void) {
     if (g_low_voltage_mode == 0) {
         heater_battery_cmd = PID_Update(&hpid_bat, current_battery_temp, 0.02f);
         heater_board_cmd = PID_Update(&hpid_brd, current_board_temp, 0.02f);
+
+        // ** Power Budget Protection: Limit heater duty cycles **
+        // Kapton heater: 7.2W @ 5V → 1.44A max current
+        // Limit to 60% duty to ensure 3+ hour flight time with 2500mAh battery
+        if (heater_battery_cmd > HEATER_BATT_MAX_DUTY) {
+            heater_battery_cmd = HEATER_BATT_MAX_DUTY;
+        }
+
+        // Minibulb: No limit for now (TBD based on hardware test)
+        if (heater_board_cmd > HEATER_BOARD_MAX_DUTY) {
+            heater_board_cmd = HEATER_BOARD_MAX_DUTY;
+        }
     }
     else {
         // Keep heaters off in low voltage mode

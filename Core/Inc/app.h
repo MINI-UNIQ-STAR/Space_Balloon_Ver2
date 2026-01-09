@@ -14,6 +14,10 @@ extern telemetry_frame_t telem_frame;
 extern float heater_battery_cmd;
 extern float heater_board_cmd;
 
+// Heater Power Budget Protection
+#define HEATER_BATT_MAX_DUTY  60.0f  // 60% duty cycle limit (power budget)
+#define HEATER_BOARD_MAX_DUTY 100.0f // No limit for minibulb (TBD)
+
 // Low Voltage Protection
 extern uint8_t g_low_voltage_mode;
 uint8_t App_IsLowVoltageMode(void);

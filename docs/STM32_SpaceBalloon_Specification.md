@@ -249,6 +249,8 @@ void BSP_Sensor_PowerOn(void);  // 리셋 라인 해제 (GPIO SET)
 ```
 
 ### 배터리 모니터링
+- **배터리 구성**: 3500mAh × 4병렬 = 14,000mAh (1S4P, 18650)
+- **공칭 전압**: 3.7V (범위: 2.7V - 4.2V)
 - **ADC 채널**: ADC1_IN2 (PA1)
 - **분압비**: 6:1 (raw * 3300 / 4096 * 6)
 - **출력**: mV (uint16_t)
@@ -317,20 +319,26 @@ typedef struct {
 - **PWM 채널**: TIM3_CH1 (PA6)
 - **온도 센서**: DS18B20 인덱스 0
 - **목표 온도**: 10°C (조정 가능)
-- **PID 상수**:
-  - Kp: 1000.0
-  - Ki: 10.0
+- **전력 사양**: 7.2W @ 5V (1.44A)
+- **Duty Cycle 제한**: **60% 최대** (전력 예산 보호, 2026-01-09)
+- **PID 상수** (2026-01-09 업데이트):
+  - Kp: **400.0** (1000.0에서 조정)
+  - Ki: **6.0** (10.0에서 조정)
   - Kd: 0.0
+  - MaxOutput: **60.0%** (100%에서 제한)
   - Integral Max: 30000.0
 
 #### 보드 히터 (Minibulb)
 - **PWM 채널**: TIM8_CH1 (PC6)
 - **온도 센서**: DS18B20 인덱스 1
 - **목표 온도**: 5°C (조정 가능)
+- **전력 사양**: ~4W @ 5V (0.8A 추정)
+- **Duty Cycle 제한**: 100% (제한 없음, 하드웨어 테스트 대기)
 - **PID 상수**:
   - Kp: 500.0
   - Ki: 5.0
   - Kd: 0.0
+  - MaxOutput: 100.0%
   - Integral Max: 15000.0
 
 ### PID 제어 알고리즘
@@ -344,8 +352,34 @@ float PID_Update(PID_HandleTypeDef *hpid, float measurement, float dt) {
     float d_term = hpid->Kd * (error - hpid->LastError) / dt;
     float output = p_term + i_term + d_term;
     hpid->LastError = error;
-    return (output > hpid->MaxOutput) ? hpid->MaxOutput : 
+    return (output > hpid->MaxOutput) ? hpid->MaxOutput :
            (output < 0) ? 0 : output;
+}
+```
+
+### 전력 예산 보호 (2026-01-09 추가)
+
+Kapton 히터의 과도한 전력 소비를 방지하기 위해 이중 보호 메커니즘을 구현했습니다.
+
+**전력 계산**:
+- Kapton 히터: 7.2W @ 5V = 1.44A
+- 60% Duty Cycle 제한 → 평균 0.86A
+- Minibulb: ~4W @ 5V = 0.8A
+- 센서 보드: ~0.3A
+- **총 전류**: 0.86A + 0.8A + 0.3A = 1.96A
+- **배터리**: 3500mAh × 4병렬 = 14,000mAh (1S4P)
+- **배터리 수명** (14,000mAh 기준): 14,000 / 1,960 × 1.12 = **8.0 시간**
+
+> **참고**: 100% Duty Cycle 시 총 전류 2.54A → 배터리 수명 6.2시간. 60% 제한으로 충분한 안전 마진 확보.
+
+**구현 위치** (Core/Src/app.c):
+```c
+// 1. PID 초기화 시 MaxOutput 설정
+PID_Init(&hpid_bat, 400.0f, 6.0f, 0.0f, 60.0f);  // MaxOutput=60%
+
+// 2. 런타임 제한 (이중 보호)
+if (heater_battery_cmd > HEATER_BATT_MAX_DUTY) {
+    heater_battery_cmd = HEATER_BATT_MAX_DUTY;  // 60%
 }
 ```
 
@@ -720,11 +754,12 @@ uint16_t FDIR_GetStatusFlags(void);  // 텔레메트리에 포함
 ## 향후 개선 사항
 
 ### 권장 사항
-1. **히터 PID 튜닝**: 실제 환경에서 Kp, Ki, Kd 최적화
-2. **칼만 필터 파라미터**: 프로세스/측정 노이즈 공분산 조정
-3. **전력 소모 최적화**: 센서 duty cycle 조정
-4. **LoRa RF 설정**: SF, BW, Coding Rate 비행 프로파일 맞춤
-5. **플래시 로깅**: 비행 데이터 온보드 저장 (옵션)
+1. **히터 PID 튜닝**: 실제 환경에서 Kp, Ki, Kd 최적화 (60% Duty Cycle 제한 고려)
+2. **Minibulb 전류 측정**: 하드웨어 테스트에서 실제 소비 전류 확인 후 Duty Cycle 제한 여부 결정
+3. **배터리 수명 검증**: 14Ah 배터리로 8시간 비행 시간 확인 (60% Duty Cycle 조건)
+4. **칼만 필터 파라미터**: 프로세스/측정 노이즈 공분산 조정
+5. **전력 소모 최적화**: 센서 duty cycle 조정
+6. **LoRa RF 설정**: SF, BW, Coding Rate 비행 프로파일 맞춤
 
 ### 확장 가능성
 - **추가 센서**: I2C/SPI/UART 포트 여유 있음
@@ -793,6 +828,7 @@ uint16_t FDIR_GetStatusFlags(void);  // 텔레메트리에 포함
 
 | 버전 | 날짜 | 변경 사항 |
 |------|------|-----------|
+| Rev 3.6 | 2026-01-09 | **히터 전력 예산 보호**: Kapton 60% Duty Cycle 제한, PID 파라미터 튜닝 (Kp=400, Ki=6), 배터리 수명 계산 추가 |
 | Rev 3.5 | 2026-01-08 | 최종 검증: I2C1 SDA 핀(PB9), UART1 보레이트(115200), 센서 테이블, PID/KF/FDIR API, BSP 경로 |
 | Rev 3.4 | 2026-01-08 | 아키텍처/핀맵 일치: App_Init/App_Loop, Bare-metal 구조, GPIO 핀 할당(LSM_RST/SHT_RST/GDK_RST) |
 | Rev 3.3 | 2026-01-08 | 프레임 구조(version/msg_type/timestamp), I2C 버스 할당, 디렉토리 구조 |

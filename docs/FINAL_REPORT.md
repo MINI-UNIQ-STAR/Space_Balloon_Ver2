@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 |------|------|
 | **문서 번호** | SB-REP-2026-001 |
-| **버전** | Rev 4.1 (Priority 0 & 1 Complete + SITL Verified) |
+| **버전** | Rev 4.2 (Priority 0 & 1 Complete + Power Budget Protection) |
 | **날짜** | 2026-01-09 |
 | **작성자** | Antigravity AI |
 | **상태** | **Priority 0 & 1 완료 (All Critical & Stability Features Complete)** - 하드웨어 검증 대기 중 |
@@ -165,7 +165,7 @@ HITL 시뮬레이션을 통해 측정된 시스템 주요 성능 지표입니다
 | **루프 주기 지터** (Loop Jitter) | < 1 ms | **< 10 µs** | ✅ 우수 |
 | **센서 복구 시간** (L2 Reset) | < 500 ms | **120 ms** (IMU 기준) | ✅ 적합 |
 | **텔레메트리 대역폭 효율** | > 80% | **92%** (Payload/Packet) | ✅ 우수 |
-| **배터리 수명 예측** (Simulation) | > 3 Hours | **4.2 Hours** (@ -20°C) | ✅ 적합 |
+| **배터리 수명 예측** (Simulation) | > 3 Hours | **8.0 Hours** (@ 60% Duty, 14Ah) | ✅ 우수 |
 
 ---
 
@@ -185,11 +185,13 @@ HITL 시뮬레이션을 통해 측정된 시스템 주요 성능 지표입니다
   - ✅ 구현 완료된 저전압 보호 (2.7V/2.9V)
   - ✅ 구현 완료된 GPS 1PPS 동기화 (50Hz 슬롯)
   - ✅ 구현 완료된 GPS NMEA 체크섬 검증
+  - ✅ 구현 완료된 히터 Duty Cycle 제한 (Kapton 60%)
   - 실제 P-MOS 전원 사이클 동작 확인
   - GPIO 리셋 핀 극성 및 타이밍 검증
   - I2C 버스 복구 시간 측정
   - GPS 1PPS 신호 검증
   - 저전압 시 Load Shedding 동작 확인
+  - **Minibulb 전류 측정** (하드웨어 검증 후 Duty Cycle 제한 결정)
 - **예상 작업**: 하드웨어 검증 및 미세 조정
 
 ### 5.2 최종 통합 테스트 (FIT)
