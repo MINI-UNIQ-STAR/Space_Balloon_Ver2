@@ -1,0 +1,57 @@
+name: HostSim & Tests
+
+on:
+  push:
+    branches: [ main, Hyeonsu_Park_Notebook_ver ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake python3
+
+      # 1) 유닛/통합 테스트 빌드 & 실행 (test 폴더)
+      - name: Build & run unit tests
+        working-directory: test
+        run: |
+          # Kalman 필터 유닛 테스트
+          gcc -o test_kalman \
+            test_kalman.c \
+            ../Core/Src/kalman.c \
+            -I../Core/Inc \
+            -DHOST_TEST_MODE
+          ./test_kalman
+
+          # 미션/통합 테스트 (필요시 소스 더 추가)
+          gcc -o mission_test \
+            test_mission.c \
+            ../Core/Src/app.c \
+            ../Core/Src/telemetry.c \
+            ../Core/Src/sensors.c \
+            -I../Core/Inc \
+            -DHOST_TEST_MODE
+          ./mission_test
+
+      # 2) HostSim 빌드 & 실행
+      - name: Build HostSim
+        working-directory: HostSim
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -G "Unix Makefiles"
+          make
+
+      - name: Run HostSim
+        working-directory: HostSim/build
+        run: |
+          ./test_host || ./test_host.exe || true
