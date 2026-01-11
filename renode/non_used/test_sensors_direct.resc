@@ -1,0 +1,64 @@
+### 통합 센서 테스트 - LSM6DSV16X + MS5611 (C# 런타임 컴파일)
+### DLL 빌드 없이 .cs 파일 직접 로드
+###
+### 사용 방법:
+###   cd renode
+###   renode --disable-xwt --console test_sensors_direct.resc
+
+logLevel 3
+
+echo "========================================"
+echo "통합 센서 테스트: LSM6DSV16X + MS5611"
+echo "========================================"
+echo ""
+
+# 작업 디렉토리 설정
+path add $CWD
+
+# 머신 생성
+mach create "sensor_test"
+
+# C# 센서 파일 직접 포함 (런타임 컴파일)
+echo "C# 센서 파일 로딩..."
+include $CWD/sensors/lsm6dsv16x_i2c.cs
+echo "  ✓ LSM6DSV16X 로드 완료"
+include $CWD/sensors/ms5611_i2c.cs
+echo "  ✓ MS5611 로드 완료"
+echo ""
+
+# 플랫폼 정의 로드 (최소 구성 - 두 센서 포함)
+echo "플랫폼 로딩..."
+machine LoadPlatformDescription $CWD/stm32g431_minimal.repl
+echo "  ✓ 플랫폼 로드 완료"
+echo ""
+
+# 센서 확인
+echo "========================================"
+echo "등록된 센서 확인"
+echo "========================================"
+peripherals
+echo ""
+
+echo "========================================"
+echo "센서 상세 정보"
+echo "========================================"
+echo ""
+echo "LSM6DSV16X (I2C1 @ 0x6B):"
+echo "  - 가속도계: ±2g, 16384 LSB/g"
+echo "  - 자이로: ±250 dps, 131 LSB/dps"
+echo "  - WHO_AM_I: 0x70"
+echo ""
+echo "MS5611 (I2C3 @ 0x77):"
+echo "  - 압력: 10-1200 mbar"
+echo "  - 온도: -40°C ~ +85°C"
+echo "  - 성층권 시뮬레이션: 0-40km"
+echo ""
+
+echo "========================================"
+echo "테스트 완료"
+echo "========================================"
+echo ""
+echo "명령어 예제:"
+echo "  (monitor) sysbus.i2c1.i2c1_lsm6dsv16x Read 1"
+echo "  (monitor) sysbus.i2c3.i2c3_ms5611 Read 1"
+echo ""

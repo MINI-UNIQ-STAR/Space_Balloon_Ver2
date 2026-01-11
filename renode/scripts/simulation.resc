@@ -1,0 +1,112 @@
+# Renode Simulation Script for STM32 Space Balloon Radiosonde
+# This script sets up the hardware platform and loads the firmware
+
+# =====================================
+# 1. Machine Setup
+# =====================================
+echo "Setting up machine..."
+mach create "radiosonde"
+
+# Load platform definition
+machine LoadPlatformDescription @renode/platforms/stm32g431.repl
+
+# =====================================
+# 2. I2C Sensor Configuration
+# =====================================
+echo "Loading I2C sensors..."
+
+# I2C1 Bus (Downside sensors)
+# Note: Python sensor peripherals are experimental
+# Uncomment if you want to try loading them
+# python "execfile('sensors/lsm6dsv16x.py')"
+# python "execfile('sensors/mlx90393.py')"
+
+# I2C3 Bus (Upside sensors)
+# Note: Python sensor peripherals are experimental
+# Uncomment if you want to try loading them
+# python "execfile('sensors/ms5611.py')"
+# python "execfile('sensors/sht31.py')"
+
+# =====================================
+# 3. UART Configuration
+# =====================================
+echo "Configuring UART peripherals..."
+
+# GPS on UART1 - Will receive NMEA sentences
+# For now, just show analyzer
+# TODO: Add GPS NMEA generator peripheral
+
+# =====================================
+# 4. Load Firmware
+# =====================================
+echo "Loading firmware..."
+
+# Load ELF from build directory
+$elf_path = @build/Debug/stm32_spaceballoon.elf
+
+sysbus LoadELF $elf_path
+
+# =====================================
+# 5. Logging Configuration
+# =====================================
+
+# General logging level (3 = Info)
+logLevel 3
+
+# Enable detailed I2C logging (uncomment for debugging)
+# logLevel -1 sysbus.i2c1
+# logLevel -1 sysbus.i2c3
+
+# Enable UART logging
+# logLevel -1 sysbus.usart1
+
+# =====================================
+# 6. UART Analyzers (Optional)
+# =====================================
+
+# Uncomment to show UART windows
+# showAnalyzer sysbus.usart1 "GPS UART1"
+# showAnalyzer sysbus.usart2 "CO2 UART2"
+# showAnalyzer sysbus.usart3 "PM UART3"
+
+# =====================================
+# 7. Simulation Hooks
+# =====================================
+
+# Set reasonable quantum for real-time feel
+# emulation SetGlobalQuantum "0.0001"
+
+# =====================================
+# 8. Ready!
+# =====================================
+
+echo ""
+echo "====================================="
+echo "STM32 Space Balloon Radiosonde"
+echo "====================================="
+echo ""
+echo "Platform: STM32G431CBU6"
+echo "CPU: Cortex-M4F @ 170MHz"
+echo "Flash: 128KB, SRAM: 32KB"
+echo ""
+echo "Loaded Sensors:"
+echo "  I2C1: LSM6DSV16X (0x6B), MLX90393 (0x0C)"
+echo "  I2C3: MS5611 (0x77), SHT31 (0x44)"
+echo ""
+echo "====================================="
+echo "Quick Start Commands:"
+echo "====================================="
+echo "  start              - Start simulation"
+echo "  pause              - Pause simulation"
+echo "  s                  - Step one instruction"
+echo "  emulation RunFor \"1.0\" - Run for 1 second"
+echo ""
+echo "Debugging:"
+echo "  logLevel -1 sysbus.i2c1  - Enable I2C1 debug"
+echo "  showAnalyzer sysbus.usart1 - Show UART1 output"
+echo "  machine StartGdbServer 3333 - Start GDB server"
+echo ""
+echo "====================================="
+echo "Type 'start' to begin simulation"
+echo "====================================="
+echo ""

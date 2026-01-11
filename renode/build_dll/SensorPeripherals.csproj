@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>SensorPeripherals</AssemblyName>
+    <RootNamespace>Antmicro.Renode.Peripherals</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <!--
+    Renode DLL 경로 설정
+    환경 변수 RENODE_ROOT를 통해 지정하거나,
+    또는 이 파일을 직접 수정하여 경로를 설정하세요.
+
+    예시:
+    Windows: C:\Program Files\Renode\bin
+    Linux: /opt/renode/bin
+    macOS: /Applications/Renode.app/Contents/MacOS
+  -->
+  <PropertyGroup>
+    <RenodePath Condition="'$(RENODE_ROOT)' != ''">$(RENODE_ROOT)</RenodePath>
+    <RenodePath Condition="'$(RenodePath)' == ''">C:\Program Files\Renode\bin</RenodePath>
+  </PropertyGroup>
+
+  <!-- 센서 C# 파일들 포함 -->
+  <ItemGroup>
+    <!-- LSM6DSV16X는 ByteRegisterCollection API로 별도 수정 필요 -->
+    <!-- <Compile Include="..\sensors\lsm6dsv16x_i2c.cs" /> -->
+    <Compile Include="..\sensors\ms5611_i2c.cs" />
+    <!-- GPS 센서는 추가 UART 참조가 필요하여 현재 제외 -->
+    <!-- <Compile Include="..\sensors\gps_xa1110.cs" /> -->
+  </ItemGroup>
+
+  <!-- 페리페럴 C# 파일들 포함 (빌드 오류로 현재 주석 처리) -->
+  <ItemGroup>
+    <!-- <Compile Include="..\peripherals\STM32G4_RCC.cs" /> -->
+    <!-- <Compile Include="..\peripherals\STM32G4_FLASH.cs" /> -->
+    <!-- <Compile Include="..\peripherals\STM32G4_PWR.cs" /> -->
+  </ItemGroup>
+
+  <!-- Renode DLL 참조 -->
+  <ItemGroup>
+    <Reference Include="Antmicro.Renode.Core">
+      <HintPath>$(RenodePath)\Antmicro.Renode.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Antmicro.Renode.Logging">
+      <HintPath>$(RenodePath)\Antmicro.Renode.Logging.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Antmicro.Renode.Peripherals">
+      <HintPath>$(RenodePath)\Antmicro.Renode.Peripherals.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Antmicro.Renode.Utilities">
+      <HintPath>$(RenodePath)\Antmicro.Renode.Utilities.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- 경고 억제 (Renode API 호환성) -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CS0618;CS0612</NoWarn>
+  </PropertyGroup>
+
+</Project>

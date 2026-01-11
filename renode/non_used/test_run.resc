@@ -1,0 +1,36 @@
+# Test run script - Executes simulation for a short period
+# This script loads the main simulation and runs it
+
+# Load main simulation setup
+include @simulation.resc
+
+# Run for 5 virtual seconds (starts automatically)
+emulation RunFor "00:00:05"
+
+# Pause to check status
+pause
+
+# Show some status
+echo ""
+echo "====================================="
+echo "Simulation completed 5 seconds"
+echo "====================================="
+
+# Check PC register (program counter)
+echo "Program Counter:"
+sysbus.cpu PC
+
+echo ""
+echo "CPU Status:"
+sysbus.cpu IsHalted
+
+# Show some peripheral status
+echo ""
+echo "I2C1 Status:"
+sysbus.i2c1
+
+echo ""
+echo "====================================="
+
+# Quit
+quit

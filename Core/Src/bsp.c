@@ -115,8 +115,8 @@ extern UART_HandleTypeDef huart3; // Use UART3 for Sensors/PMS?
 int32_t BSP_UART_Write(uint8_t *pData, uint16_t Len) {
 #ifndef UNIT_TEST
     // Assuming UART3 for general sensor bus or debug
-    // return HAL_UART_Transmit(&huart3, pData, Len, 100);
-    return 0;
+    return HAL_UART_Transmit(&huart3, pData, Len, 100);
+    // return 0;
 #else
     // Mock Print
     char tmp[128];

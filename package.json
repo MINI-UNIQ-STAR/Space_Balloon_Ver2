@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@hyperbrowser/sdk": "^0.81.2",
+    "dotenv": "^17.2.3"
+  }
+}

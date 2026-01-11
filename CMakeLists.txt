@@ -62,6 +62,7 @@ set(sources_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/telemetry.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/xcp.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/bsp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/pps_capture.c
     # HAL Drivers
     ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c
@@ -206,7 +207,7 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     # -Wsuggest-override
     >
     $<$<COMPILE_LANGUAGE:ASM>:-x assembler-with-cpp>
-    $<$<CONFIG:Debug>:-Og -g3 -ggdb>
+    $<$<CONFIG:Debug>:-Os -g3 -ggdb>
     $<$<CONFIG:Release>:-Oz>
 )
 

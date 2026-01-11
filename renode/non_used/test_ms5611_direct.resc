@@ -1,0 +1,59 @@
+### MS5611 Direct Load Test (C# 런타임 컴파일 방식)
+### DLL 없이 .cs 파일 직접 로드
+###
+### 사용 방법:
+###   renode --disable-xwt --console test_ms5611_direct.resc
+
+logLevel 3
+
+echo "========================================"
+echo "MS5611 C# 직접 로드 테스트"
+echo "========================================"
+echo ""
+
+# 작업 디렉토리 설정
+path add $CWD
+
+# 머신 생성
+mach create "ms5611_test"
+
+# C# 센서 파일 직접 포함 (런타임 컴파일)
+echo "C# 센서 파일 로딩..."
+include $CWD/sensors/ms5611_i2c.cs
+echo "  ✓ ms5611_i2c.cs 로드 완료"
+echo ""
+
+# 플랫폼 정의 로드 (최소 구성)
+echo "플랫폼 로딩..."
+machine LoadPlatformDescription $CWD/stm32g431_minimal.repl
+echo "  ✓ 플랫폼 로드 완료"
+echo ""
+
+# I2C3 센서 확인
+echo "I2C3 버스 확인:"
+i2c3
+echo ""
+
+# 로깅 활성화
+logLevel 0 i2c3
+
+echo "========================================"
+echo "시뮬레이션 (30초)"
+echo "========================================"
+echo ""
+
+start
+emulation RunFor "00:00:30"
+pause
+
+echo ""
+echo "========================================"
+echo "테스트 완료"
+echo "========================================"
+echo ""
+echo "로그에서 다음 확인:"
+echo "  - MS5611 Reset (0x1E)"
+echo "  - PROM Read (0xA0-0xAE)"
+echo "  - Convert D1/D2"
+echo "  - ADC Read (0x00)"
+echo ""

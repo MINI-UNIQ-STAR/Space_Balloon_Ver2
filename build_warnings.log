@@ -1,8 +1,0 @@
-msbuild 踰꾩쟾 17.14.23+b0019275e(.NET Framework??
-
-  test_drivers_runner.vcxproj -> C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\Debug\test_drivers_runner.exe
-  test_fdir_runner.vcxproj -> C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\Debug\test_fdir_runner.exe
-app.obj : error LNK2019: BSP_InitApp_Init ?⑥닔?먯꽌 李몄“?섎뒗 ?뺤씤?????녿뒗 ?몃? 湲고샇 [C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\test_integration_runner.vcxproj]
-C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\Debug\test_integration_runner.exe : fatal error LNK1120: 1媛쒖쓽 ?뺤씤?????녿뒗 ?몃? 李몄“?낅땲?? [C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\test_integration_runner.vcxproj]
-  test_kalman_runner.vcxproj -> C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\Debug\test_kalman_runner.exe
-  test_pid_runner.vcxproj -> C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\test\build_host\Debug\test_pid_runner.exe

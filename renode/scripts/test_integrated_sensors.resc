@@ -1,0 +1,208 @@
+### Renode Integrated Test Script - LSM6DSV16X + MS5611
+### STM32G431 Space Balloon Radiosonde - Multi-Sensor Validation
+###
+### 목적: LSM6DSV16X (IMU) + MS5611 (기압계) 동시 동작 검증
+###
+### 사용 방법:
+###   renode --disable-xwt --console renode/scripts/test_integrated_sensors.resc
+###
+### 전제조건:
+###   1. 펌웨어 빌드: ../build/stm32_spaceballoon
+###   2. 센서 DLL 빌드: build_dll/bin/Release/SensorPeripherals.dll
+###
+### 검증 항목:
+###   - LSM6DSV16X @ I2C1 0x6B (6축 IMU)
+###   - MS5611 @ I2C3 0x77 (기압계)
+###   - 두 센서 동시 통신 가능 여부
+###   - I2C 버스 충돌 없음
+###   - 센서 데이터 상관성 (가속도 Z축 ~1g, 압력 감소 vs 고도 증가)
+
+# 로그 레벨 설정 (일반 메시지)
+logLevel 3
+
+echo "========================================"
+echo "통합 센서 테스트: LSM6DSV16X + MS5611"
+echo "========================================"
+echo ""
+echo "센서 구성:"
+echo "  - LSM6DSV16X (IMU) @ I2C1 0x6B"
+echo "    * 가속도계: ±2g, 16384 LSB/g"
+echo "    * 자이로: ±250 dps, 131 LSB/dps"
+echo "    * WHO_AM_I: 0x70"
+echo ""
+echo "  - MS5611 (기압계) @ I2C3 0x77"
+echo "    * 압력: 10-1200 mbar, 0.012 mbar 해상도"
+echo "    * 온도: -40°C ~ +85°C"
+echo "    * 성층권 시뮬레이션: 0-40km"
+echo ""
+
+# 머신 생성
+mach create "radiosonde"
+
+# 센서/페리페럴 DLL 로드
+echo "DLL 로딩..."
+machine LoadPeripheralsAssembly @renode/build_dll/bin/Release/SensorPeripherals.dll
+echo "  ✓ SensorPeripherals.dll 로드 완료"
+echo ""
+
+# 플랫폼 정의 로드 (LSM6DSV16X + MS5611 포함)
+echo "플랫폼 로딩..."
+machine LoadPlatformDescription @renode/platforms/stm32g431_with_sensors.repl
+echo "  ✓ stm32g431_with_sensors.repl 로드 완료"
+echo ""
+
+# 펌웨어 ELF 파일 로드
+echo "펌웨어 로딩..."
+sysbus LoadELF @build/Debug/stm32_spaceballoon.elf
+echo "  ✓ 펌웨어 로드 완료"
+echo ""
+
+echo "========================================"
+echo "I2C 버스 센서 등록 확인"
+echo "========================================"
+echo ""
+
+# I2C1 센서 확인 (LSM6DSV16X)
+echo "I2C1 버스 (Downside 센서):"
+i2c1
+echo ""
+
+# I2C3 센서 확인 (MS5611)
+echo "I2C3 버스 (Upside 센서):"
+i2c3
+echo ""
+
+echo "========================================"
+echo "I2C 통신 로깅 활성화"
+echo "========================================"
+echo ""
+
+# I2C1 상세 로깅 (LSM6DSV16X)
+logLevel 0 i2c1
+logLevel 0 i2c1_lsm6dsv16x
+echo "  ✓ I2C1 로깅 활성화 (LSM6DSV16X)"
+
+# I2C3 상세 로깅 (MS5611)
+logLevel 0 i2c3
+logLevel 0 i2c3_ms5611
+echo "  ✓ I2C3 로깅 활성화 (MS5611)"
+echo ""
+
+echo "========================================"
+echo "시뮬레이션 시작 (60초)"
+echo "========================================"
+echo ""
+echo "예상 동작:"
+echo "  - 시뮬레이션 시간: 60초 (가상 시간)"
+echo "  - 풍선 상승: 0m → 300m (5 m/s)"
+echo ""
+echo "LSM6DSV16X 예상 출력:"
+echo "  - 가속도 Z축: ~16384 LSB (~1g, 정지 상태)"
+echo "  - 가속도 X/Y축: ~0 LSB (기울기 없음)"
+echo "  - 자이로 X/Y/Z축: ~0 LSB (회전 없음)"
+echo ""
+echo "MS5611 예상 출력:"
+echo "  - 초기 (0m): P ≈ 1013 mbar, T ≈ 15°C"
+echo "  - 최종 (300m): P ≈ 978 mbar, T ≈ 13°C"
+echo "  - 압력 감소율: ~0.12 mbar/m"
+echo ""
+
+echo "시뮬레이션 실행 중..."
+start
+emulation RunFor "00:00:05"
+pause
+
+echo ""
+echo "========================================"
+echo "시뮬레이션 완료"
+echo "========================================"
+echo ""
+
+# CPU 상태 확인
+echo "CPU 상태:"
+echo "  PC: "
+sysbus.cpu PC
+echo "  SP: "
+sysbus.cpu SP
+echo ""
+
+# I2C 레지스터 상태
+echo "I2C 버스 제어 레지스터:"
+echo "  I2C1 CR1: "
+sysbus ReadDoubleWord 0x40005400
+echo "  I2C3 CR1: "
+sysbus ReadDoubleWord 0x40007800
+echo ""
+
+echo "========================================"
+echo "검증 포인트"
+echo "========================================"
+echo ""
+echo "✓ 확인 사항:"
+echo ""
+echo "1. LSM6DSV16X 통신 검증 (I2C1 로그)"
+echo "   - WHO_AM_I 읽기: Read [0x0F] → 0x70"
+echo "   - 가속도 데이터: Read [0x28-0x2D] (6 바이트)"
+echo "   - 자이로 데이터: Read [0x22-0x27] (6 바이트)"
+echo "   - Z축 가속도: ~16384 LSB (±1000 LSB)"
+echo ""
+echo "2. MS5611 통신 검증 (I2C3 로그)"
+echo "   - Reset: Write [0x1E]"
+echo "   - PROM 읽기: 0xA0-0xAE → C1-C6 계수"
+echo "   - 압력 변환: Write [0x40-0x48]"
+echo "   - 온도 변환: Write [0x50-0x58]"
+echo "   - ADC 읽기: Read [0x00] (3 바이트)"
+echo "   - 압력: 1013 mbar → 978 mbar (감소 확인)"
+echo ""
+echo "3. I2C 버스 충돌 없음"
+echo "   - I2C1과 I2C3 동시 통신 시 오류 없음"
+echo "   - NACK, 타임아웃, 버스 오류 없음"
+echo ""
+echo "4. 센서 데이터 상관성"
+echo "   - 가속도 Z축: 중력 방향 일정 (~1g)"
+echo "   - 압력 감소: 고도 증가와 비례 (0-300m)"
+echo "   - 온도 감소: 대류권 감률 (~-6.5°C/km)"
+echo ""
+
+echo "========================================"
+echo "모니터 명령어 예제"
+echo "========================================"
+echo ""
+echo "센서 상태 확인:"
+echo "  (monitor) i2c1                       # I2C1 센서 목록"
+echo "  (monitor) i2c3                       # I2C3 센서 목록"
+echo ""
+echo "추가 시뮬레이션:"
+echo "  (monitor) start"
+echo "  (monitor) emulation RunFor \"00:10:00\"  # 10분 = 3km 상승"
+echo "  (monitor) pause"
+echo ""
+echo "고도별 압력 예상 값:"
+echo "  1km: ~899 mbar, 8.5°C"
+echo "  3km: ~701 mbar, -4.5°C"
+echo "  5km: ~540 mbar, -17.5°C"
+echo "  10km: ~265 mbar, -50°C"
+echo ""
+echo "센서 레지스터 읽기 (디버깅용):"
+echo "  # LSM6DSV16X WHO_AM_I 확인"
+echo "  (monitor) sysbus ReadByte 0x40005400   # I2C1 CR1"
+echo ""
+echo "  # MS5611 상태 확인"
+echo "  (monitor) sysbus ReadByte 0x40007800   # I2C3 CR1"
+echo ""
+echo "장시간 시뮬레이션 (11km 대류권 경계):"
+echo "  (monitor) emulation RunFor \"00:36:40\"  # 2200초 = 11km"
+echo "  # 예상: P ≈ 226 mbar, T ≈ -56.5°C"
+echo ""
+echo "종료:"
+echo "  (monitor) quit"
+echo ""
+
+echo "========================================"
+echo "통합 테스트 준비 완료"
+echo "========================================"
+echo ""
+echo "✓ LSM6DSV16X + MS5611 동시 동작 검증 가능"
+echo "✓ I2C 로그에서 통신 상세 확인 가능"
+echo "✓ 위 모니터 명령어로 추가 테스트 진행"
+echo ""

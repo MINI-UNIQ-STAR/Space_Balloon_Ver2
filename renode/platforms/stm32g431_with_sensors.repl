@@ -1,0 +1,193 @@
+// STM32G431CBU6 Platform Definition with Sensors for Renode
+// Extended version with sensor peripherals loaded from DLL
+// Based on: stm32g431.repl
+
+// DLL 로드 (센서 및 페리페럴)
+// 주의: 상대 경로는 Renode 실행 위치에 따라 다를 수 있음
+// .resc 스크립트에서 LoadPeripheralsAssembly로 로드하는 것을 권장
+// using "build_dll/bin/Release/SensorPeripherals.dll"
+
+// Memory configuration for STM32G431CBU6
+// Flash: 128KB, SRAM: 32KB
+flash: Memory.MappedMemory @ sysbus 0x8000000
+    size: 0x20000
+
+sram: Memory.MappedMemory @ sysbus 0x20000000
+    size: 0x8000
+
+cpu: CPU.CortexM @ sysbus
+    cpuType: "cortex-m4f"
+    nvic: nvic
+
+nvic: IRQControllers.NVIC @ sysbus 0xE000E000
+    priorityMask: 0xF0
+    systickFrequency: 170000000
+    IRQ -> cpu@0
+
+// RCC - Reset and Clock Control (Memory-mapped with default values)
+rcc: Memory.MappedMemory @ sysbus 0x40021000
+    size: 0x400
+
+// FLASH Controller (Memory-mapped)
+flashCtrl: Memory.MappedMemory @ sysbus 0x40022000
+    size: 0x400
+
+// PWR - Power Control (Memory-mapped)
+pwr: Memory.MappedMemory @ sysbus 0x40007000
+    size: 0x400
+
+// TIM2 - 0x40000000
+tim2: Timers.STM32_Timer @ sysbus 0x40000000
+    frequency: 170000000
+    initialLimit: 0xFFFFFFFF
+    -> nvic@28
+
+// TIM3 - 0x40000400
+tim3: Timers.STM32_Timer @ sysbus 0x40000400
+    frequency: 170000000
+    initialLimit: 0xFFFF
+    -> nvic@29
+
+// TIM6/7 - Basic timers (0x40000400, 0x40001400)
+tim6: Timers.STM32_Timer @ sysbus 0x40001000
+    frequency: 170000000
+    initialLimit: 0xFFFF
+    -> nvic@54
+
+tim7: Timers.STM32_Timer @ sysbus 0x40001400
+    frequency: 170000000
+    initialLimit: 0xFFFF
+    -> nvic@55
+
+// I2C1 Bus (Downside sensors)
+// LSM6DSV16X (0x6B), MLX90393 (0x0C), GDK101 (0x18)
+i2c1: I2C.STM32F7_I2C @ sysbus 0x40005400
+    EventInterrupt -> nvic@31
+    ErrorInterrupt -> nvic@32
+
+// I2C1 센서들 (DLL에서 로드)
+// 주의: DLL이 먼저 로드되어야 함
+// LSM6DSV16X는 ByteRegisterCollection API로 별도 구현 필요
+// i2c1_lsm6dsv16x: Sensors.LSM6DSV16X @ i2c1 0x6B
+//     // 6축 IMU 센서: 가속도계 + 자이로스코프
+//     // WHO_AM_I: 0x70
+//     // 가속도계: ±2g, 16-bit
+//     // 자이로: ±250 dps, 16-bit
+
+// I2C3 Bus (Upside sensors)
+// SHT31 (0x44), MS5611 (0x77), MCP9600 (0x60)
+i2c3: I2C.STM32F7_I2C @ sysbus 0x40007800
+    EventInterrupt -> nvic@72
+    ErrorInterrupt -> nvic@73
+
+// I2C3 센서들 (DLL에서 로드)
+i2c3_ms5611: Sensors.MS5611 @ i2c3 0x77
+    // 기압계 센서: 고정밀 압력 및 온도
+    // 압력 범위: 10-1200 mbar
+    // 온도 범위: -40°C ~ +85°C
+    // 해상도: 0.012 mbar
+    // 성층권 시뮬레이션: 0-40km, 10Hz
+
+// UART1 - GPS XA1110
+usart1: UART.STM32F7_USART @ sysbus 0x40013800
+    frequency: 200000000
+    IRQ -> nvic@37
+
+// UART2 - CM1107N CO2 sensor
+usart2: UART.STM32F7_USART @ sysbus 0x40004400
+    frequency: 200000000
+    IRQ -> nvic@38
+
+// UART3 - PMS3003 PM sensor
+usart3: UART.STM32F7_USART @ sysbus 0x40004800
+    frequency: 200000000
+    IRQ -> nvic@39
+
+// ADC1 - Battery voltage monitoring
+adc1: Analog.STM32_ADC @ sysbus 0x50000000
+    IRQ -> nvic@18
+
+// RTC - Real Time Clock
+rtc: Timers.STM32F4_RTC @ sysbus 0x40002800
+    AlarmIRQ -> nvic@41
+
+// Independent Watchdog
+iwdg: Timers.STM32_IndependentWatchdog @ sysbus 0x40003000
+    frequency: 32000
+    windowOption: false
+
+// Timers
+tim1: Timers.STM32_Timer @ sysbus 0x40012C00
+    frequency: 200000000
+    initialLimit: 0xFFFF
+    -> nvic@24
+
+tim8: Timers.STM32_Timer @ sysbus 0x40013400
+    frequency: 200000000
+    initialLimit: 0xFFFF
+    -> nvic@43
+
+tim16: Timers.STM32_Timer @ sysbus 0x40014400
+    frequency: 200000000
+    initialLimit: 0xFFFF
+    -> nvic@25
+
+// DMA
+dma1: DMA.STM32DMA @ sysbus 0x40020000
+    [0-7] -> nvic@[11-17]
+
+dma2: DMA.STM32DMA @ sysbus 0x40020400
+    [0-7] -> nvic@[56-63]
+
+// GPIO Ports
+gpioPortA: GPIOPort.STM32_GPIOPort @ sysbus <0x48000000, +0x400>
+    modeResetValue: 0xABFFFFFF
+    pullUpPullDownResetValue: 0x64000000
+    numberOfAFs: 16
+    [0-15] -> exti@[0-15]
+
+gpioPortB: GPIOPort.STM32_GPIOPort @ sysbus <0x48000400, +0x400>
+    modeResetValue: 0xFFFFFEBF
+    pullUpPullDownResetValue: 0x00000100
+    numberOfAFs: 16
+    [0-15] -> exti@[0-15]
+
+gpioPortC: GPIOPort.STM32_GPIOPort @ sysbus <0x48000800, +0x400>
+    modeResetValue: 0xFFFFFFFF
+    numberOfAFs: 16
+    [0-15] -> exti@[0-15]
+
+gpioPortD: GPIOPort.STM32_GPIOPort @ sysbus <0x48000C00, +0x400>
+    modeResetValue: 0xFFFFFFFF
+    numberOfAFs: 16
+    [0-15] -> exti@[0-15]
+
+gpioPortF: GPIOPort.STM32_GPIOPort @ sysbus <0x48001400, +0x400>
+    modeResetValue: 0xFFFFFFFF
+    numberOfAFs: 16
+    [0-15] -> exti@[0-15]
+
+// EXTI (External Interrupt)
+exti: IRQControllers.EXTI @ sysbus 0x40010400
+    numberOfOutputLines: 43
+    [0, 1, 2, 3, 4] -> nvic@[6, 7, 8, 9, 10]
+    [5-9] -> nvicInput5_9@[0-4]
+    [10-15] -> nvicInput10_15@[0-5]
+
+nvicInput5_9: Miscellaneous.CombinedInput @ none
+    numberOfInputs: 5
+    -> nvic@23
+
+nvicInput10_15: Miscellaneous.CombinedInput @ none
+    numberOfInputs: 6
+    -> nvic@40
+
+// SPI1 - LoRa module
+spi1: SPI.STM32SPI @ sysbus 0x40013000
+    IRQ -> nvic@35
+
+sysbus:
+    init:
+        Tag <0x40023000 0x400> "CRC"
+        Tag <0x40006C00 0x400> "LPTIM1"
+        Tag <0x48002000 0x400> "GPIOG" // Partial support

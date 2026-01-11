@@ -1,0 +1,11 @@
+logLevel 3 sysbus.gpioPortB
+(spaceballoon) 
+(spaceballoon) emulation GetTimeSourceInfo
+Elapsed Virtual Time: 00:00:24.640800000
+Elapsed Host Time: 00:00:24.640772000
+Current load: 1.0457
+Cumulative load: 1.00000581959263
+State: WaitingForReportBack
+Advance immediately: False
+Quantum: 00:00:00.000100000
+(spaceballoon) 

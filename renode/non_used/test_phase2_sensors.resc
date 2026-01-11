@@ -1,0 +1,50 @@
+# Phase 2 Test: I2C Sensors
+
+echo "====================================="
+echo "Phase 2: I2C Sensors Test"
+echo "====================================="
+echo ""
+
+echo "[1/5] Creating machine and loading platform..."
+mach create "radiosonde"
+machine LoadPlatformDescription @stm32g431.repl
+
+echo "[2/5] Loading firmware..."
+sysbus LoadELF @../build/stm32_spaceballoon
+
+echo "[3/5] Enabling I2C logging..."
+logLevel 0 i2c1
+logLevel 0 i2c3
+
+echo "[4/5] Running firmware with I2C sensors..."
+echo "Running for 2 seconds to observe I2C traffic..."
+echo ""
+
+emulation RunFor "00:00:02"
+
+pause
+
+echo ""
+echo "[5/5] Checking results..."
+echo ""
+
+# Check I2C controller states
+echo "I2C1 Controller:"
+i2c1
+
+echo ""
+echo "I2C3 Controller:"
+i2c3
+
+echo ""
+echo "====================================="
+echo "Phase 2 Test Complete!"
+echo "====================================="
+echo ""
+echo "Check the log above for I2C transactions."
+echo "You should see I2C reads/writes to addresses:"
+echo "  - 0x6B (LSM6DSV16X on I2C1)"
+echo "  - 0x77 (MS5611 on I2C3)"
+echo "  - 0x44 (SHT31 on I2C3)"
+
+quit

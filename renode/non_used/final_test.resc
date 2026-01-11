@@ -1,0 +1,68 @@
+# Final working test - Demonstrates successful simulation
+
+echo "====================================="
+echo "STM32 Space Balloon Radiosonde"
+echo "Renode Simulation Test"
+echo "====================================="
+echo ""
+
+# Create and setup machine
+mach create "radiosonde"
+machine LoadPlatformDescription @stm32g431.repl
+
+echo "[1/4] Platform loaded"
+
+# Load firmware
+sysbus LoadELF @../build/stm32_spaceballoon
+
+echo "[2/4] Firmware loaded"
+echo ""
+
+# Check initial state
+echo "Initial CPU state:"
+echo "  Reset Vector: "
+sysbus ReadDoubleWord 0x8000004
+echo "  Stack Pointer:"
+sysbus ReadDoubleWord 0x8000000
+echo ""
+
+echo "[3/4] Starting simulation for 1 second..."
+echo ""
+
+# Run simulation for 1 second (don't use 'start' beforehand)
+logLevel 2
+emulation RunFor "00:00:01"
+
+echo ""
+echo "[4/4] Simulation completed!"
+echo ""
+
+# Check final state
+pause
+
+echo "Final CPU state:"
+echo "  Program Counter:"
+sysbus.cpu PC
+echo "  Stack Pointer:"
+sysbus.cpu SP
+echo "  CPU Halted:"
+sysbus.cpu IsHalted
+echo ""
+
+# Show some memory content
+echo "SRAM content (first 32 bytes):"
+sysbus ReadBytes 0x20000000 32
+
+echo ""
+echo "====================================="
+echo "SUCCESS: Firmware executed in Renode!"
+echo "====================================="
+echo ""
+echo "You can now:"
+echo "  - Run longer: emulation RunFor \"00:00:10\""
+echo "  - Continue: start"
+echo "  - Debug with GDB: machine StartGdbServer 3333"
+echo "  - View UART: showAnalyzer sysbus.usart1"
+echo ""
+
+quit

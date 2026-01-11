@@ -1,0 +1,100 @@
+### 전체 센서 통합 테스트 (6개 센서)
+### C# 런타임 컴파일 방식 - DLL 빌드 불필요
+###
+### 사용 방법:
+###   cd renode
+###   & "C:\Program Files\Renode\bin\Renode.exe" --disable-xwt --console test_all_sensors.resc
+
+logLevel 3
+
+echo "============================================"
+echo "전체 센서 통합 테스트 (6개 센서)"
+echo "============================================"
+echo ""
+
+# 작업 디렉토리 설정
+path add $CWD
+
+# 머신 생성
+mach create "all_sensors_test"
+
+# C# 센서 파일 직접 포함 (런타임 컴파일)
+echo "C# 센서 파일 로딩..."
+
+echo "  [1/6] LSM6DSV16X (IMU)..."
+include $CWD/sensors/lsm6dsv16x_i2c.cs
+
+echo "  [2/6] MS5611 (Barometer)..."
+include $CWD/sensors/ms5611_i2c.cs
+
+echo "  [3/6] SHT31D (Humidity)..."
+include $CWD/sensors/sht31d_i2c.cs
+
+echo "  [4/6] MLX90393 (Magnetometer)..."
+include $CWD/sensors/mlx90393_i2c.cs
+
+echo "  [5/6] MCP9600 (Thermocouple)..."
+include $CWD/sensors/mcp9600_i2c.cs
+
+echo "  [6/6] GDK101 (Radiation)..."
+include $CWD/sensors/gdk101_i2c.cs
+
+echo "  ✓ 모든 센서 로드 완료"
+echo ""
+
+# 플랫폼 정의 로드
+echo "플랫폼 로딩..."
+machine LoadPlatformDescription $CWD/stm32g431_minimal.repl
+echo "  ✓ 플랫폼 로드 완료"
+echo ""
+
+# 센서 확인
+echo "============================================"
+echo "등록된 페리페럴"
+echo "============================================"
+peripherals
+echo ""
+
+echo "============================================"
+echo "센서 상세 정보"
+echo "============================================"
+echo ""
+echo "┌─────────────────────────────────────────┐"
+echo "│ I2C1 Bus (Downside Sensors)             │"
+echo "├─────────────────────────────────────────┤"
+echo "│ LSM6DSV16X @ 0x6B - 6축 IMU             │"
+echo "│   가속도계: ±2g, 자이로: ±250dps        │"
+echo "│                                         │"
+echo "│ MLX90393 @ 0x0C - 3축 자기계            │"
+echo "│   지구 자기장 측정, 나침반용            │"
+echo "│                                         │"
+echo "│ GDK101 @ 0x18 - 감마선 센서             │"
+echo "│   우주 방사선 측정 (µSv/h)              │"
+echo "└─────────────────────────────────────────┘"
+echo ""
+echo "┌─────────────────────────────────────────┐"
+echo "│ I2C3 Bus (Upside Sensors)               │"
+echo "├─────────────────────────────────────────┤"
+echo "│ MS5611 @ 0x77 - 기압계                  │"
+echo "│   압력: 10-1200mbar, 성층권 시뮬레이션  │"
+echo "│                                         │"
+echo "│ SHT31D @ 0x44 - 온습도 센서             │"
+echo "│   온도: -40~125°C, 습도: 0-100%         │"
+echo "│                                         │"
+echo "│ MCP9600 @ 0x60 - 열전대                 │"
+echo "│   Type K 열전대, 외부 온도 측정         │"
+echo "└─────────────────────────────────────────┘"
+echo ""
+
+echo "============================================"
+echo "테스트 완료 - 6개 센서 로드 성공!"
+echo "============================================"
+echo ""
+echo "센서 접근 명령어:"
+echo "  sysbus.i2c1.i2c1_lsm6dsv16x   # IMU"
+echo "  sysbus.i2c1.i2c1_mlx90393     # 자기계"
+echo "  sysbus.i2c1.i2c1_gdk101       # 방사선"
+echo "  sysbus.i2c3.i2c3_ms5611       # 기압계"
+echo "  sysbus.i2c3.i2c3_sht31d       # 온습도"
+echo "  sysbus.i2c3.i2c3_mcp9600      # 열전대"
+echo ""

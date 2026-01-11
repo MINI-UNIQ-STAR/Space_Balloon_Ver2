@@ -1,0 +1,46 @@
+# Interactive test - Load firmware and let it run
+mach create "radiosonde"
+machine LoadPlatformDescription @stm32g431.repl
+
+echo "Platform loaded."
+
+# Load firmware
+sysbus LoadELF @../build/stm32_spaceballoon
+
+echo "Firmware loaded."
+echo ""
+echo "====================================="
+echo "STM32 Space Balloon Radiosonde"
+echo "Platform: STM32G431CBU6"
+echo "====================================="
+echo ""
+echo "CPU Initial State:"
+sysbus.cpu PC
+echo ""
+
+# Enable some logging for debugging
+logLevel 2
+
+echo "Starting simulation..."
+echo "The simulation will run for 1 second of virtual time."
+echo ""
+
+# Start and run
+start
+emulation RunFor "00:00:01"
+pause
+
+echo ""
+echo "=== After 1 second of execution ==="
+echo "Program Counter:"
+sysbus.cpu PC
+
+echo ""
+echo "Stack Pointer:"
+sysbus.cpu SP
+
+echo ""
+echo "Simulation completed successfully!"
+echo ""
+echo "To continue manually, use: start"
+echo "To quit: quit"

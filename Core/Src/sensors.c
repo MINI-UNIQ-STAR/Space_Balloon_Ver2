@@ -1,7 +1,7 @@
 #include "sensors.h"
 #include "main.h" /* HAL_GetTick */
 #include "bsp.h" /* BSP Layer */
-#include <stdio.h> /* printf */
+// #include <stdio.h> /* printf - Removed to save space */
 #include <string.h> /* memcpy, memset */
 #include <math.h> /* sqrtf, powf, ldexpf */
 #include "lsm6dsv16x_reg.h"
@@ -138,6 +138,35 @@ void Sensors_Init(void) {
     Sensors_Init_I2C3();
     Sensors_Init_UART();
     Sensors_Init_1Wire();
+    Sensors_Init_1Wire();
+}
+
+static void UART_Print(const char* str) {
+    BSP_UART_Write((uint8_t*)str, strlen(str));
+}
+
+static void UART_LogInt(const char* label, int32_t val) {
+    UART_Print(label);
+    char buf[12];
+    int idx = 0;
+    if (val < 0) {
+        UART_Print("-");
+        val = -val;
+    }
+    if (val == 0) {
+        UART_Print("0\n");
+        return;
+    }
+    while (val > 0 && idx < 10) {
+        buf[idx++] = (val % 10) + '0';
+        val /= 10;
+    }
+    // Print reverse
+    while (idx > 0) {
+        uint8_t c = buf[--idx];
+        BSP_UART_Write(&c, 1);
+    }
+    UART_Print("\n");
 }
 
 
@@ -242,6 +271,7 @@ void Sensors_Reset(SensorID_t id) {
 #endif
 
 #ifndef UNIT_TEST
+    UART_LogInt("FDIR: Reset Configured for Sensor ID ", id);
     switch(id) {
         case SENSOR_ID_GPS:
             // L3: Hard Reset (PA9: GPS_nRST - active low)
@@ -397,11 +427,14 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
     int32_t ret_xl, ret_gy;
     
     /* Read Accel with explicit error check */
+    // UART_Print("IMU: XL Read Start\n");
     ret_xl = lsm6dsv16x_acceleration_raw_get(&lsm_ctx, data_raw);
     if (ret_xl != 0) {
+        UART_LogInt("IMU: XL Read Fail ret=", ret_xl);
         /* I2C error - don't update values, FDIR will detect timeout */
         return;
     }
+    // UART_Print("IMU: XL Read Success\n");
     /* Convert to m/s^2 * 1000 */
     for (idx = 0U; idx < 3U; idx++) {
         float mg = lsm6dsv16x_from_fs2_to_mg(data_raw[idx]);
@@ -409,10 +442,13 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
     }
     
     /* Read Gyro with explicit error check */
+    // UART_Print("IMU: GY Read Start\n");
     ret_gy = lsm6dsv16x_angular_rate_raw_get(&lsm_ctx, data_raw);
     if (ret_gy != 0) {
+        UART_LogInt("IMU: GY Read Fail ret=", ret_gy);
         return;
     }
+    // UART_Print("IMU: GY Read Success\n");
     for (idx = 0U; idx < 3U; idx++) {
          float mdps = lsm6dsv16x_from_fs2000_to_mdps(data_raw[idx]);
          /* rad/s * 1000. 1 mdps = 0.00001745 rad/s.
@@ -482,14 +518,17 @@ void Sensors_Read_Rad(uint16_t *uSvh) {
 void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
 #ifndef HOST_TEST_MODE
     int32_t p, t;
+    // UART_Print("BARO: Read Start\n");
     int32_t status = MS5611_Read_PT(&ms_ctx, &p, &t);
     
     if (status == MS5611_OK) {
         // Only update values when new data is ready
+        // UART_Print("BARO: Read OK\n");
         *press_pa = (uint32_t)p;
         *temp_c_x100 = (int16_t)t;
         FDIR_ReportSuccess(SENSOR_ID_BARO);
     } else if (status == MS5611_ERROR) {
+        UART_LogInt("BARO: Read Error Status=", status);
         // On Error, set error values
         // Note: MS5611_BUSY (1) does nothing, keeps old values
         *press_pa = 101325; 

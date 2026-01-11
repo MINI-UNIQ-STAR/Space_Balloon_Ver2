@@ -1,0 +1,14 @@
+machine LoadPlatformDescription @renode/platforms/stm32g431_full.repl
+There was an error executing command 'machine LoadPlatformDescription @C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\renode\platforms\stm32g431_full.repl'
+Error E02: Variable 'flash' was already declared as an already registered peripheral or builtin.
+At C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\renode\platforms\stm32g431_full.repl:8:1:
+flash: Memory.MappedMemory @ sysbus 0x8000000
+^
+(spaceballoon) sysbus LoadELF @build/Debug/stm32_spaceballoon.elf
+There was an error executing command 'sysbus LoadELF @C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\build\Debug\stm32_spaceballoon.elf'
+Cannot load ELF on an unpaused machine.
+(spaceballoon) start
+Starting emulation...
+(spaceballoon) logLevel -1 sysbus
+(spaceballoon) sysbus.i2c3 Reset
+(spaceballoon) 

@@ -1,0 +1,17 @@
+{
+    "mcpServers": {
+        "allPepper-memory-bank": {
+            "type": "stdio",
+            "command": "cmd",
+            "args": [
+                "/c",
+                "npx",
+                "-y",
+                "@allpepper/memory-bank-mcp@latest"
+            ],
+            "env": {
+                "MEMORY_BANK_ROOT": "./.memory-bank"
+            }
+        }
+    }
+}

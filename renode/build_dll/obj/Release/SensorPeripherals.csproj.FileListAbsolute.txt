@@ -1,0 +1,5 @@
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\renode\build_dll\obj\Release\SensorPeripherals.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\renode\build_dll\obj\Release\SensorPeripherals.AssemblyInfoInputs.cache
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\renode\build_dll\obj\Release\SensorPeripherals.AssemblyInfo.cs
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\renode\build_dll\obj\Release\SensorPeripherals.csproj.CoreCompileInputs.cache
+C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\renode\build_dll\obj\Release\SensorPeripherals.sourcelink.json

@@ -46,7 +46,26 @@
       "Bash(claude mcp add:*)",
       "Bash(where:*)",
       "Bash(echo:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(cube-cmake:*)",
+      "Bash(arm-none-eabi-gcc:*)",
+      "Bash(ninja clean:*)",
+      "Bash(ninja:*)",
+      "Bash(renode --version:*)",
+      "Bash(timeout 30 renode:*)",
+      "Bash(timeout 40 renode:*)",
+      "mcp__context7__resolve-library-id",
+      "Bash(renode:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(dir \"C:\\\\Program Files\\\\Renode\\\\bin\")",
+      "Bash(findstr:*)",
+      "Bash(powershell:*)",
+      "mcp__allPepper-memory-bank__memory_bank_write"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "allPepper-memory-bank"
+  ],
+  "outputStyle": "default"
 }
