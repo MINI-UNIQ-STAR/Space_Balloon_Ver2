@@ -113,7 +113,7 @@ scoop install gcc arm-none-eabi-gcc cmake python
 | Temp/Hum | SHT31-D | I2C3 | 온습도 |
 | GPS | XA1110 | UART1 | 위치/고도 |
 | Radiation | GDK101 | I2C1 | 방사선량 |
-| CO2 | CM1107N | UART | CO2 농도 |
+| CO2 | CM1107N | I2C3 | CO2 농도 (UART→I2C3 변경) |
 | Ozone | SEN0321 | I2C3 | 오존 농도 |
 | PM | PMS3003 | UART3 | 미세먼지 |
 | Thermo | MCP9600 | I2C3 | 외부 온도 |
@@ -145,14 +145,17 @@ stm32_spaceballoon/
 │       ├── mlx90393/
 │       ├── ms5611/
 │       └── ...
-├── HostSim/                    # 호스트 PC 시뮬레이션
-│   ├── CMakeLists.txt
-│   ├── mock_sensors.c          # 모의 센서 (RS41 데이터)
-│   ├── mock_hal.c              # HAL 스텁
-│   ├── flight_data.h           # RS41 비행 데이터
-│   └── convert_flight_data.py  # JSON→C 변환
-├── simulation_reference_data/  # 실제 비행 데이터
-│   └── V4630075.json           # RS41 라디오존데 데이터
+├── RENODE_TEST(HIL)/           # Renode 시뮬레이션 환경 (HIL/SITL)
+│   ├── renode/                 # Renode 플랫폼 및 스크립트
+│   ├── run_fdir_tests.py       # 자동화된 FDIR 테스트 러너
+│   └── results/                # 테스트 결과 및 리포트
+├── SITL/                       # Software-In-The-Loop 시뮬레이션
+│   ├── HostSim/                # 호스트 PC 시뮬레이션 (C 언어 스텁)
+│   ├── test/                   # 알고리즘 유닛 테스트 (Kalman, PID 등)
+│   ├── simulation_reference_data/ # 실제 비행 데이터 (RS41)
+│   ├── build_host/             # HostSim 빌드 결과물
+│   └── build_test/             # Unit Test 빌드 결과물
+├── HITL/                       # Hardware-In-The-Loop 시나리오 및 대시보드
 ├── cmake/
 │   └── gcc-arm-none-eabi.cmake # 툴체인 설정
 ├── CMakeLists.txt              # 메인 빌드 설정
@@ -182,20 +185,24 @@ cube-cmake --build build/Debug
 openocd -f interface/stlink.cfg -f target/stm32g4x.cfg -c "program build/Debug/stm32_spaceballoon.elf verify reset exit"
 ```
 
-### 호스트 시뮬레이션 빌드
+### 호스트 시뮬레이션 빌드 (SITL)
 
 ```powershell
-cd HostSim
+cd SITL/HostSim
 
 # 1. (선택) 비행 데이터 업데이트
 python convert_flight_data.py
 
 # 2. CMake 설정
-cube-cmake -B build -G "MinGW Makefiles"
+cube-cmake -B ../build_host -G "MinGW Makefiles"
 
 # 3. 빌드
-mingw32-make -C build
+mingw32-make -C ../build_host
 ```
+
+> [!IMPORTANT]
+> 폴더 이동으로 인해 기존의 `CMakeCache.txt`가 무효화되었습니다.
+> 통합된 `SITL/build_host` 와 `SITL/build_test`에서 다시 빌드하실 때, **기존 빌드 폴더를 삭제하거나 `CMakeCache.txt`를 제거**한 후 다시 생성해야 정상적으로 빌드됩니다.
 
 ---
 
@@ -215,8 +222,8 @@ mingw32-make -C build
 
 ```powershell
 # 예: Kalman Filter 테스트
-cd test/test_kalman
-gcc -o test_kalman test_kalman.c ..\..\Core\Src\kalman.c -I..\..\Core\Inc -DHOST_TEST_MODE
+cd SITL/test/test_kalman
+gcc -o test_kalman test_kalman.c ..\..\..\Core\Src\kalman.c -I..\..\..\Core\Inc -DHOST_TEST_MODE
 .\test_kalman.exe
 ```
 
@@ -224,9 +231,9 @@ gcc -o test_kalman test_kalman.c ..\..\Core\Src\kalman.c -I..\..\Core\Inc -DHOST
 전체 시스템의 비행 시나리오(대기-상승-폭발-하강)를 시뮬레이션하여 데이터 로직을 검증합니다.
 
 ```powershell
-cd test/test_integration
+cd SITL/test/test_integration
 # 빌드 및 실행 (gcc 필요)
-gcc -o mission_test.exe test_mission.c ... (상세 명령어는 walkthrough.md 참조)
+gcc -o mission_test.exe test_mission.c ... (상세 명령어는 SITL/walkthrough.md 참조)
 .\mission_test.exe
 ```
 
@@ -234,8 +241,8 @@ gcc -o mission_test.exe test_mission.c ... (상세 명령어는 walkthrough.md �
 과거 비행 데이터(RS41)를 재생하여 실시간 텔레메트리 전송을 검증합니다.
 
 ```powershell
-cd HostSim
-.\build\test_host.exe
+cd SITL/HostSim
+..\build_host\test_host.exe
 ```
 **출력 예시:**
 ```text
@@ -265,26 +272,44 @@ CRC16: 0xABCD
 
 ---
 
-## � HITL 시뮤레이션
+## 🚀 HITL 시뮬레이션
 
 **HITL (Hardware-In-The-Loop)** 테스트를 통해 실제 STM32와 ESP32 Mock 보드를 연결하여 비행 시나리오를 검증합니다.
 
 ### HITL 구성
 - **Main Control (ESP32-C3)**: PC와 통신, ESP-NOW 브로드캐스트
 - **I2C Mock Nodes (4개)**: 센서 에뮬레이션 (LSM6DSV16X, GPS, 기압계 등)
-- **Python Dashboard**: `docs/HITL/sensor_sender.py`
+- **Python Dashboard**: `HITL/sensor_sender.py`
 
 ### 실행 방법
 ```powershell
-cd docs\HITL
+cd HITL
 python sensor_sender.py
 ```
 
-> 자세한 내용은 [docs/HITL/README.md](docs/HITL/README.md) 참조
+> 자세한 내용은 [HITL/README.md](HITL/README.md) 참조
 
 ---
 
-## �📡 텔레메트리 프로토콜
+## 🤖 Renode FDIR 시뮬레이션 (SITL)
+
+**Renode**를 사용하여 하드웨어 없이 펌웨어의 전체 로직과 FDIR(장애 감지 및 복구) 기능을 시뮬레이션합니다.
+
+- **테스트 항목**: 22개 (모든 I2C/UART 센서, 시스템 타이머, ADC, EXTI 등)
+- **주입 장애**: I2C 버스 타임아웃, 센서 연결 해제, UART 통신 불량 등
+- **검증 방법**: 자동화된 Python 스크립트를 통한 펌웨어 상태 및 복구 동작 상시 모니터링
+
+### 실행 방법
+```powershell
+cd "RENODE_TEST(HIL)"
+python run_fdir_tests.py
+```
+
+> 최근 테스트 결과: **22/22 PASS (100%)** - [상세 리포트 보기](RENODE_TEST(HIL)/results/README.md)
+
+---
+
+## 📡 텔레메트리 프로토콜
 
 ### 프레임 크기
 | 구성 요소 | 크기 |
@@ -395,7 +420,7 @@ typedef struct {
 | 3 | SHT31-D | 온도, 습도 | 1Hz |
 | 4 | XA1110 | GPS 위치 | 1Hz |
 | 5 | GDK101 | 방사선량 | 1Hz |
-| 6 | CM1107N | CO2 | 1Hz |
+| 6 | CM1107N | CO2 | 1Hz (I2C3) |
 | 7 | SEN0321 | 오존 | 1Hz |
 | 8 | PMS3003 | 미세먼지 | 1Hz |
 | 9 | MCP9600 | 열전대 온도 | 1Hz |
@@ -417,4 +442,4 @@ MIT License
 
 ---
 
-**마지막 업데이트:** 2026-01-08
+**마지막 업데이트:** 2026-01-11

@@ -1,24 +1,0 @@
-17:05:06.6782 [INFO] Loaded monitor commands from: C:\Program Files\Renode\scripts/monitor.py
-Renode, version 1.16.0 (20ad06d9-202508030343)
-
-(monitor) include @renode/scripts/test_firmware.resc;  peripherals;  quit
-17:05:06.7363 [INFO] Including script: C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\renode\scripts\test_firmware.resc
-============================================
-STM32G431 펌웨어 통합 테스트
-============================================
-
-Current 'PATH' value is: C:\Program Files\Renode;C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32;C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32
-센서 C# 파일 로딩...
-  [1/7] LSM6DSV16X (IMU)...
-  [2/7] MS5611 (Barometer)...
-  [3/7] SHT31D (Humidity)...
-  [4/7] MLX90393 (Magnetometer)...
-  [5/7] MCP9600 (Thermocouple)...
-  [6/7] GDK101 (Radiation)...
-  [7/7] GPS XA1110 (GNSS)...
-  ? 모든 센서 로드 완료
-
-플랫폼 로딩...
-There was an error executing command 'machine LoadPlatformDescription @C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32/platforms/stm32g431_full.repl'
-Could not find file 'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32/platforms/stm32g431_full.repl'.
-(spaceballoon) 

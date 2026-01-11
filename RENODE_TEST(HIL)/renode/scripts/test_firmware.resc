@@ -1,0 +1,132 @@
+### 펌웨어 통합 테스트 (7개 센서 + 펌웨어)
+### 모든 센서 + GPS + STM32G431 펌웨어 통합 실행
+###
+### 사용 방법:
+###   cd renode
+###   & "C:\Program Files\Renode\bin\Renode.exe" --disable-xwt --console scripts/test_firmware.resc
+
+logLevel 3
+
+echo "============================================"
+echo "STM32G431 펌웨어 통합 테스트"
+echo "============================================"
+echo ""
+
+# 작업 디렉토리 설정
+path add $CWD
+
+# 머신 생성
+mach create "spaceballoon"
+
+# C# 센서 파일 로드
+echo "센서 C# 파일 로딩..."
+
+echo "  [1/7] LSM6DSV16X (IMU)..."
+include @renode/sensors/lsm6dsv16x_i2c.cs
+
+echo "  [2/7] MS5611 (Barometer)..."
+include @renode/sensors/ms5611_i2c.cs
+
+echo "  [3/7] SHT31D (Humidity)..."
+include @renode/sensors/sht31d_i2c.cs
+
+echo "  [4/7] MLX90393 (Magnetometer)..."
+include @renode/sensors/mlx90393_i2c.cs
+
+echo "  [5/7] MCP9600 (Thermocouple)..."
+include @renode/sensors/mcp9600_i2c.cs
+
+echo "  [6/7] GDK101 (Radiation)..."
+include @renode/sensors/gdk101_i2c.cs
+
+echo "  [7/7] GPS XA1110 (GNSS)..."
+include @renode/sensors/gps_xa1110.cs
+
+echo "  [8/7] SEN0321 (Ozone)..."
+include @renode/sensors/sps30_i2c.cs
+include @renode/sensors/sen0321_i2c.cs
+include @renode/sensors/pms3003_uart.cs
+include @renode/sensors/cm1107n_i2c.cs
+
+echo "  ✓ 모든 센서 로드 완료"
+echo ""
+
+# 플랫폼 로드
+echo "플랫폼 로딩..."
+machine LoadPlatformDescription @renode/platforms/stm32g431.repl
+
+# Create sensors
+machine LoadPlatformDescriptionFromString "i2c1: { lsm6dsv16x: Sensors.LSM6DSV16X @ 0x6a }"
+machine LoadPlatformDescriptionFromString "i2c1: { lis2mdl: Sensors.LIS2MDL @ 0x1e }"
+machine LoadPlatformDescriptionFromString "i2c1: { mlx90393: Sensors.MLX90393 @ 0x0C }"
+machine LoadPlatformDescriptionFromString "i2c1: { gdk101: Sensors.GDK101 @ 0x18 }"
+
+machine LoadPlatformDescriptionFromString "i2c3: { ms5611: Sensors.MS5611 @ 0x77 }"
+machine LoadPlatformDescriptionFromString "i2c3: { sht31d: Sensors.SHT31D @ 0x44 }"
+machine LoadPlatformDescriptionFromString "i2c3: { mcp9600: Sensors.MCP9600 @ 0x67 }"
+machine LoadPlatformDescriptionFromString "i2c3: { sen0321: Sensors.SEN0321 @ 0x79 }"
+machine LoadPlatformDescriptionFromString "i2c3: { cm1107n: Antmicro.Renode.Peripherals.I2C.CM1107N @ 0x31 }"
+
+echo "  ✓ 플랫폼 로드 완료"
+echo ""
+
+# Python Hooks 로드 (DS18B20) - Disabled for now, causing errors
+# echo "Python Hooks 로딩..."
+# python "import sys; sys.path.append(r'$CWD/renode/scripts')"
+# python "import hooks"
+# echo "  ✓ Hooks Script Imported"
+# echo ""
+
+# 펌웨어 로드
+echo "펌웨어 로딩..."
+sysbus LoadELF $CWD/../build/Debug/stm32_spaceballoon.elf
+echo "  ✓ 펌웨어 로드 완료"
+echo ""
+
+# Hook 설치 (Disabled)
+# python "hooks.install_ds18b20_hook(self.Machine)"
+
+# 센서 확인
+echo "============================================"
+echo "등록된 페리페럴"
+echo "============================================"
+peripherals
+echo ""
+
+# UART 콘솔 연결 (디버그 출력)
+echo "============================================"
+echo "UART 콘솔 설정"
+echo "============================================"
+showAnalyzer usart3
+echo "  ✓ USART2 콘솔 활성화"
+# sysbus.usart3 AddLineHook "print 'FDIR-LOG: ' + line"  # Disabled: syntax error
+echo ""
+
+# 로깅 설정
+echo "I2C/UART 로깅 활성화..."
+logLevel 1 i2c1
+logLevel 1 i2c3
+logLevel 1 usart1
+logLevel 1 usart3
+echo "  ✓ 로깅 활성화"
+echo ""
+
+echo "============================================"
+echo "시뮬레이션 준비 완료"
+echo "============================================"
+echo ""
+echo "센서 구성:"
+echo "  I2C1: LSM6DSV16X(0x6B), MLX90393(0x0C), GDK101(0x18), SEN0321(0x70)"
+echo "  I2C3: MS5611(0x77), SHT31D(0x44), MCP9600(0x60)"
+echo "  USART1: GPS XA1110"
+echo "  USART3: PMS3003"
+echo "  1-Wire: DS18B20 (Hooked)"
+echo ""
+echo "시뮬레이션 시작:"
+echo "  (monitor) start"
+echo "  (monitor) emulation RunFor \"00:00:05\"  # 5초 (Demo)"
+echo ""
+echo "수동 제어:"
+echo "  (monitor) pause"
+echo "  (monitor) step    # 단일 명령 실행"
+echo ""

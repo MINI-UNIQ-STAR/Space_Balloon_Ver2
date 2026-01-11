@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 |------|------|
 | **레이어** | BSP (HAL 래퍼) |
-| **코드 라인** | 176줄 |
+| **코드 라인** | 283줄 |
 | **역할** | 하드웨어 추상화 레이어 |
 
 ## 구조
@@ -11,8 +11,8 @@
 | 그룹 | 함수 | 설명 |
 |------|------|------|
 | **Init** | `BSP_Init()`, `BSP_Sensor_PowerOn()` | 초기화 |
-| **I2C1** | `WriteReg`, `ReadReg`, `Write`, `Read` | Downside 버스 |
-| **I2C3** | `WriteReg`, `ReadReg` | Upside 버스 |
+| **I2C1** | `WriteReg`, `ReadReg`, `Write`, `Read`, `Recovery` | Downside 버스 |
+| **I2C3** | `WriteReg`, `ReadReg`, `Recovery` | Upside 버스 |
 | **UART** | `Write`, `Read` | 시리얼 통신 |
 | **System** | `GetTick`, `Delay` | 시스템 |
 | **ADC** | `Read_Battery_mV` | 배터리 전압 |
