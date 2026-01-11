@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "a10OjZBgKTA=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\hyuns\\Desktop\\project\\SpaceBalloon_2.0\\spaceballoon_stm32_lora32\\renode\\build_dll\\SensorPeripherals.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\hyuns\\.nuget\\packages\\microsoft.netcore.app.ref\\6.0.36\\microsoft.netcore.app.ref.6.0.36.nupkg.sha512",
+    "C:\\Users\\hyuns\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\6.0.36\\microsoft.windowsdesktop.app.ref.6.0.36.nupkg.sha512",
+    "C:\\Users\\hyuns\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\6.0.36\\microsoft.aspnetcore.app.ref.6.0.36.nupkg.sha512"
+  ],
+  "logs": []
+}

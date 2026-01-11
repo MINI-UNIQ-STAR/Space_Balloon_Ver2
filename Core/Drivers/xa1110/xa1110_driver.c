@@ -9,7 +9,7 @@ static uint16_t line_idx = 0;
 
 static void XA1110_SendCommand(xa1110_ctx_t *ctx, const char *cmd) {
     if (ctx->write) {
-        ctx->write(ctx->handle, (uint8_t*)cmd, strlen(cmd));
+        ctx->write(ctx->handle, (uint8_t*)cmd, (uint16_t)strlen(cmd));
     }
 }
 
@@ -46,6 +46,11 @@ void XA1110_ProcessByte(xa1110_ctx_t *ctx, uint8_t byte) {
 }
 
 bool XA1110_ParseSentence(xa1110_ctx_t *ctx, char *sentence) {
+    // Validate checksum before parsing
+    if (!minmea_check(sentence, false)) {
+        return false;  // Invalid checksum or malformed sentence
+    }
+
     switch (minmea_sentence_id(sentence, false)) {
         case MINMEA_SENTENCE_RMC: {
             struct minmea_sentence_rmc frame;
@@ -74,19 +79,24 @@ bool XA1110_ParseSentence(xa1110_ctx_t *ctx, char *sentence) {
                 ctx->data.lon_deg_e7 = minmea_rescale(&frame.longitude, 10000000);
             }
         } break;
-        
-        case MINMEA_SENTENCE_GSA: {
-             struct minmea_sentence_gsa frame;
-             if (minmea_parse_gsa(&frame, sentence)) {
-                 // ctx->data.fix_type = frame.fix_type; // 2D/3D
-                 // Update sats used from GSA if needed
-             }
+
+        case MINMEA_SENTENCE_GSV: {
+            struct minmea_sentence_gsv frame;
+            if (minmea_parse_gsv(&frame, sentence)) {
+                // Determine system by Talker ID
+                char talker[3];
+                if (minmea_talker_id(talker, sentence)) {
+                    if (talker[0] == 'G' && talker[1] == 'P') ctx->data.sats_gps = frame.total_sats;
+                    else if (talker[0] == 'G' && talker[1] == 'L') ctx->data.sats_glonass = frame.total_sats;
+                    else if (talker[0] == 'G' && talker[1] == 'A') ctx->data.sats_galileo = frame.total_sats;
+                    else if (talker[0] == 'G' && talker[1] == 'B') ctx->data.sats_beidou = frame.total_sats;
+                }
+
+                // Update total visible
+                ctx->data.sats_view_total = ctx->data.sats_gps + ctx->data.sats_glonass +
+                                          ctx->data.sats_galileo + ctx->data.sats_beidou;
+            }
         } break;
-        
-        // GSV for Sat Counts... complicated logic, skipping for now as not minimal requirement.
-        // We can parse GSV to count Total Sats and Per-System count by Talker ID.
-        // XA1110 uses GP, GL, GA, GB talkers.
-        // minmea_talker_id() can return 'GP', 'GL' etc.
         
         default:
             return false;

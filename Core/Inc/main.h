@@ -1,4 +1,8 @@
 /* USER CODE BEGIN Header */
+#if defined(HOST_TEST_MODE)
+// Suppress standard HAL inclusion so we can use mock_hal.h
+#define STM32G4xx_HAL_H
+#endif
 /**
   ******************************************************************************
   * @file           : main.h
@@ -17,17 +21,19 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#if !defined(HOST_TEST_MODE) || defined(STM32G431xx)
+#ifndef STM32G4xx_HAL_H
 #include "stm32g4xx_hal.h"
+#include "stm32g4xx_hal_i2c.h"
+#include "stm32g4xx_hal_uart.h"
+#include "stm32g4xx_hal_gpio.h"
 #endif
-
-#if defined(HOST_TEST_MODE) && !defined(STM32G431xx)
-#include "mock_hal.h"
-#endif
-
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#if defined(HOST_TEST_MODE)
+#include "mock_hal.h"
+#endif
+
 #include "pid.h"
 #include "kalman.h"
 #include "xcp.h"

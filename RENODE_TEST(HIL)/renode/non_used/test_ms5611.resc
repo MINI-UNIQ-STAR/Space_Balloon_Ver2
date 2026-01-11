@@ -1,0 +1,125 @@
+### Renode Test Script - MS5611 Barometric Pressure Sensor
+### STM32G431 Space Balloon Radiosonde - Stratospheric Simulation
+###
+### 목적: MS5611 기압계 센서 DLL 로드 및 통신 테스트
+###
+### 사용 방법:
+###   renode --disable-xwt --console test_ms5611.resc
+###
+### 전제조건:
+###   1. 펌웨어 빌드: ../build/stm32_spaceballoon
+###   2. 센서 DLL 빌드: build_dll/bin/Release/SensorPeripherals.dll
+
+# 로그 레벨 설정
+logLevel 3
+
+# 머신 생성
+mach create "radiosonde"
+
+# 센서/페리페럴 DLL 로드
+machine LoadPeripheralsAssembly @build_dll/bin/Release/SensorPeripherals.dll
+
+# 플랫폼 정의 로드 (MS5611 포함 버전)
+machine LoadPlatformDescription @stm32g431_with_sensors.repl
+
+# 펌웨어 ELF 파일 로드
+sysbus LoadELF @../build/stm32_spaceballoon
+
+echo "================================"
+echo "MS5611 기압계 센서 테스트"
+echo "================================"
+echo ""
+
+# I2C3 로깅 활성화
+logLevel 0 i2c3
+logLevel 0 i2c3_ms5611
+
+echo "I2C3 통신 로깅 활성화됨"
+echo ""
+
+echo "================================"
+echo "테스트 1: Reset 및 PROM 읽기"
+echo "================================"
+echo ""
+echo "MS5611 프로토콜:"
+echo "  - Reset: 0x1E"
+echo "  - PROM C1: 0xA2 → 0xA2E0 (41696)"
+echo "  - PROM C2: 0xA4 → 0x9188 (37256)"
+echo "  - PROM C5: 0xAA → 0x7D8F (32143)"
+echo ""
+
+# 시뮬레이션 시작 (5초)
+echo "시뮬레이션 시작 (5초)..."
+echo "고도 시뮬레이션: 0m → ~25m (5 m/s * 5s)"
+echo "예상 압력: ~1013 mbar (해수면)"
+echo "예상 온도: ~15°C"
+echo ""
+
+start
+emulation RunFor "00:00:05"
+pause
+
+echo ""
+echo "================================"
+echo "테스트 2: 압력 변환 테스트"
+echo "================================"
+echo ""
+echo "압력 변환 명령어:"
+echo "  - OSR 4096: 0x48"
+echo "  - ADC 읽기: 0x00"
+echo ""
+echo "예상 D1 (압력 ADC): ~9,000,000"
+echo "예상 D2 (온도 ADC): ~8,500,000"
+echo ""
+
+# 추가 10초 시뮬레이션
+echo "추가 시뮬레이션 (10초)..."
+echo "고도: 25m → ~75m"
+echo ""
+
+start
+emulation RunFor "00:00:10"
+pause
+
+echo ""
+echo "================================"
+echo "시뮬레이션 결과 확인"
+echo "================================"
+echo ""
+
+# CPU 상태
+echo "CPU 상태:"
+sysbus.cpu PC
+sysbus.cpu SP
+echo ""
+
+# I2C3 레지스터 상태
+echo "I2C3 제어 레지스터:"
+sysbus ReadDoubleWord 0x40007800
+echo ""
+
+echo "================================"
+echo "테스트 완료"
+echo "================================"
+echo ""
+echo "검증 포인트:"
+echo "  1. PROM 값이 올바른지 확인"
+echo "     - C1=0xA2E0, C2=0x9188, C5=0x7D8F"
+echo "  2. I2C 로그에서 Reset(0x1E) 명령 확인"
+echo "  3. PROM 읽기 (0xA0-0xAE) 명령 확인"
+echo "  4. D1/D2 변환 (0x40-0x58) 명령 확인"
+echo "  5. ADC 읽기 (0x00) 3바이트 확인"
+echo "  6. 압력/온도 값이 현실적인지 확인"
+echo ""
+echo "장시간 시뮬레이션 (성층권):"
+echo "  - 40km 도달: 약 8000초 (5 m/s 기준)"
+echo "  - 예상 압력 (40km): ~3 mbar"
+echo "  - 예상 온도 (40km): ~-23°C"
+echo ""
+echo "계속 실행:"
+echo "  (monitor) start"
+echo "  (monitor) emulation RunFor \"00:10:00\"  # 10분 = 3km 상승"
+echo ""
+echo "종료:"
+echo "  (monitor) quit"
+echo ""

@@ -1,0 +1,134 @@
+// STM32G431 플랫폼 - 전체 센서 + GPS 통합
+// 7개 센서: LSM6DSV16X, MS5611, SHT31D, MLX90393, MCP9600, GDK101, GPS XA1110
+// C# 런타임 컴파일 사용
+
+// ============================================
+// Memory
+// ============================================
+flash: Memory.MappedMemory @ sysbus 0x8000000
+    size: 0x20000
+
+sram: Memory.MappedMemory @ sysbus 0x20000000
+    size: 0x8000
+
+cpu: CPU.CortexM @ sysbus
+    cpuType: "cortex-m4f"
+    nvic: nvic
+
+nvic: IRQControllers.NVIC @ sysbus 0xE000E000
+    priorityMask: 0xF0
+    systickFrequency: 170000000
+    IRQ -> cpu@0
+
+// ============================================
+// System Peripherals
+// ============================================
+rcc: Memory.MappedMemory @ sysbus 0x40021000
+    size: 0x400
+
+pwr: Memory.MappedMemory @ sysbus 0x40007000
+    size: 0x400
+
+flashCtrl: Memory.MappedMemory @ sysbus 0x40022000
+    size: 0x400
+
+// ============================================
+// I2C1 Bus - Downside Sensors
+// ============================================
+i2c1: I2C.STM32F7_I2C @ sysbus 0x40005400
+    EventInterrupt -> nvic@31
+    ErrorInterrupt -> nvic@32
+
+// LSM6DSV16X IMU @ 0x6B
+i2c1_lsm6dsv16x: Sensors.LSM6DSV16X @ i2c1 0x6B
+
+// MLX90393 Magnetometer @ 0x0C
+i2c1_mlx90393: Sensors.MLX90393 @ i2c1 0x0C
+
+// GDK101 Radiation Sensor @ 0x18
+i2c1_gdk101: Sensors.GDK101 @ i2c1 0x18
+
+// ============================================
+// I2C3 Bus - Upside Sensors
+// ============================================
+i2c3: I2C.STM32F7_I2C @ sysbus 0x40007800
+    EventInterrupt -> nvic@72
+    ErrorInterrupt -> nvic@73
+
+// MS5611 Barometer @ 0x77
+i2c3_ms5611: Sensors.MS5611 @ i2c3 0x77
+
+// SHT31D Temperature/Humidity @ 0x44
+i2c3_sht31d: Sensors.SHT31D @ i2c3 0x44
+
+// MCP9600 Thermocouple @ 0x60
+i2c3_mcp9600: Sensors.MCP9600 @ i2c3 0x60
+
+// ============================================
+// UART - GPS & Other Serial Sensors
+// ============================================
+// USART1 - GPS XA1110 (connected to GPS module)
+usart1: UART.STM32F7_USART @ sysbus 0x40013800
+    frequency: 170000000
+    IRQ -> nvic@37
+
+// GPS module attached to USART1
+// Note: GPS is separate external device, data flows through USART1
+
+// USART2 - Debug/Console
+usart2: UART.STM32F7_USART @ sysbus 0x40004400
+    frequency: 170000000
+    IRQ -> nvic@38
+
+// ============================================
+// Timers
+// ============================================
+tim2: Timers.STM32_Timer @ sysbus 0x40000000
+    frequency: 170000000
+    initialLimit: 0xFFFFFFFF
+    -> nvic@28
+
+tim6: Timers.STM32_Timer @ sysbus 0x40001000
+    frequency: 170000000
+    initialLimit: 0xFFFF
+    -> nvic@54
+
+// ============================================
+// SPI - LoRa Module
+// ============================================
+spi1: SPI.STM32SPI @ sysbus 0x40013000
+    IRQ -> nvic@35
+
+// ============================================
+// ADC - Battery Monitoring
+// ============================================
+adc1: Analog.STM32_ADC @ sysbus 0x50000000
+    IRQ -> nvic@18
+
+// ============================================
+// GPIO Ports
+// ============================================
+gpioPortA: GPIOPort.STM32_GPIOPort @ sysbus <0x48000000, +0x400>
+    numberOfAFs: 16
+
+gpioPortB: GPIOPort.STM32_GPIOPort @ sysbus <0x48000400, +0x400>
+    numberOfAFs: 16
+
+gpioPortC: GPIOPort.STM32_GPIOPort @ sysbus <0x48000800, +0x400>
+    numberOfAFs: 16
+
+// ============================================
+// New Sensors (2026-01-11)
+// ============================================
+
+// SEN0321 Ozone Sensor @ 0x70 on I2C1
+i2c1_sen0321: Sensors.SEN0321 @ i2c1 0x70
+
+// USART3 - PMS3003 Dust Sensor
+// Connects to PC10(TX)/PC11(RX) ? Need to check schematic
+// Assuming USART3 for PMS3003
+usart3: UART.STM32F7_USART @ sysbus 0x40004800
+    frequency: 170000000
+    IRQ -> nvic@39
+
+pms3003: Sensors.PMS3003 @ usart3

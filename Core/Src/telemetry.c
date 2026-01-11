@@ -80,13 +80,6 @@ static void Telemetry_PrintFrame(telemetry_frame_t *frame) {
 #endif
 
 void Telemetry_Send(telemetry_frame_t *frame) {
-    /* 1. Calculate CRC over Header (excluding CRC field) + Payload
-     * Header is 12 bytes. payload is variable.
-     * Total length to CRC = sizeof(header before crc) + payload_len
-     * Actually, let's just calc CRC over the whole structure excluding the last 2 bytes?
-     * Structure alignment might be tricky. Safest is to just cast to uint8_t* 
-     */
-    
     /* Frame size = sizeof(telemetry_frame_t).
      * CRC applies to bytes 0 to end-3 (Total - 2 bytes for CRC)
      */
@@ -98,13 +91,9 @@ void Telemetry_Send(telemetry_frame_t *frame) {
     
 #ifdef HOST_TEST_MODE
     Telemetry_PrintFrame(frame);
+#else
+    /* Actual UART Transmission to LoRa32 via UART3 */
+    extern UART_HandleTypeDef huart3;
+    HAL_UART_Transmit(&huart3, (uint8_t*)frame, total_len, 100);
 #endif
-    
-    /* 2. Send via UART
-     * Assuming UART3 is used for LoRa as per spec
-     * extern UART_HandleTypeDef huart3;
-     * HAL_UART_Transmit(&huart3, (uint8_t*)frame, total_len, 100);
-     */
-    
-    /* Mock Send (No-op) */
 }

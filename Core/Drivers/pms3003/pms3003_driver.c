@@ -1,7 +1,7 @@
 #include "pms3003_driver.h"
 #include <string.h> // for memset
 
-// Endianness helper
+// Endianness helper (Big Endian to Host)
 static uint16_t makeWord(uint8_t h, uint8_t l) {
     return (h << 8) | l;
 }

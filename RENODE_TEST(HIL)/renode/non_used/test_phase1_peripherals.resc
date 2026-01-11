@@ -1,0 +1,71 @@
+# Phase 1 Test: RCC, FLASH, PWR peripherals
+
+echo "====================================="
+echo "Phase 1: Core Peripherals Test"
+echo "====================================="
+echo ""
+
+# Load C# peripherals
+echo "[1/5] Loading C# peripheral implementations..."
+include @peripherals/STM32G4_RCC.cs
+include @peripherals/STM32G4_FLASH.cs
+include @peripherals/STM32G4_PWR.cs
+
+echo "[2/5] Creating machine and loading platform..."
+mach create "radiosonde"
+machine LoadPlatformDescription @stm32g431.repl
+
+echo "[3/5] Loading firmware..."
+sysbus LoadELF @../build/stm32_spaceballoon
+
+echo "[4/5] Testing peripherals..."
+echo ""
+
+# Enable detailed logging for our peripherals
+logLevel 0 rcc
+logLevel 0 flashCtrl
+logLevel 0 pwr
+
+# Run for 0.5 seconds
+echo "Running firmware for 0.5 seconds..."
+emulation RunFor "00:00:00.500"
+
+pause
+
+echo ""
+echo "[5/5] Checking peripheral states..."
+echo ""
+
+# Check RCC registers
+echo "RCC Registers:"
+echo "  CR (Clock Control):"
+sysbus ReadDoubleWord 0x40021000
+echo "  CFGR (Clock Config):"
+sysbus ReadDoubleWord 0x40021004
+echo "  AHB2ENR (GPIO clocks):"
+sysbus ReadDoubleWord 0x4002104C
+echo "  APB1ENR1 (I2C/TIM clocks):"
+sysbus ReadDoubleWord 0x40021058
+
+echo ""
+echo "FLASH Registers:"
+echo "  ACR (Access Control):"
+sysbus ReadDoubleWord 0x40022000
+echo "  SR (Status):"
+sysbus ReadDoubleWord 0x40022010
+echo "  CR (Control):"
+sysbus ReadDoubleWord 0x40022014
+
+echo ""
+echo "PWR Registers:"
+echo "  CR1 (Power Control 1):"
+sysbus ReadDoubleWord 0x40007000
+echo "  SR2 (Status 2):"
+sysbus ReadDoubleWord 0x40007014
+
+echo ""
+echo "====================================="
+echo "Phase 1 Test Complete!"
+echo "====================================="
+
+quit

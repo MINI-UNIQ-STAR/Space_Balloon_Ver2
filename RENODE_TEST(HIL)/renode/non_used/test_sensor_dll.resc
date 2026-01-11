@@ -1,0 +1,96 @@
+### Renode Test Script - Sensor DLL Integration
+### STM32G431 Space Balloon Radiosonde with Sensor Peripherals
+###
+### 목적: 컴파일된 센서/페리페럴 DLL을 로드하고 I2C 센서 통신 테스트
+###
+### 사용 방법:
+###   renode --disable-xwt --console test_sensor_dll.resc
+###
+### 전제조건:
+###   1. 펌웨어 빌드 완료: ../build/stm32_spaceballoon
+###   2. 센서 DLL 빌드 완료: build_dll/bin/Release/SensorPeripherals.dll
+
+# 로그 레벨 설정
+logLevel 3
+
+# 머신 생성
+mach create "radiosonde"
+
+# 센서/페리페럴 DLL 로드
+# 주의: 상대 경로는 Renode 실행 위치에 따라 다름
+# renode 디렉토리에서 실행하는 것을 권장
+machine LoadPeripheralsAssembly @build_dll/bin/Release/SensorPeripherals.dll
+
+# 플랫폼 정의 로드 (센서 포함 버전)
+machine LoadPlatformDescription @stm32g431_with_sensors.repl
+
+# 펌웨어 ELF 파일 로드
+sysbus LoadELF @../build/stm32_spaceballoon
+
+# 초기 상태 확인
+echo "================================"
+echo "초기 상태 확인"
+echo "================================"
+sysbus.cpu PC
+sysbus.cpu SP
+echo ""
+
+# I2C 로깅 활성화 (센서 통신 추적)
+echo "I2C 로깅 활성화..."
+logLevel 0 i2c1
+logLevel 0 i2c3
+logLevel 0 i2c1_lsm6dsv16x
+echo ""
+
+# UART 분석기 설정 (GPS 데이터 확인용)
+showAnalyzer sysbus.usart1
+showAnalyzer sysbus.usart2
+showAnalyzer sysbus.usart3
+
+echo "================================"
+echo "시뮬레이션 시작 (2초)"
+echo "================================"
+echo "I2C 센서 통신을 모니터링합니다..."
+echo "LSM6DSV16X (0x6B) 센서 응답 확인:"
+echo "  - WHO_AM_I (0x0F) -> 0x70 예상"
+echo "  - 가속도계/자이로 데이터 읽기"
+echo ""
+
+# 시뮬레이션 실행 (2초)
+start
+emulation RunFor "00:00:02"
+pause
+
+echo ""
+echo "================================"
+echo "시뮬레이션 종료 후 상태"
+echo "================================"
+
+# CPU 상태 확인
+sysbus.cpu PC
+sysbus.cpu SP
+
+echo ""
+echo "RCC 레지스터 상태:"
+sysbus ReadDoubleWord 0x40021000
+
+echo ""
+echo "I2C1 제어 레지스터:"
+sysbus ReadDoubleWord 0x40005400
+
+echo ""
+echo "================================"
+echo "테스트 완료"
+echo "================================"
+echo ""
+echo "추가 테스트:"
+echo "  - I2C 로그에서 센서 응답 확인"
+echo "  - WHO_AM_I 값이 0x70인지 확인"
+echo "  - 가속도계/자이로 데이터 업데이트 확인"
+echo ""
+echo "계속 실행하려면:"
+echo "  (monitor) start"
+echo ""
+echo "종료하려면:"
+echo "  (monitor) quit"
+echo ""

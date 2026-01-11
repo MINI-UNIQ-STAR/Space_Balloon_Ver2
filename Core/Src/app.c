@@ -2,6 +2,8 @@
 #include "fdir.h"
 #include "main.h"  // For HAL_GPIO and pin definitions
 #include "sensors.h" // For SensorID definitions
+#include "bsp.h" // BSP Layer
+#include "pps_capture.h" // GPS 1PPS synchronization
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
@@ -18,15 +20,29 @@ telemetry_frame_t telem_frame;
 float heater_battery_cmd = 0.0f;
 float heater_board_cmd = 0.0f;
 
+// Low Voltage Protection State
+uint8_t g_low_voltage_mode = 0;
+
+uint8_t App_IsLowVoltageMode(void) {
+    return g_low_voltage_mode;
+}
+
 void App_Init(void) {
+    // 0. Board Init
+    BSP_Init();
+
     // 1. Sensor Init
     Sensors_Init();
 
     // 2. Thermal PID Init
-    // Heater max output 100.0 (percent)
-    PID_Init(&hpid_bat, 1000.0f, 10.0f, 0.0f, 100.0f); // Kp, Ki, Kd, Max
+    // ** Power Budget Tuning (2026-01-09) **
+    // Battery Heater: Kapton 7.2W @ 5V, limited to 60% duty (HEATER_BATT_MAX_DUTY)
+    // Kp scaled down from 1000 → 400 to account for duty cycle limit
+    // MaxOutput set to 60.0 to match power budget (redundant with app.c limiter, but safer)
+    PID_Init(&hpid_bat, 400.0f, 6.0f, 0.0f, 60.0f); // Kp, Ki, Kd, Max
     hpid_bat.Target = 10.0f; // Maintain 10C
-    
+
+    // Board Heater: Minibulb ~4W @ 5V, no limit yet (pending hardware test)
     PID_Init(&hpid_brd, 500.0f, 5.0f, 0.0f, 100.0f);
     hpid_brd.Target = 5.0f; // Maintain 5C
     
@@ -46,9 +62,12 @@ void App_Init(void) {
     
     // 6. Actuators Init
     Actuators_Init();
-    
+
     // 7. FDIR Init
     FDIR_Init();
+
+    // 8. GPS 1PPS Init
+    PPS_Init();
 }
 
 void App_Loop(void) {
@@ -177,10 +196,53 @@ void App_Loop(void) {
         kf_initialized = 1U;
     }
     
-    // 2. PID Update
-    heater_battery_cmd = PID_Update(&hpid_bat, current_battery_temp, 0.02f);
-    heater_board_cmd = PID_Update(&hpid_brd, current_board_temp, 0.02f);
-    
+    // ** Low Voltage Protection (Load Shedding) **
+    // Disable high-power consumers when battery voltage < 2.7V to prevent brownout
+    uint16_t bat_mv = telem_frame.payload.bat_mv;
+
+    if (bat_mv < 2700 && g_low_voltage_mode == 0) {
+        // Enter low voltage mode
+        g_low_voltage_mode = 1;
+
+        // Disable heaters (highest power consumers)
+        heater_battery_cmd = 0.0f;
+        heater_board_cmd = 0.0f;
+
+        // Disable PMS3003 (UART2 sensor, moderate power ~100mA)
+        // Note: PMS3003 will be re-enabled when voltage recovers
+        #ifndef HOST_TEST_MODE
+        // No explicit disable function for PMS yet, but we can stop reading it
+        // FDIR will mark it as timeout if we don't update it
+        #endif
+    }
+    else if (bat_mv > 2900 && g_low_voltage_mode == 1) {
+        // Exit low voltage mode with 200mV hysteresis (2.9V)
+        g_low_voltage_mode = 0;
+    }
+
+    // 2. PID Update (skipped if in low voltage mode)
+    if (g_low_voltage_mode == 0) {
+        heater_battery_cmd = PID_Update(&hpid_bat, current_battery_temp, 0.02f);
+        heater_board_cmd = PID_Update(&hpid_brd, current_board_temp, 0.02f);
+
+        // ** Power Budget Protection: Limit heater duty cycles **
+        // Kapton heater: 7.2W @ 5V → 1.44A max current
+        // Limit to 60% duty to ensure 3+ hour flight time with 2500mAh battery
+        if (heater_battery_cmd > HEATER_BATT_MAX_DUTY) {
+            heater_battery_cmd = HEATER_BATT_MAX_DUTY;
+        }
+
+        // Minibulb: No limit for now (TBD based on hardware test)
+        if (heater_board_cmd > HEATER_BOARD_MAX_DUTY) {
+            heater_board_cmd = HEATER_BOARD_MAX_DUTY;
+        }
+    }
+    else {
+        // Keep heaters off in low voltage mode
+        heater_battery_cmd = 0.0f;
+        heater_board_cmd = 0.0f;
+    }
+
     // 3. Actuator Output
     Actuators_SetHeater_Battery(heater_battery_cmd);
     Actuators_SetHeater_Board(heater_board_cmd);

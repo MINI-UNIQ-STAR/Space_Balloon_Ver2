@@ -19,8 +19,12 @@ void Actuators_Init(void) {
 }
 
 void Actuators_SetHeater_Battery(float duty_percent) {
-    if (duty_percent < 0.0f) duty_percent = 0.0f;
-    if (duty_percent > 100.0f) duty_percent = 100.0f;
+    if (duty_percent < 0.0f) {
+        duty_percent = 0.0f;
+    }
+    if (duty_percent > 100.0f) {
+        duty_percent = 100.0f;
+    }
     
     // Calculate CCR value based on Timer Period (ARR)
     // Assuming ARR = 1000 for simple mapping
@@ -35,8 +39,12 @@ void Actuators_SetHeater_Battery(float duty_percent) {
 }
 
 void Actuators_SetHeater_Board(float duty_percent) {
-    if (duty_percent < 0.0f) duty_percent = 0.0f;
-    if (duty_percent > 100.0f) duty_percent = 100.0f;
+    if (duty_percent < 0.0f) {
+        duty_percent = 0.0f;
+    }
+    if (duty_percent > 100.0f) {
+        duty_percent = 100.0f;
+    }
     
     uint32_t ccr_val = (uint32_t)(duty_percent * 10.0f);
     

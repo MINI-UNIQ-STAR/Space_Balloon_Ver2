@@ -1,0 +1,11 @@
+logLevel 3 sysbus.nvic
+(spaceballoon) 
+(spaceballoon) emulation GetTimeSourceInfo
+Elapsed Virtual Time: 00:00:30.674900000
+Elapsed Host Time: 00:00:30.674832200
+Current load: 0.9978
+Cumulative load: 0.999997789723846
+State: WaitingForReportBack
+Advance immediately: False
+Quantum: 00:00:00.000100000
+(spaceballoon) 

@@ -1,6 +1,12 @@
 #ifndef GDK101_DRIVER_H
 #define GDK101_DRIVER_H
 
+// Error Codes
+#define GDK101_OK             0
+#define GDK101_I2C_ERR       -1
+#define GDK101_ID_ERR        -2
+#define GDK101_RESET_ERR     -3
+
 #include <stdint.h>
 #include <stdbool.h>
 

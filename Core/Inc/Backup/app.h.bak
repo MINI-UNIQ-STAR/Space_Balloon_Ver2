@@ -2,6 +2,9 @@
 #define __APP_H
 
 #include "main.h" // Holds HAL includes and basic types
+#include "pid.h"
+#include "kalman.h"
+#include "telemetry.h"
 
 // Global Contexts (Exposed for Test/Debugging)
 extern PID_HandleTypeDef hpid_bat;

@@ -176,7 +176,7 @@ static void ds18b20_fetchTemp( uint8_t device )
 {
     if ( device < attachedDevices && devices[ device ].serial[ 0 ] != 0 )
     {
-        uint8_t i;
+        // uint8_t i; // Unused in single device mode
         uint8_t b1, b2;
 
         owTouchReset();
@@ -198,7 +198,7 @@ static void ds18b20_fetchTemp( uint8_t device )
         b2 = owReadByte();
 
         devices[ device ].lastVal = ( (int16_t) b2 << 8 ) | ( b1 & 0xFF );
-        devices[ device ].lastTemp = devices[ device ].lastVal * 0.0625;
+        devices[ device ].lastTemp = devices[ device ].lastVal * 0.0625f;
     }
 }
 

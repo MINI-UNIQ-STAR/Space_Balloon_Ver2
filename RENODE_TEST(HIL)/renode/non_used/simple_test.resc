@@ -1,0 +1,29 @@
+# Simple test - Just load and check if firmware boots
+mach create "test"
+machine LoadPlatformDescription @stm32g431.repl
+
+# Load firmware
+sysbus LoadELF @../build/stm32_spaceballoon
+
+echo "Platform and firmware loaded successfully!"
+echo ""
+
+# Start for a brief moment
+start
+emulation RunFor "0.001"
+pause
+
+echo "=== CPU State ==="
+sysbus.cpu PC
+echo ""
+
+echo "=== Reset Vector Check ==="
+sysbus ReadDoubleWord 0x8000004
+
+echo ""
+echo "=== Flash Content (first 32 bytes) ==="
+sysbus ReadBytes 0x8000000 32
+
+echo ""
+echo "Test completed!"
+quit

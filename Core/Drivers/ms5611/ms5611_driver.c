@@ -29,12 +29,26 @@ static int32_t _read_adc(ms5611_ctx_t *ctx, uint32_t *val) {
     return 0;
 }
 
+// State definitions
+#define S_IDLE_START_D1 0
+#define S_WAIT_D1       1
+#define S_START_D2      2
+#define S_WAIT_D2       3
+
 int32_t MS5611_Init(ms5611_ctx_t *ctx) {
     if (!ctx->address) ctx->address = MS5611_I2C_ADDR_HIGH; // Default
     
-    // Reset
+    // Reset state
+    ctx->state = S_IDLE_START_D1;
+    ctx->tick_start = 0;
+
+    // Reset Command
     _send_cmd(ctx, MS5611_CMD_RESET);
-    // Need Delay ~3ms
+    // Need Delay ~3ms - In init phase, blocking is acceptable or we should assume caller waits.
+    // For now, keeping blocking in Init as Init is usually done once at startup.
+    #ifndef UNIT_TEST
+    HAL_Delay(5);
+    #endif
     
     // Read PROM C1-C6 (indices 1-6)
     // Also read C0 (Factory data) and C7 (CRC) for validation
@@ -50,7 +64,6 @@ int32_t MS5611_Init(ms5611_ctx_t *ctx) {
     }
     
     // CRC4 Verification (FMEA S-07 mitigation)
-    // Standard MS5611 CRC4 algorithm per datasheet AN520
     uint16_t crc_read = prom[7] & 0x000F; // Last 4 bits of PROM[7]
     prom[7] = (prom[7] & 0xFF00); // CRC byte removed for calculation
     
@@ -82,47 +95,91 @@ int32_t MS5611_Init(ms5611_ctx_t *ctx) {
 }
 
 int32_t MS5611_Read_PT(ms5611_ctx_t *ctx, int32_t *press_pa, int32_t *temp_c_x100) {
-    // 1. Convert D1 (Pressure)
-    uint8_t cmd_d1 = MS5611_CMD_CONV_D1 | MS5611_OSR_4096;
-    _send_cmd(ctx, cmd_d1);
-    // Delay ~9ms
-#ifndef UNIT_TEST
-    HAL_Delay(10);
-#endif
-    
-    uint32_t D1 = 0;
-    _read_adc(ctx, &D1);
-    
-    // 2. Convert D2 (Temp)
-    uint8_t cmd_d2 = MS5611_CMD_CONV_D2 | MS5611_OSR_4096;
-    _send_cmd(ctx, cmd_d2);
-    // Delay ~9ms
-#ifndef UNIT_TEST
-    HAL_Delay(10);
-#endif
-    
-    uint32_t D2 = 0;
-    _read_adc(ctx, &D2);
-    
-    // 3. Calculate
-    // D2 is raw temp, D1 is raw pressure
-    // dT = D2 - C5 * 2^8
-    int64_t dT = (int64_t)D2 - ((int64_t)ctx->C[5] << 8);
-    
-    // TEMP = 2000 + dT * C6 / 2^23
-    int64_t TEMP = 2000 + (dT * (int64_t)ctx->C[6] >> 23);
-    
-    // OFF = C2 * 2^16 + (C4 * dT) / 2^7
-    int64_t OFF = ((int64_t)ctx->C[2] << 16) + (( (int64_t)ctx->C[4] * dT ) >> 7);
-    
-    // SENS = C1 * 2^15 + (C3 * dT) / 2^8
-    int64_t SENS = ((int64_t)ctx->C[1] << 15) + (( (int64_t)ctx->C[3] * dT ) >> 8);
-    
-    // P = (D1 * SENS / 2^21 - OFF) / 2^15
-    int64_t P = (((D1 * SENS) >> 21) - OFF) >> 15;
-    
-    *press_pa = (int32_t)P;
-    *temp_c_x100 = (int32_t)TEMP;
-    
-    return 0;
+    uint32_t now = HAL_GetTick();
+
+    switch (ctx->state) {
+        case S_IDLE_START_D1:
+        {
+            // 1. Send Command Convert D1 (Pressure)
+            uint8_t cmd_d1 = MS5611_CMD_CONV_D1 | MS5611_OSR_4096;
+            if (_send_cmd(ctx, cmd_d1) != 0) return MS5611_ERROR;
+            
+            ctx->tick_start = now;
+            ctx->state = S_WAIT_D1;
+            return MS5611_BUSY;
+        }
+
+        case S_WAIT_D1:
+        {
+            // Check 10ms delay
+            if ((now - ctx->tick_start) < 10) return MS5611_BUSY;
+
+            // Read D1
+            if (_read_adc(ctx, &ctx->D1_raw) != 0) {
+                ctx->state = S_IDLE_START_D1; // Retry next time
+                return MS5611_ERROR;
+            }
+
+            // Immediately Start D2
+            ctx->state = S_START_D2;
+            // Fallthrough to S_START_D2 to save one cycle? 
+            // Better to return busy to keep it simple or execute immediately?
+            // Let's execute immediately to start D2 conversion right away.
+        }
+        /* Fallthrough */
+
+        case S_START_D2:
+        {
+             // 2. Send Command Convert D2 (Temp)
+            uint8_t cmd_d2 = MS5611_CMD_CONV_D2 | MS5611_OSR_4096;
+            if (_send_cmd(ctx, cmd_d2) != 0) {
+                 ctx->state = S_IDLE_START_D1;
+                 return MS5611_ERROR;
+            }
+
+            ctx->tick_start = now; // Update timestamp for D2 wait
+            ctx->state = S_WAIT_D2;
+            return MS5611_BUSY;
+        }
+
+        case S_WAIT_D2:
+        {
+            // Check 10ms delay
+            if ((now - ctx->tick_start) < 10) return MS5611_BUSY;
+
+            // Read D2
+            if (_read_adc(ctx, &ctx->D2_raw) != 0) {
+                ctx->state = S_IDLE_START_D1;
+                return MS5611_ERROR;
+            }
+
+            // 3. Calculate
+            // D2 is raw temp, D1 is raw pressure
+            // dT = D2 - C5 * 2^8
+            int64_t dT = (int64_t)ctx->D2_raw - ((int64_t)ctx->C[5] << 8);
+            
+            // TEMP = 2000 + dT * C6 / 2^23
+            int64_t TEMP = 2000 + (dT * (int64_t)ctx->C[6] >> 23);
+            
+            // OFF = C2 * 2^16 + (C4 * dT) / 2^7
+            int64_t OFF = ((int64_t)ctx->C[2] << 16) + (( (int64_t)ctx->C[4] * dT ) >> 7);
+            
+            // SENS = C1 * 2^15 + (C3 * dT) / 2^8
+            int64_t SENS = ((int64_t)ctx->C[1] << 15) + (( (int64_t)ctx->C[3] * dT ) >> 8);
+            
+            // P = (D1 * SENS / 2^21 - OFF) / 2^15
+            int64_t P = (((ctx->D1_raw * SENS) >> 21) - OFF) >> 15;
+            
+            *press_pa = (int32_t)P;
+            *temp_c_x100 = (int32_t)TEMP;
+            
+            // Reset to start for next reading
+            ctx->state = S_IDLE_START_D1;
+            return MS5611_OK; // Data Ready
+        }
+
+        default:
+            ctx->state = S_IDLE_START_D1;
+            return MS5611_ERROR;
+    }
 }

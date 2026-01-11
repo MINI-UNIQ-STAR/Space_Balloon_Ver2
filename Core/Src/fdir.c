@@ -1,3 +1,4 @@
+#pragma warning(disable:4819)
 #include "fdir.h"
 #include "main.h"
 #include <stdio.h>
@@ -34,15 +35,15 @@ static const uint8_t sensor_max_recovery[SENSOR_ID_COUNT] = {
 // Operating temperature limits (in °C x 100)
 // Format: {min_temp, max_temp}
 static const int16_t sensor_temp_limits[SENSOR_ID_COUNT][2] = {
-    [SENSOR_ID_IMU]      = {-4000, 8500},   // LSM6DSV16X: -40°C ~ +85°C
-    [SENSOR_ID_MAG]      = {-4000, 8500},   // MLX90393: -40°C ~ +85°C
-    [SENSOR_ID_BARO]     = {-4000, 8500},   // MS5611: -40°C ~ +85°C
-    [SENSOR_ID_GPS]      = {-4000, 8500},   // XA1110: -40°C ~ +85°C
-    [SENSOR_ID_PMS]      = {-1000, 6000},   // PMS3003: -10°C ~ +60°C ★
-    [SENSOR_ID_CO2]      = {-500,  5000},   // CM1107N: -5°C ~ +50°C ★
-    [SENSOR_ID_SHT]      = {-4000, 12500},  // SHT31: -40°C ~ +125°C
-    [SENSOR_ID_RAD]      = {-2000, 6000},   // GDK101: -20°C ~ +60°C ★
-    [SENSOR_ID_EXT_TEMP] = {-4000, 15000},  // MCP9600: -40°C ~ +150°C
+    [SENSOR_ID_IMU]      = {-4000, 8500},   // LSM6DSV16X: -40 degC ~ +85 degC
+    [SENSOR_ID_MAG]      = {-4000, 8500},   // MLX90393: -40 degC ~ +85 degC
+    [SENSOR_ID_BARO]     = {-4000, 8500},   // MS5611: -40 degC ~ +85 degC
+    [SENSOR_ID_GPS]      = {-4000, 8500},   // XA1110: -40 degC ~ +85 degC
+    [SENSOR_ID_PMS]      = {-1000, 6000},   // PMS3003: -10 degC ~ +60 degC *
+    [SENSOR_ID_CO2]      = {-500,  5000},   // CM1107N: -5 degC ~ +50 degC *
+    [SENSOR_ID_SHT]      = {-4000, 12500},  // SHT31: -40 degC ~ +125 degC
+    [SENSOR_ID_RAD]      = {-2000, 6000},   // GDK101: -20 degC ~ +60 degC *
+    [SENSOR_ID_EXT_TEMP] = {-9000, 25000},  // MCP9600 (K-Type): -90 degC ~ +250 degC (Stratosphere < -60)
 };
 
 // Temperature hysteresis (5°C = 500 in x100 scale)
@@ -109,7 +110,7 @@ void FDIR_Update(void) {
             sensors_health[i].enabled = false;
             sensors_health[i].state = FDIR_STATE_WARNING; // Mark as warning, not permanent failure
             #ifdef DEBUG
-            printf("FDIR: Sensor %d COLD DISABLED (%.1f°C < %.1f°C)\n", 
+            printf("FDIR: Sensor %d COLD DISABLED (%.1f degC < %.1f degC)\n", 
                    i, current_ext_temp_x100/100.0f, min_temp/100.0f);
             #endif
             
@@ -133,7 +134,7 @@ void FDIR_Update(void) {
             sensors_health[i].last_valid_update_ms = now;
             sensors_health[i].state = FDIR_STATE_RECOVERY;
             #ifdef DEBUG
-            printf("FDIR: Sensor %d WARM RECOVERY (%.1f°C)\n", 
+            printf("FDIR: Sensor %d WARM RECOVERY (%.1f degC)\n", 
                    i, current_ext_temp_x100/100.0f);
             #endif
             
@@ -212,8 +213,8 @@ bool FDIR_IsSensorColdDisabled(SensorID_t id) {
 #define BARO_MAX_PA     110000
 #define GPS_ALT_MIN_M   (-500.0f)
 #define GPS_ALT_MAX_M   50000.0f
-#define TEMP_MIN_X100   (-8000)   // -80°C
-#define TEMP_MAX_X100   6000      // +60°C
+#define TEMP_MIN_X100   (-8000)   // -80 degC
+#define TEMP_MAX_X100   6000      // +60 degC
 
 // Continuity check threshold (from FDIR.md L144)
 #define ALT_JUMP_THRESHOLD_M  500.0f

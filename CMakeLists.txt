@@ -61,6 +61,8 @@ set(sources_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/sensors.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/telemetry.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/xcp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/bsp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/pps_capture.c
     # HAL Drivers
     ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32G4xx_HAL_Driver/Src/stm32g4xx_hal_rcc.c
@@ -205,7 +207,7 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     # -Wsuggest-override
     >
     $<$<COMPILE_LANGUAGE:ASM>:-x assembler-with-cpp>
-    $<$<CONFIG:Debug>:-O0 -g3 -ggdb>
+    $<$<CONFIG:Debug>:-Os -g3 -ggdb>
     $<$<CONFIG:Release>:-Oz>
 )
 
@@ -216,7 +218,7 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     ${compiler_OPTS}
     ${linker_OPTS}
     -Wl,-Map=${CMAKE_PROJECT_NAME}.map
-    -u _printf_float # STDIO float formatting support (remove if not used)
+    # -u _printf_float # STDIO float formatting support (remove if not used)
     -specs=nosys.specs
     -Wl,--start-group
     -lc

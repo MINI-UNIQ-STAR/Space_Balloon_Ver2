@@ -1,5 +1,5 @@
 #include "pid.h"
-
+#include <stdbool.h>
 void PID_Init(PID_HandleTypeDef *hpid, float Kp, float Ki, float Kd, float MaxOutput) {
     hpid->Kp = Kp;
     hpid->Ki = Ki;
@@ -17,28 +17,32 @@ float PID_Update(PID_HandleTypeDef *hpid, float measurement, float dt) {
     /* Proportional term */
     float p_term = hpid->Kp * error;
     
-    /* Integral term */
-    hpid->IntegratedError += error * dt;
-    float i_term = hpid->Ki * hpid->IntegratedError;
-    
     /* Derivative term */
     float derivative = (error - hpid->LastError) / dt;
     float d_term = hpid->Kd * derivative;
-    
     hpid->LastError = error;
     
+    /* Tentative output without new I-term contribution */
+    float tentative_output = p_term + (hpid->Ki * hpid->IntegratedError) + d_term;
+    
+    /* Conditional Integration (Anti-windup):
+     * Only accumulate I-term if output is not saturated.
+     * Saturated means: output >= MaxOutput OR output <= 0 when error pushes further */
+    bool saturated_high = (tentative_output >= hpid->MaxOutput) && (error > 0.0f);
+    bool saturated_low = (tentative_output <= 0.0f) && (error < 0.0f);
+    
+    if (!saturated_high && !saturated_low) {
+        hpid->IntegratedError += error * dt;
+    }
+    
+    float i_term = hpid->Ki * hpid->IntegratedError;
     float output = p_term + i_term + d_term;
     
-    /* Clamping (Anti-windup simple) */
+    /* Output Clamping */
     if (output > hpid->MaxOutput) {
         output = hpid->MaxOutput;
-    } else if (output < -hpid->MaxOutput) {
-        output = -hpid->MaxOutput; /* Assuming symmetric limits or 0 lower bound depending on application */
-        /* If output is strictly positive (like heater PWM 0-100%), clamp to 0. */
-        /* Let's assume heater is 0 to Max. */
-        if (output < 0.0f) {
-            output = 0.0f;
-        }
+    } else if (output < 0.0f) {
+        output = 0.0f;
     }
     
     return output;

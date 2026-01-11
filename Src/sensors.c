@@ -1,7 +1,8 @@
 #include "sensors.h"
-#include "main.h" // HAL_GetTick
-#include <stdio.h> // for printf
-#include <string.h> // for memset
+#include "main.h" 
+#include "bsp.h" // [NEW] BSP Layer
+#include <stdio.h> 
+#include <string.h> 
 #include "lsm6dsv16x_reg.h"
 #include "mlx90393_driver.h"
 #include "sen0321_driver.h"
@@ -10,23 +11,10 @@
 #include "mcp9600_driver.h"
 #include "sht31_driver.h"
 #include "ms5611_driver.h"
-#include "ms5611_driver.h"
 #include "cm1107n_driver.h"
 #include "xa1110_driver.h"
 #include "ds18b20_driver.h"
 #include "fdir.h"
-
-// --- Sensor Hardware Definitions ---
-// Downside Bus (I2C1)
-#define LSM6DSV16X_ADDR     0x6B // SDO/SA0 pulled high usually, or 0x6A
-#define MLX90393_ADDR       0x0C 
-#define GDK101_ADDR         0x18 
-
-// Upside Bus (I2C3)
-#define SHT31_ADDR          0x44 
-#define MS5611_ADDR         0x77 
-#define CM1107N_ADDR        0x31 
-#define MCP9600_ADDR        0x60 
 
 // --- Driver Handles ---
 static stmdev_ctx_t lsm_ctx;
@@ -37,103 +25,61 @@ static gdk101_ctx_t gdk_ctx;
 static mcp9600_ctx_t mcp_ctx;
 static sht31_ctx_t sht_ctx;
 static ms5611_ctx_t ms_ctx;
-static ms5611_ctx_t ms_ctx;
 static cm1107n_ctx_t cm_ctx;
 static xa1110_ctx_t xa_ctx;
 
-// --- Mock State ---
-static float mock_altitude = 100.0f;
-static float mock_temp = 15.0f;
+// --- Mock State (Moved to BSP or handled internally) ---
+// Kept here if logic depends on it, but hardware mock is in BSP.
 
-// --- Platform Functions ---
-static int32_t platform_write(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
-    // HAL_I2C_Mem_Write(handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, (uint8_t*)bufp, len, 1000);
-    return 0;
+// --- Platform Functions (Adapters to BSP) ---
+
+// 1. I2C1 (Downside) Wrapper
+static int32_t platform_write_i2c1(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
+    uint16_t dev_addr = (uintptr_t)handle; // Handle stores Address
+    return BSP_I2C1_WriteReg(dev_addr, reg, (uint8_t*)bufp, len);
 }
 
-// Wrapper for MLX (Standard I2C Write)
+static int32_t platform_read_i2c1(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
+    uint16_t dev_addr = (uintptr_t)handle;
+    return BSP_I2C1_ReadReg(dev_addr, reg, bufp, len);
+}
+
+// MLX (I2C1) Specific
 static int32_t mlx_write(void *handle, uint8_t *buf, uint16_t len) {
-    // HAL_I2C_Master_Transmit(handle, MLX90393_DEFAULT_ADDR << 1, buf, len, 1000);
-    return 0;
+    // MLX Driver passes handle differently, check driver
+    // Assuming handle is NULL or context pointer, but MLX Init doesn't take addr in standard driver
+    // We hardcode address or use context handle if available.
+    return BSP_I2C1_Write(BSP_MLX90393_ADDR << 1, buf, len);
 }
 
 static int32_t mlx_read(void *handle, uint8_t *buf, uint16_t len) {
-    // HAL_I2C_Master_Receive(handle, MLX90393_DEFAULT_ADDR << 1, buf, len, 1000);
-    // Mock for host test
-    memset(buf, 0, len);
-    return 0;
+    return BSP_I2C1_Read(BSP_MLX90393_ADDR << 1, buf, len);
 }
 
+// 2. I2C3 (Upside) Wrapper
+static int32_t platform_write_i2c3(void *handle, uint8_t reg, const uint8_t *bufp, uint16_t len) {
+    uint16_t dev_addr = (uintptr_t)handle; 
+    return BSP_I2C3_WriteReg(dev_addr, reg, (uint8_t*)bufp, len);
+}
+
+static int32_t platform_read_i2c3(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
+    uint16_t dev_addr = (uintptr_t)handle;
+    return BSP_I2C3_ReadReg(dev_addr, reg, bufp, len);
+}
+
+// 3. UART Wrapper
 static int32_t pms_write(void *handle, uint8_t *buf, uint16_t len) {
-#ifndef UNIT_TEST
-    // HAL_UART_Transmit(handle, buf, len, 100);
-#else
-    char tmp[128];
-    if (len < 128) {
-        memcpy(tmp, buf, len);
-        tmp[len] = 0;
-        // Check if it looks like a PMTK command to print cleanly
-        if (tmp[0] == '$') printf("UART TX: %s", tmp);
-        else printf("UART TX: [Binary %d bytes]\n", len);
-    }
-#endif
-    return 0;
+    return BSP_UART_Write(buf, len);
 }
 
 static int32_t uart_read_mock(void *handle, uint8_t *buf, uint16_t len) {
-    // Mock UART Receive for CM1107N
-    // Return a valid response frame: 16 05 01 [DF1] [DF2] [DF3] [DF4] [CS]
-    // 0x16 0x05 0x01 0x01 0xF4 0x00 0x00 [CS] -> 500 ppm
-    if (len >= 8) {
-        buf[0] = 0x16;
-        buf[1] = 0x05;
-        buf[2] = 0x01;
-        buf[3] = 0x01; // High byte 500
-        buf[4] = 0xF4; // Low byte 500
-        buf[5] = 0x00;
-        buf[6] = 0x00;
-        // Calc CS
-        uint16_t sum = 0;
-        for(int i=0; i<7; i++) sum += buf[i];
-        buf[7] = (256 - (sum % 256)) % 256;
-    }
-    return 0;
+    return BSP_UART_Read(buf, len);
 }
 
-static int32_t platform_read(void *handle, uint8_t reg, uint8_t *bufp, uint16_t len) {
-    // Real Hardware:
-    // HAL_I2C_Mem_Read(handle, LSM6DSV16X_I2C_ADD_H, reg, I2C_MEMADD_SIZE_8BIT, bufp, len, 1000);
-    
-    // Mock Logic for Host Test
-    memset(bufp, 0, len);
-    if (reg == LSM6DSV16X_WHO_AM_I) {
-        bufp[0] = LSM6DSV16X_ID;
-    } 
-    // Mock Z-Accel 1G (approx 16384 LSB for +/- 2g maybe, depends on sensitivity)
-    // Default 2g sensitivity -> 0.061 mg/LSB. 1000mg / 0.061 = ~16393.
-    else if (reg == LSM6DSV16X_OUTZ_L_A) {
-        // Assuming len >= 2 for low/high read
-        int16_t val = 16384; 
-        bufp[0] = (uint8_t)(val & 0xFF);
-        if (len > 1) bufp[1] = (uint8_t)((val >> 8) & 0xFF);
-    }
-    return 0;
-}
 
 void Sensors_Init(void) {
-    // 1. GPIO Power Sequence (Release Resets)
-#ifndef UNIT_TEST
-    // Assumes CubeMX generated labels
-    HAL_GPIO_WritePin(GPS_RST_GPIO_Port, GPS_RST_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(GPS_Wake_GPIO_Port, GPS_Wake_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(CO2_RST_GPIO_Port, CO2_RST_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SEN_RST_GPIO_Port, SEN_RST_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_SET);
-    HAL_Delay(100); 
-#endif
+    // 1. Power On Sensors (BSP)
+    BSP_Sensor_PowerOn();
     
     Sensors_Init_I2C1();
     Sensors_Init_I2C3();
@@ -154,15 +100,15 @@ void Sensors_Init_I2C1(void) {
     MLX90393_Init(&mlx_ctx);
 
     // GDK101 Init
-    gdk_ctx.write_reg = platform_write;
-    gdk_ctx.read_reg = platform_read;
-    gdk_ctx.address = GDK101_I2C_ADDR; // 0x18
+    gdk_ctx.write_reg = platform_write_i2c1;
+    gdk_ctx.read_reg = platform_read_i2c1;
+    gdk_ctx.handle = (void*)(uintptr_t)BSP_GDK101_ADDR; 
     GDK101_Init(&gdk_ctx);
 
     // LSM6DSV16X Init
-    lsm_ctx.write_reg = platform_write;
-    lsm_ctx.read_reg = platform_read;
-    // lsm_ctx.handle = &hi2c1; // In real HW
+    lsm_ctx.write_reg = platform_write_i2c1;
+    lsm_ctx.read_reg = platform_read_i2c1;
+    lsm_ctx.handle = (void*)(uintptr_t)BSP_LSM6DSV16X_ADDR;
     
     uint8_t whoamI = 0;
     lsm6dsv16x_device_id_get(&lsm_ctx, &whoamI);
@@ -170,7 +116,6 @@ void Sensors_Init_I2C1(void) {
         // Error handling
     }
     
-    // Restore default config
     // Restore default config
     lsm6dsv16x_sw_reset(&lsm_ctx);
     
@@ -185,27 +130,27 @@ void Sensors_Init_I2C1(void) {
 
 void Sensors_Init_I2C3(void) {
     // SEN0321 Init
-    sen_ctx.write_reg = platform_write; // Re-using platform_write (I2C Mem Write)
-    sen_ctx.read_reg = platform_read;   // Re-using platform_read
-    sen_ctx.address = SEN0321_I2C_ADDR_0; 
+    sen_ctx.write_reg = platform_write_i2c3; 
+    sen_ctx.read_reg = platform_read_i2c3;   
+    sen_ctx.handle = (void*)(uintptr_t)BSP_SEN0321_ADDR;
     SEN0321_Init(&sen_ctx);
 
     // MCP9600 Init
-    mcp_ctx.write_reg = platform_write;
-    mcp_ctx.read_reg = platform_read; 
-    mcp_ctx.address = MCP9600_I2C_ADDR_DEFAULT; // 0x67
+    mcp_ctx.write_reg = platform_write_i2c3;
+    mcp_ctx.read_reg = platform_read_i2c3; 
+    mcp_ctx.handle = (void*)(uintptr_t)BSP_MCP9600_ADDR;
     MCP9600_Init(&mcp_ctx);
 
     // MS5611 Init
-    ms_ctx.write_reg = platform_write;
-    ms_ctx.read_reg = platform_read;
-    ms_ctx.address = MS5611_I2C_ADDR_HIGH;
+    ms_ctx.write_reg = platform_write_i2c3;
+    ms_ctx.read_reg = platform_read_i2c3;
+    ms_ctx.handle = (void*)(uintptr_t)BSP_MS5611_ADDR;
     MS5611_Init(&ms_ctx);
 
     // SHT31 Init
-    sht_ctx.write_reg = platform_write;
-    sht_ctx.read_reg = platform_read;
-    sht_ctx.address = SHT31_I2C_ADDR_DEFAULT;
+    sht_ctx.write_reg = platform_write_i2c3;
+    sht_ctx.read_reg = platform_read_i2c3;
+    sht_ctx.handle = (void*)(uintptr_t)BSP_SHT31_ADDR;
     SHT31_Init(&sht_ctx);
 }
 
@@ -247,14 +192,14 @@ SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
     
     // 3. Baro (Decimated 5Hz)
     static uint32_t last_baro = 0;
-    if (HAL_GetTick() - last_baro > 200) {
+    if (BSP_GetTick() - last_baro > 200) {
         Sensors_Read_Baro(&data->ms5611_press_pa, &data->ms5611_temp_c_x100);
         last_baro = HAL_GetTick();
     }
     
     // 4. Humidity/Temp (Decimated 1Hz)
     static uint32_t last_env = 0;
-    if (HAL_GetTick() - last_env > 1000) {
+    if (BSP_GetTick() - last_env > 1000) {
         Sensors_Read_Humid(&data->sht31_temp_c_x100, &data->sht31_rh_x100);
         last_env = HAL_GetTick();
     }
@@ -355,10 +300,12 @@ void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uin
     if (*pm2_5 == 0) *pm2_5 = 15;
 }
 
-void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
+void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
                       uint8_t *sats, uint8_t *sats_view,
                       uint8_t *sats_gps, uint8_t *sats_glonass,
-                      uint8_t *sats_galileo, uint8_t *sats_beidou) {
+                      uint8_t *sats_galileo, uint8_t *sats_beidou,
+                      uint8_t *utc_hour, uint8_t *utc_min, uint8_t *utc_sec,
+                      uint8_t *utc_day, uint8_t *utc_month, uint16_t *utc_year) {
     // Mock: Feed NMEA data if fix is 0 (just to verify parsing on host)
     if (xa_ctx.data.fix_type == 0) {
         const char *sim_gga = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
@@ -371,10 +318,21 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     *fix = xa_ctx.data.fix_type;
     *sats = xa_ctx.data.sats_used;
     *sats_view = xa_ctx.data.sats_view_total;
-    // Parsing per-system sats logic not implemented in driver wrapper yet, mocking:
-    *sats_gps = *sats;
-    // ...
-    
+
+    // Per-GNSS satellite counts from GSV parsing
+    *sats_gps = xa_ctx.data.sats_gps;
+    *sats_glonass = xa_ctx.data.sats_glonass;
+    *sats_galileo = xa_ctx.data.sats_galileo;
+    *sats_beidou = xa_ctx.data.sats_beidou;
+
+    // UTC Time from GPS
+    *utc_hour = xa_ctx.data.utc_hour;
+    *utc_min = xa_ctx.data.utc_min;
+    *utc_sec = xa_ctx.data.utc_sec;
+    *utc_day = xa_ctx.data.utc_day;
+    *utc_month = xa_ctx.data.utc_month;
+    *utc_year = xa_ctx.data.utc_year;
+
     // Check Health: if fix is valid or data coming
     FDIR_ReportSuccess((void*)(uintptr_t)SENSOR_ID_GPS);
 }
@@ -382,30 +340,12 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
 void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {
     // 1Hz Limit for slow sensors
     static uint32_t last_bat = 0;
-    if (HAL_GetTick() - last_bat > 1000) {
+    if (BSP_GetTick() - last_bat > 1000) {
         
-#ifndef UNIT_TEST
-        // Real Hardware ADC
-        // Assuming hadc1 and Rank 1/Channel configured
-        extern ADC_HandleTypeDef hadc1;
-        HAL_ADC_Start(&hadc1);
-        if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-            uint32_t raw = HAL_ADC_GetValue(&hadc1);
-            // V_in = V_adc * (R1+R2)/R2
-            // 3.3V Ref, 12-bit (4095)
-            // Assuming "10k series" means appropriate divider for 4S (approx 16.8V max)
-            // Example Ratio 6.0: 3.3V * 6.0 = 19.8V Max
-            // V = (raw * 3300 / 4096) * 6.0
-            float voltage_mv = (raw * 3300.0f / 4096.0f) * 6.0f;
-            *mv = (uint16_t)voltage_mv;
-        }
-        HAL_ADC_Stop(&hadc1);
-#else
-        *mv = 15500; // Mock 15.5V (4S Battery)
-#endif
+        *mv = BSP_ADC_Read_Battery_mV();
         
         *temp_c_x100 = DS18B20_ReadTemp_x100(0); // Battery Temp
-        last_bat = HAL_GetTick();
+        last_bat = BSP_GetTick();
     }
 }
 

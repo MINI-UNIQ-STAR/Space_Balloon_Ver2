@@ -12,24 +12,19 @@
 #ifndef __MAIN_H
 #define __MAIN_H
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-/* Since we don't have the full HAL library path verified, we'll try to include standard HAL
-   If this fails in real environment, user needs to ensure HAL is in include path */
-// Mock HAL for Unit Test
-#ifdef UNIT_TEST
-  #define __disable_irq() 
-  #define __enable_irq()
-  uint32_t HAL_GetTick(void);
-  void HAL_Delay(uint32_t Delay);
+#if !defined(HOST_TEST_MODE) || defined(STM32G431xx)
+#include "stm32g4xx_hal.h"
 #endif
 
-// #include "stm32g4xx_hal.h" 
+#if defined(HOST_TEST_MODE) && !defined(STM32G431xx)
+#include "mock_hal.h"
+#endif
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -64,6 +59,49 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BAT_measure_Pin GPIO_PIN_1
+#define BAT_measure_GPIO_Port GPIOA
+#define MCP_RST_Pin GPIO_PIN_4
+#define MCP_RST_GPIO_Port GPIOA
+#define MS_RST_Pin GPIO_PIN_5
+#define MS_RST_GPIO_Port GPIOA
+#define Kapton_PWM_Pin GPIO_PIN_6
+#define Kapton_PWM_GPIO_Port GPIOA
+#define XA1110_Wake_Pin GPIO_PIN_7
+#define XA1110_Wake_GPIO_Port GPIOA
+#define CM1107N_RST_Pin GPIO_PIN_0
+#define CM1107N_RST_GPIO_Port GPIOB
+#define SEN_RST_Pin GPIO_PIN_1
+#define SEN_RST_GPIO_Port GPIOB
+#define GDK_RST_Pin GPIO_PIN_2
+#define GDK_RST_GPIO_Port GPIOB
+#define PMS_SET_Pin GPIO_PIN_10
+#define PMS_SET_GPIO_Port GPIOB
+#define SHT_RST_Pin GPIO_PIN_11
+#define SHT_RST_GPIO_Port GPIOB
+#define XA1110_INT_Pin GPIO_PIN_12
+#define XA1110_INT_GPIO_Port GPIOB
+#define XA1110_INT_EXTI_IRQn EXTI15_10_IRQn
+#define LSM_RST_Pin GPIO_PIN_13
+#define LSM_RST_GPIO_Port GPIOB
+#define MLX_RST_Pin GPIO_PIN_14
+#define MLX_RST_GPIO_Port GPIOB
+#define DS18B20_Pin GPIO_PIN_15
+#define DS18B20_GPIO_Port GPIOB
+#define Minibulb_PWM_Pin GPIO_PIN_6
+#define Minibulb_PWM_GPIO_Port GPIOC
+#define XA1110_RST_Pin GPIO_PIN_9
+#define XA1110_RST_GPIO_Port GPIOA
+#define XA1110_PPS_Pin GPIO_PIN_4
+#define XA1110_PPS_GPIO_Port GPIOB
+#define XA1110_PPS_EXTI_IRQn EXTI4_IRQn
+#define LSM_INT_Pin GPIO_PIN_6
+#define LSM_INT_GPIO_Port GPIOB
+#define LSM_INT_EXTI_IRQn EXTI9_5_IRQn
+#define MLX_INT_Pin GPIO_PIN_7
+#define MLX_INT_GPIO_Port GPIOB
+#define MLX_INT_EXTI_IRQn EXTI9_5_IRQn
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
