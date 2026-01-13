@@ -60,7 +60,9 @@
       "Bash(dir \"C:\\\\Program Files\\\\Renode\\\\bin\")",
       "Bash(findstr:*)",
       "Bash(powershell:*)",
-      "mcp__allPepper-memory-bank__memory_bank_write"
+      "mcp__allPepper-memory-bank__memory_bank_write",
+      "Bash(git push:*)",
+      "Bash(du:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
