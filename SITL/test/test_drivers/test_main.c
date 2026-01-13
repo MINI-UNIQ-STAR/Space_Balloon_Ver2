@@ -1,3 +1,15 @@
+/**
+ * @file test_main.c
+ * @brief 센서 드라이버 및 주변장치 초기화 테스트 (SITL)
+ * @details I2C, UART 등 주변장치 Mock을 이용한 드라이버 초기화 및 통신 검증
+ *          - I2C 센서 초기화 명령 시퀀스 확인
+ *          - UART GPS 설정 명령 확인
+ *          - 센서 데이터 파싱 로직 검증
+ * @author Hyeonsu Park
+ * @date 2026-01-13
+ * @version 1.0
+ */
+
 #include <stdio.h>
 #include "unity.h"
 #include "mock_hal.h"
@@ -5,8 +17,8 @@
 #include "mlx90393_driver.h"
 #include "lsm6dsv16x_reg.h"
 
-// Externs for accessing internal driver state if needed
-// Or just rely on MockHAL history
+// 필요 시 내부 드라이버 상태 접근을 위한 extern 선언
+// 현재는 MockHAL의 기록(History)을 통해 간접 검증
 
 void setUp(void) {
     MockI2C_ClearStats();
@@ -16,162 +28,100 @@ void setUp(void) {
 void tearDown(void) {
 }
 
+/** @brief I2C1 버스 센서(LSM6DSV16X) 초기화 시퀀스 테스트 */
 void test_sensors_init_i2c1(void) {
-    // Calling Sensors_Init_I2C1 should trigger LSM6DSV16X initialization
-    // 1. Read byte (device check) -> Mocking WHO_AM_I return
+    // Sensors_Init_I2C1 호출 시 LSM6DSV16X 초기화가 트리거되어야 함
+    // 1. 디바이스 ID 확인 (WHO_AM_I)
     
-    // Prepare Mock Response for WHO_AM_I (0x70 = LSM6DSV16X_ID)
-    // The driver calls lsm6dsv16x_device_id_get -> platform_read
+    // Mock 응답 설정: WHO_AM_I 값 (0x70 = LSM6DSV16X_ID)
     uint8_t mock_rx[] = {0x70}; 
     MockI2C_SetNextReadData(mock_rx, 1);
     
     Sensors_Init_I2C1();
     
-    // Verify that the driver attempted to WRITE to the correct address (0xD7) during configuration
-    // (e.g. sw_reset, data_rate_set, etc. happen after ID check passes)
+    // 초기화 과정 중 올바른 주소(0xD7 or 0xD6)로 쓰기 시도가 있었는지 검증
     MockI2C_LastWrite_t* last = MockI2C_GetLastWrite();
     
-    // If last->addr is 0, it means no write occurred.
-    // Check if ID mismatch caused return.
-    // We can't see internal state easily, but we can verify the last I2C action.
-    
-    
+    // 주소가 0이 아니면 쓰기 시도 발생 (ID 체크 통과 후 설정 명령 전송)
     TEST_ASSERT_EQUAL_INT(LSM6DSV16X_I2C_ADD_H, last->addr);
 }
 
+/** @brief I2C3 버스 센서(SHT31, MS5611 등) 초기화 시퀀스 테스트 */
 void test_sensors_init_i2c3(void) {
-    // Calling Sensors_Init_I2C3 should trigger SHT31, MS5611, MCP9600, SEN0321
-    // We can verify one of them, e.g. SHT31 (0x44) or MS5611 (0x77)
-    // SHT31 init writes to 0x44
+    // Sensors_Init_I2C3 호출 시 SHT31, MS5611 등 초기화 수행
     
     Sensors_Init_I2C3();
     
     MockI2C_LastWrite_t* last = MockI2C_GetLastWrite();
-    // Just verify the last one called. 
-    // Init order in sensors_copy.c: SEN, MCP, MS, SHT.
-    // So last write should be SHT31.
-    // SHT31 Init usually does soft reset or similar. 
-    // SHT31_I2C_ADDR_DEFAULT is 0x44 or 0x45. Defined in sht31_driver.h.
-    // If we assume 0x44 (7-bit) -> 0x88 (8-bit read/write).
-    // Let's assert non-zero to show it ran something on I2C3 specific sensors.
+    // 초기화 함수 중 마지막에 호출되는 센서에 대한 쓰기 작업 확인
+    // SHT31은 0x44 (7-bit) 주소 사용
     
     TEST_ASSERT(last->addr != 0);
-    // Ideally we check specific address but let's confirm activity first
 }
 
+/** @brief UART 센서(GPS, PMS, CM1107) 초기화 시퀀스 테스트 */
 void test_sensors_init_uart(void) {
-    // Should init PMS, CM1107, XA1110
-    // XA1110_Init sends PMTK commands via UART.
-    // Let's verify XA1110 Config command was sent.
-    // "$PMTK220,100*2F\r\n" is last command in XA1110_Init.
+    // XA1110_Init 등 호출 확인
+    // XA1110 초기화 시 "$PMTK..." 설정 명령 전송됨
     
     Sensors_Init_UART();
     
     MockUART_LastTx_t* last = MockUART_GetLastTx();
     
-    // Check if it contains "$PMTK"
-    // We can use strstr or just check non-zero length and print it (or assert length)
+    // 전송된 데이터가 있는지 확인
     TEST_ASSERT(last->len != 0);
-    // Simple check if it looks like NMEA/PMTK
+    // NMEA/PMTK 명령인지 시작 문자 검사 ($)
     TEST_ASSERT_EQUAL_INT('$', last->data[0]); 
 }
 
+/** @brief GPS 데이터 파싱 및 구조체 업데이트 테스트 */
 void test_gps_parsing_mock(void) {
-    // Test Sensors_Read_GPS parsing logic
-    // We can inject NMEA via UART RX mock or just verifying the Parse function if accessible?
-    // sensors.c has Sensors_Read_GPS which calls FDIR_ReportSuccess.
-    // It also checks `xa_ctx.data.fix_type`.
-    // It mocks NMEA injection if fix is 0.
-    
-    // Let's call Sensors_Read_GPS
+    // Sensors_Read_GPS 함수 내부 로직 검증
+    // Fix Type이 0이면 Mock 데이터를 주입하도록 되어 있음
+        
     int32_t lat, lon;
     float alt;
     uint8_t fix, sats, sats_view, s1, s2, s3, s4;
     uint8_t h, m, s, day, month;
     uint16_t year;
     
+    // GPS 읽기 수행 (내부적으로 GPGGA Mock 데이터 주입)
     Sensors_Read_GPS(&lat, &lon, &alt, &fix, &sats, &sats_view, &s1, &s2, &s3, &s4,
                      &h, &m, &s, &day, &month, &year);
     
-    // internal mock injection in sensors.c has:
-    // "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47"
-    // Expect Lat: 4807.038 N -> 48 deg 07.038 min -> 48 + 7.038/60 = 48.1173 deg
-    // XA1110 driver likely converts to e7.
-    // 48.1173 * 1e7 = 481173000
-    
-    // Let's just assert that fix is valid (1)
-    // The loop in sensors.c runs XA1110_ProcessByte so parser should update fix
-    
-    // Note: XA1110_ProcessByte must be linked.
-    
+    // Mock 데이터: "$GPGGA,123519,4807.038,N,..."
+    // 파싱 성공하여 Fix가 1이 되어야 함
     TEST_ASSERT_EQUAL_INT(1, fix);
     TEST_ASSERT_TRUE(lat > 0);
 }
 
+/** @brief GDK101 초기화 실패 케이스 테스트 (Stub) */
 void test_sensors_init_gdk101_failure(void) {
-    // IMP-08: Test GDK101 Init Failure codes
-    // 1. Simulate I2C Failure (MockHAL returns Error?)
-    // MockHAL_SetError(HAL_ERROR); // If Mock support it
-    // Currently mock always returns OK.
+    // IMP-08: GDK101 초기화 실패 처리 검증
+    // 현재 MockHAL은 항상 OK를 반환하므로, 실패 주입을 위해서는 MockHAL 확장 필요
+    // 여기서는 테스트 구조만 잡아두고 항상 성공하는 케이스로 둠
     
-    // We can rely on GDK101_Init calling Read_Status.
-    // If we want to simulate failure, we might need MockHAL to support error injection
-    // or just return invalid status data if the driver checks it?
-    // The driver checks return value of Read_Status. 
-    // MockHAL currently always returns HAL_OK. 
-    // We can add a simple error injection to MockHAL if needed, or skipped if too complex.
-    
-    // However, we changed GDK101_Init to return GDK101_I2C_ERR if Read_Status fails.
-    // Since MockHAL always returns OK, Read_Status always returns 0 (OK).
-    // So Init always returns OK in this current mock setup.
-    
-    // To properly verify, we need to extend MockHAL to allow failing next I2C op.
-    // But since that's a larger change, we will skip *forcing* the failure test 
-    // and just verify compilation and clean structure.
+    // 실제 실패 테스트를 하려면 MockHAL_SetNextError(HAL_ERROR) 같은 기능 필요
 }
 
+/** @brief 방사능 센서(GDK101) 읽기 테스트 */
 void test_sensors_read_rad(void) {
-    // Test Sensors_Read_Rad (GDK101)
-    // Logic: Calls GDK101_Read_10Min_Avg -> platform_read
-    // Multiplies by 100 to get uint16_t (uSv/h * 100)
+    // Sensors_Read_Rad -> GDK101_Read 동작 검증
     
-    // 1. Prepare Mock Data for GDK101 (float response)
-    // GDK101 returns a float (4 bytes).
-    // Let's say we want to simulate 1.23 uSv/h.
-    // 1.23f in hex: 0x3F9D70A4 (IEEE 754)
-    // Expect read of 4 bytes.
-    // However, GDK101_Read relies on specific register map. 
-    // Assuming driver reads 2 bytes or 4 bytes?
-    // Let's check GDK101_Read_10Min_Avg driver implementation (not visible here, but assuming standard I2C)
-    // If it reads float directly:
-    // uint8_t mock_data[] = {0xA4, 0x70, 0x9D, 0x3F}; // Little Endian?
-    // Actually, GDK101 is usually UART or I2C. If I2C, it might just read registers.
-    // Let's assume standard float read for now.
-    
-    // NOTE: Without knowing exact GDK driver endianness, we might fail.
-    // But demonstrating the *method* is key.
-    
-    uint16_t val = 0;
-    // Mocking a successful I2C read is enough to hit the scaling logic?
-    // We need to feed data to MockI2C.
-    // Sensors_Read_Rad -> GDK101_Read -> platform_read
-    
-    // Creating a dummy valid I2C response (just non-zero)
-    uint8_t dummy_data[4] = {0x00, 0x00, 0x80, 0x3F}; // 1.0f
+    // Mock 데이터 준비: 1.0f (IEEE 754) = {0x00, 0x00, 0x80, 0x3F} (Little Endian)
+    uint8_t dummy_data[4] = {0x00, 0x00, 0x80, 0x3F}; 
     MockI2C_SetNextReadData(dummy_data, 4);
     
+    uint16_t val = 0;
     Sensors_Read_Rad(&val);
     
-    // If logic works: 1.0f * 100 = 100
-    // If fails (due to driver specifics), we know we need to debug driver.
-    // Let's just run it and see.
-    // TEST_ASSERT_EQUAL_INT(100, val);
+    // GDK101 드라이버 동작 검증 (값 변화 여부 등)
+    // 현재는 드라이버 내부 구현에 따라 다를 수 있으므로 크래시 없음만 확인
+    (void)val;
 }
 
+/** @brief 멀티 GNSS(GLONASS, Galileo 등) 위성 정보 파싱 테스트 */
 void test_gps_gsv_parsing_multi_gnss(void) {
-    // Test GSV parsing for multiple GNSS systems
-    // We need to access xa1110 context - for now we test indirectly via Sensors_Read_GPS
-    
     int32_t lat, lon;
     float alt;
     uint8_t fix, sats, sats_view;
@@ -179,26 +129,18 @@ void test_gps_gsv_parsing_multi_gnss(void) {
     uint8_t h, m, s, day, month;
     uint16_t year;
     
-    // First call Sensors_Read_GPS to set up initial state
     Sensors_Read_GPS(&lat, &lon, &alt, &fix, &sats, &sats_view, 
                      &sats_gps, &sats_glonass, &sats_galileo, &sats_beidou,
                      &h, &m, &s, &day, &month, &year);
     
-    // The internal mock injection in Sensors_Read_GPS uses GPGGA 
-    // which doesn't set per-system sats. GSV sentences are needed.
-    // Since xa1110_driver now parses GSV, we verify the structure exists.
-    // Real integration test would feed GSV sentences via UART mock.
-    
-    // For now, just verify the parameters are returned correctly
-    // After the mock GGA injection, sats_gps should be 0 initially
-    // (GSV not injected in the mock)
+    // 기본 Mock GGA만으로는 다른 위성계 정보가 0이어야 함
     TEST_ASSERT_EQUAL_INT(0, sats_glonass);
     TEST_ASSERT_EQUAL_INT(0, sats_galileo);
     TEST_ASSERT_EQUAL_INT(0, sats_beidou);
 }
 
 int main(void) {
-    UnityBegin();
+    UNITY_BEGIN();
     // RUN_TEST(test_sensors_read_rad);
     RUN_TEST(test_sensors_init_i2c1);
     RUN_TEST(test_sensors_init_i2c3);
@@ -206,5 +148,5 @@ int main(void) {
     RUN_TEST(test_gps_parsing_mock);
     RUN_TEST(test_gps_gsv_parsing_multi_gnss);
     RUN_TEST(test_sensors_init_gdk101_failure);
-    return UnityEnd();
+    return UNITY_END();
 }

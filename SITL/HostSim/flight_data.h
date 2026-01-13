@@ -1,3 +1,13 @@
+/**
+ * @file flight_data.h
+ * @brief 시뮬레이션용 비행 데이터 구조체 및 데이터셋
+ * @details 실제 라디오존데(RS41) 비행 데이터 기반의 시뮬레이션 데이터
+ *          - 위경도, 고도, 속도, 온습도 등
+ *          - JSON 파일(V4630075.json)에서 자동 생성됨
+ * @author Hyeonsu Park
+ * @version 1.0
+ */
+
 // Auto-generated from V4630075.json
 // RS41 Radiosonde flight data for simulation
 #ifndef FLIGHT_DATA_H
@@ -5,20 +15,26 @@
 
 #include <stdint.h>
 
+/**
+ * @brief 비행 데이터 포인트 구조체
+ * @details 프레임 단위 시뮬레이션 데이터
+ */
 typedef struct {
-    int32_t lat_e7;      // Latitude * 1e7
-    int32_t lon_e7;      // Longitude * 1e7
-    float alt_m;         // Altitude (m)
-    float vel_v;         // Vertical velocity (m/s)
-    float vel_h;         // Horizontal velocity (m/s)
-    float temp_c;        // Temperature (C)
-    uint16_t batt_mv;    // Battery (mV)
-    uint8_t sats;        // GPS satellites
-    float heading_deg;   // Heading (degrees)
+    int32_t lat_e7;      /**< 위도 (도 * 1e7) */
+    int32_t lon_e7;      /**< 경도 (도 * 1e7) */
+    float alt_m;         /**< 고도 (m) */
+    float vel_v;         /**< 수직 속도 (m/s) */
+    float vel_h;         /**< 수평 속도 (m/s) */
+    float temp_c;        /**< 기온 (°C) */
+    uint16_t batt_mv;    /**< 배터리 전압 (mV) */
+    uint8_t sats;        /**< GPS 위성 수 */
+    float heading_deg;   /**< 이동 방향 (도) */
 } flight_data_point_t;
 
+/** @brief 시뮬레이션 데이터 포인트 개수 */
 #define FLIGHT_DATA_COUNT 65
 
+/** @brief 비행 시뮬레이션 데이터셋 */
 static const flight_data_point_t flight_data[] = {
     { 350929800, 1269988700, 5174.33f, 4.56f, 41.44f, -50.0f, 2800, 9, 87.52f },
     { 350929900, 1269993300, 5179.85f, 6.50f, 41.14f, -50.0f, 2800, 9, 87.76f },

@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """
-Convert RS41 radiosonde JSON data to C header for HostSim simulation.
-Extracts key fields: lat, lon, alt, vel_v, vel_h, temp, batt, sats
+@file convert_flight_data.py
+@brief 비행 데이터(JSON)를 C 헤더 파일로 변환하는 스크립트
+@details RS41 라디오존데의 원본 데이터(JSON)를 파싱하여 SITL 시뮬레이션용
+         `flight_data.h` 파일을 자동 생성함.
+         - 주요 추출 필드: 위경도, 고도, 속도, 기온, 배터리, 위성 수
+         - 프레임 중복 제거 및 정렬 수행
+@author Hyeonsu Park
+@date 2026-01-13
 """
 import json
 import sys
@@ -36,15 +42,15 @@ def main():
         f.write("#include <stdint.h>\n\n")
         
         f.write("typedef struct {\n")
-        f.write("    int32_t lat_e7;      // Latitude * 1e7\n")
-        f.write("    int32_t lon_e7;      // Longitude * 1e7\n")
-        f.write("    float alt_m;         // Altitude (m)\n")
-        f.write("    float vel_v;         // Vertical velocity (m/s)\n")
-        f.write("    float vel_h;         // Horizontal velocity (m/s)\n")
-        f.write("    float temp_c;        // Temperature (C)\n")
-        f.write("    uint16_t batt_mv;    // Battery (mV)\n")
-        f.write("    uint8_t sats;        // GPS satellites\n")
-        f.write("    float heading_deg;   // Heading (degrees)\n")
+        f.write("    int32_t lat_e7;      /**< 위도 (도 * 1e7) */\n")
+        f.write("    int32_t lon_e7;      /**< 경도 (도 * 1e7) */\n")
+        f.write("    float alt_m;         /**< 고도 (m) */\n")
+        f.write("    float vel_v;         /**< 수직 속도 (m/s) */\n")
+        f.write("    float vel_h;         /**< 수평 속도 (m/s) */\n")
+        f.write("    float temp_c;        /**< 기온 (C) */\n")
+        f.write("    uint16_t batt_mv;    /**< 배터리 (mV) */\n")
+        f.write("    uint8_t sats;        /**< GPS 위성 수 */\n")
+        f.write("    float heading_deg;   /**< 헤딩 (도) */\n")
         f.write("} flight_data_point_t;\n\n")
         
         f.write(f"#define FLIGHT_DATA_COUNT {len(sorted_data)}\n\n")
@@ -58,7 +64,7 @@ def main():
             vel_v = d.get('vel_v', 0)
             vel_h = d.get('vel_h', 0)
             temp = d.get('temp', -50.0) if 'temp' in d else -50.0
-            batt = int(d.get('batt', 2.8) * 1000)  # Convert V to mV
+            batt = int(d.get('batt', 2.8) * 1000)  # V 단위를 mV로 변환
             sats = d.get('sats', 0)
             heading = d.get('heading', 0)
             

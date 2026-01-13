@@ -1,7 +1,11 @@
 #include "lsm6dsv16x_reg.h"
 // #include <stdio.h>
 
-// Mock Implementation for Test Drivers
+/** 
+ * @file mock_lsm6dsv16x.c
+ * @brief 테스트 드라이버를 위한 LSM6DSV16X Mock 구현
+ * @details 실제 하드웨어 없이 드라이버 함수 호출을 받아주는 Stub 함수들입니다.
+ */
 
 int32_t lsm6dsv16x_device_id_get(const stmdev_ctx_t *ctx, uint8_t *val) {
     *val = LSM6DSV16X_ID;
@@ -48,9 +52,9 @@ int32_t lsm6dsv16x_angular_rate_raw_get(const stmdev_ctx_t *ctx, int16_t *val) {
 }
 
 float lsm6dsv16x_from_fs2_to_mg(int16_t lsb) {
-    return ((float)lsb) * 0.061f; // Typical sensitivity
+    return ((float)lsb) * 0.061f; /**< 일반적인 감도 값 적용 */
 }
 
 float lsm6dsv16x_from_fs2000_to_mdps(int16_t lsb) {
-    return ((float)lsb) * 70.0f; // Typical sensitivity
+    return ((float)lsb) * 70.0f; /**< 일반적인 감도 값 적용 */
 }

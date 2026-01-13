@@ -7,14 +7,14 @@
 
 #include "mock_hal.h"
 
-// Mock Error Handler
+/** @brief Mock 에러 핸들러 (테스트용) */
 void Error_Handler(void);
 
-// Mock GPIO Ports (Pointers)
+// --- Mock GPIO 포트 정의 (포인터 매핑) ---
 #define GPIOB ((void*)0x2)
 #define GPIOC ((void*)0x3)
 
-// Mock Pin Labels
+// --- Mock 핀 정의 ---
 #define PMS_SET_GPIO_Port GPIOB
 #define PMS_SET_Pin GPIO_PIN_0
 
@@ -40,6 +40,7 @@ void Error_Handler(void);
 #include "sensors.h"
 #include "actuators.h"
 
+// 디버그 출력 매크로
 #define DEBUG_PRINT printf
 
 #endif
