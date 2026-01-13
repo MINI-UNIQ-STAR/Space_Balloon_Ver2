@@ -1,3 +1,16 @@
+/**
+ * @file xcp.c
+ * @brief XCP 캘리브레이션 프로토콜 구현
+ * @details ASAM XCP (Universal Measurement and Calibration Protocol)
+ *          - 실시간 파라미터 조정 (PID 게인, 칼만 필터 파라미터)
+ *          - DAQ (Data Acquisition) 지원
+ *          - 명령어: CONNECT, SHORT_UPLOAD, SHORT_DOWNLOAD, GET_STATUS
+ *          - 전송: UART (바이너리 프로토콜)
+ * @author Hyeonsu Park
+ * @date 2026-01-13
+ * @version 1.0
+ */
+
 #include "xcp.h"
 #include "bsp.h" // For BSP_UART_Write
 #include <string.h>
@@ -11,6 +24,10 @@ extern KF_Handle_t hkf;
 static uint8_t xcp_rx_buf[XCP_MAX_PACKET_SIZE];
 static uint8_t xcp_tx_buf[XCP_MAX_PACKET_SIZE];
 
+/**
+ * @brief XCP 프로토콜 초기화
+ * @details 버퍼 초기화 및 상태 리셋
+ */
 void XCP_Init(void) {
     // Initialize XCP Protocol Layer
     // In a real implementation: Setup CAN/UART interrupts, Timer for DAQ

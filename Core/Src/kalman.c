@@ -1,12 +1,37 @@
+/**
+ * @file kalman.c
+ * @brief 칼만 필터 구현 - 고도 추정 및 수직 속도 계산
+ * @details 1차원 칼만 필터 (고도 및 수직 속도 추정)
+ *          - 상태 변수: [고도, 수직속도]
+ *          - 측정값: 기압 고도 (MS5611)
+ *          - 예측 모델: 등속도 모델 (Constant Velocity Model)
+ *          - 프로세스 노이즈: 0.5 (풍선 역학)
+ *          - 측정 노이즈: 0.3 (기압계 정밀도 ~0.5m)
+ *          - 발산 방지: 공분산 상한 (10000.0) 및 NaN 검출
+ * @author Hyeonsu Park
+ * @date 2026-01-13
+ * @version 1.0
+ */
+
 #include "kalman.h"
 
-/* MISRA C compliant NaN check - avoids math.h dependency for embedded systems */
+/** @brief MISRA C 호환 NaN 검사 매크로 (math.h 의존성 제거) */
 #define KF_ISNAN(x) ((x) != (x))
 
 #ifdef HOST_TEST_MODE
 #include <stdio.h>
 #endif
 
+/**
+ * @brief 칼만 필터 초기화
+ * @param hkf 칼만 필터 핸들
+ * @param dt 샘플 주기 (초, 50Hz = 0.02s)
+ * @param process_noise 프로세스 노이즈 (Q)
+ * @param meas_noise 측정 노이즈 (R)
+ * @details 초기 상태:
+ *          - 고도 = 0m, 속도 = 0m/s
+ *          - 공분산 = 단위 행렬
+ */
 void KF_Init(KF_Handle_t *hkf, float dt, float process_noise, float meas_noise) {
     hkf->dt = dt;
     
@@ -31,6 +56,13 @@ void KF_Init(KF_Handle_t *hkf, float dt, float process_noise, float meas_noise) 
     hkf->R = meas_noise;
 }
 
+/**
+ * @brief 칼만 필터 예측 단계
+ * @param hkf 칼만 필터 핸들
+ * @details 상태 전이 행렬 F = [1 dt; 0 1]
+ *          - 상태 예측: x = F * x
+ *          - 공분산 예측: P = F * P * F^T + Q
+ */
 void KF_Predict(KF_Handle_t *hkf) {
     /* F = [1 dt; 0 1] */
     float old_alt = hkf->x[0];
@@ -53,6 +85,16 @@ void KF_Predict(KF_Handle_t *hkf) {
     hkf->P[1][1] = p11 + hkf->Q[1][1];
 }
 
+/**
+ * @brief 칼만 필터 업데이트 단계 (고도 측정값)
+ * @param hkf 칼만 필터 핸들
+ * @param measurement 기압 고도 측정값 (m)
+ * @details 측정 행렬 H = [1 0]
+ *          - 칼만 이득: K = P * H^T * (H * P * H^T + R)^-1
+ *          - 상태 업데이트: x = x + K * (z - H * x)
+ *          - 공분산 업데이트: P = (I - K * H) * P
+ * @note KF_Predict()를 먼저 호출해야 함
+ */
 void KF_Update_Altitude(KF_Handle_t *hkf, float measurement) {
     /* NOTE: KF_Predict() must be called manually by user before this function 
      * to avoid implicit recursion and strictly separate phases */
@@ -81,9 +123,21 @@ void KF_Update_Altitude(KF_Handle_t *hkf, float measurement) {
     hkf->P[1][1] = hkf->P[1][1] - (K1 * p01);
 }
 
-/* ===== Divergence Protection (FMEA W-05) ===== */
-#define KF_P_MAX  10000.0f  /* Covariance divergence threshold */
+/* ========================================================================== */
+/* 발산 방지 (FMEA W-05)                                                      */
+/* ========================================================================== */
 
+/** @brief 공분산 발산 임계값 */
+#define KF_P_MAX  10000.0f
+
+/**
+ * @brief 칼만 필터 발산 검사 및 복구
+ * @param hkf 칼만 필터 핸들
+ * @details 발산 조건:
+ *          - 공분산 P[0][0] 또는 P[1][1] > 10000.0
+ *          - 상태 변수 NaN 검출
+ *          복구: 공분산 및 상태를 초기값으로 리셋
+ */
 void KF_CheckDivergence(KF_Handle_t *hkf) {
     /* Check if covariance has grown too large (filter divergence) */
     if ((hkf->P[0][0] > KF_P_MAX) || (hkf->P[1][1] > KF_P_MAX)) {

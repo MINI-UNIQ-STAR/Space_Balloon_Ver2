@@ -1,3 +1,16 @@
+/**
+ * @file actuators.c
+ * @brief 액추에이터 제어 모듈 구현 - PWM 히터 제어
+ * @details 배터리 히터와 보드 히터의 PWM 듀티 사이클 제어
+ *          - 배터리 히터: TIM3 CH1 (PA6) - Kapton 히터 7.2W @ 5V
+ *          - 보드 히터: TIM8 CH1 (PC6) - Minibulb 히터 ~4W @ 5V
+ *          - ARR = 1000으로 가정 (0.1% 해상도)
+ *          - 전력 예산 보호: 배터리 히터 60% 제한
+ * @author Hyeonsu Park
+ * @date 2026-01-13
+ * @version 1.0
+ */
+
 #include "actuators.h"
 
 #ifndef UNIT_TEST
@@ -7,6 +20,13 @@ extern TIM_HandleTypeDef htim3; // PA6 - Heater 1
 extern TIM_HandleTypeDef htim8; // PC6 - Heater 2
 #endif
 
+/**
+ * @brief 액추에이터 초기화 (PWM 히터)
+ * @details PWM 타이머 시작
+ *          - TIM3 CH1: 배터리 히터
+ *          - TIM8 CH1: 보드 히터
+ * @note main() 초기화 시퀀스에서 App_Init()을 통해 호출됨
+ */
 void Actuators_Init(void) {
 #ifndef UNIT_TEST
     // Start PWM
@@ -18,6 +38,15 @@ void Actuators_Init(void) {
 #endif
 }
 
+/**
+ * @brief 배터리 히터 PWM 듀티 사이클 설정
+ * @param duty_percent 듀티 사이클 (0.0 ~ 100.0%)
+ * @details Kapton 히터 제어 (7.2W @ 5V, 1.44A)
+ *          - 듀티 사이클 범위: 0.0% ~ 100.0%
+ *          - 전력 예산 보호: app.c에서 60% 제한 적용
+ *          - CCR 계산: duty_percent * 10 (ARR=1000 가정)
+ *          - 타이머: TIM3 CH1 (PA6)
+ */
 void Actuators_SetHeater_Battery(float duty_percent) {
     if (duty_percent < 0.0f) {
         duty_percent = 0.0f;
@@ -38,6 +67,14 @@ void Actuators_SetHeater_Battery(float duty_percent) {
 #endif
 }
 
+/**
+ * @brief 보드 히터 PWM 듀티 사이클 설정
+ * @param duty_percent 듀티 사이클 (0.0 ~ 100.0%)
+ * @details Minibulb 히터 제어 (~4W @ 5V)
+ *          - 듀티 사이클 범위: 0.0% ~ 100.0%
+ *          - CCR 계산: duty_percent * 10 (ARR=1000 가정)
+ *          - 타이머: TIM8 CH1 (PC6)
+ */
 void Actuators_SetHeater_Board(float duty_percent) {
     if (duty_percent < 0.0f) {
         duty_percent = 0.0f;

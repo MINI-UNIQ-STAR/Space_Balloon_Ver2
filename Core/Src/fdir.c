@@ -1,12 +1,30 @@
+/**
+ * @file fdir.c
+ * @brief 고장 검출, 격리 및 복구 (FDIR) 시스템 구현
+ * @details 센서 상태 모니터링 및 자동 복구
+ *          - 타임아웃 기반 고장 검출
+ *          - 온도 기반 센서 비활성화/재활성화
+ *          - 범위 및 연속성 검증
+ *          - 자동 센서 리셋 및 I2C 버스 복구
+ *          - 백업 고도 계산 (BARO/GPS 페일오버)
+ * @author Hyeonsu Park
+ * @date 2026-01-13
+ * @version 1.0
+ */
+
 #pragma warning(disable:4819)
 #include "fdir.h"
 #include "main.h"
 #include <stdio.h>
 
+/* ========================================================================== */
+/* 전역 변수 정의                                                              */
+/* ========================================================================== */
 
+/** @brief 센서 상태 배열 (9개 센서) */
 static SensorHealth_t sensors_health[SENSOR_ID_COUNT];
 
-// Sensor-specific timeout configuration (in milliseconds)
+/** @brief 센서별 타임아웃 설정 (밀리초) */
 static const uint32_t sensor_timeout_ms[SENSOR_ID_COUNT] = {
     [SENSOR_ID_IMU]      = 100,    // 480Hz → 100ms timeout
     [SENSOR_ID_MAG]      = 500,    // 50Hz → 500ms timeout
@@ -19,7 +37,7 @@ static const uint32_t sensor_timeout_ms[SENSOR_ID_COUNT] = {
     [SENSOR_ID_EXT_TEMP] = 3000,   // 1Hz → 3s timeout
 };
 
-// Max recovery attempts per sensor (reduced for faster fail)
+/** @brief 센서별 최대 복구 시도 횟수 */
 static const uint8_t sensor_max_recovery[SENSOR_ID_COUNT] = {
     [SENSOR_ID_IMU]      = 2,      // Critical, fast fail
     [SENSOR_ID_MAG]      = 2,
@@ -32,8 +50,11 @@ static const uint8_t sensor_max_recovery[SENSOR_ID_COUNT] = {
     [SENSOR_ID_EXT_TEMP] = 2,
 };
 
-// Operating temperature limits (in °C x 100)
-// Format: {min_temp, max_temp}
+/**
+ * @brief 센서별 동작 온도 범위 (°C x 100)
+ * @details 형식: {min_temp, max_temp}
+ *          온도 범위를 벗어나면 센서 비활성화
+ */
 static const int16_t sensor_temp_limits[SENSOR_ID_COUNT][2] = {
     [SENSOR_ID_IMU]      = {-4000, 8500},   // LSM6DSV16X: -40 degC ~ +85 degC
     [SENSOR_ID_MAG]      = {-4000, 8500},   // MLX90393: -40 degC ~ +85 degC
@@ -46,15 +67,23 @@ static const int16_t sensor_temp_limits[SENSOR_ID_COUNT][2] = {
     [SENSOR_ID_EXT_TEMP] = {-9000, 25000},  // MCP9600 (K-Type): -90 degC ~ +250 degC (Stratosphere < -60)
 };
 
-// Temperature hysteresis (5°C = 500 in x100 scale)
+/** @brief 온도 히스테리시스 (5°C = 500 x 100) */
 #define TEMP_HYSTERESIS_X100  500
 
-// Track cold-disabled state separately
+/** @brief 저온 비활성화 상태 플래그 */
 static bool sensor_cold_disabled[SENSOR_ID_COUNT] = {false};
 
-// Current external temperature (updated by FDIR_UpdateTemperature)
-static int16_t current_ext_temp_x100 = 2500; // Default 25°C
+/** @brief 현재 외부 온도 (°C x 100, 기본값: 25°C) */
+static int16_t current_ext_temp_x100 = 2500;
 
+/**
+ * @brief FDIR 시스템 초기화
+ * @details 모든 센서 상태를 HEALTHY로 초기화
+ *          - 마지막 업데이트 시간: 현재 틱
+ *          - 오류 카운터: 0
+ *          - 복구 카운터: 0
+ *          - 활성화 상태: true
+ */
 void FDIR_Init(void) {
     uint8_t i;
     for (i = 0U; i < (uint8_t)SENSOR_ID_COUNT; i++) {
@@ -67,10 +96,23 @@ void FDIR_Init(void) {
     }
 }
 
+/**
+ * @brief 외부 온도 업데이트
+ * @param ext_temp_c_x100 외부 온도 (°C x 100)
+ * @details 온도 기반 센서 보호에 사용
+ */
 void FDIR_UpdateTemperature(int16_t ext_temp_c_x100) {
     current_ext_temp_x100 = ext_temp_c_x100;
 }
 
+/**
+ * @brief 센서 정상 작동 보고
+ * @param id 센서 ID
+ * @details 센서가 정상 데이터를 반환했을 때 호출
+ *          - 마지막 업데이트 시간 갱신
+ *          - 오류 카운터 리셋
+ *          - WARNING/RECOVERY 상태에서 HEALTHY로 전환
+ */
 void FDIR_ReportSuccess(SensorID_t id) {
     if (id >= SENSOR_ID_COUNT) {
         return;
@@ -85,6 +127,12 @@ void FDIR_ReportSuccess(SensorID_t id) {
     }
 }
 
+/**
+ * @brief 센서 고장 보고
+ * @param id 센서 ID
+ * @param error_code 오류 코드 (현재 미사용)
+ * @details 센서 읽기 실패 시 오류 카운터 증가
+ */
 void FDIR_ReportFailure(SensorID_t id, int32_t error_code) {
     (void)error_code;  /* Currently unused, suppress warning */
     if (id >= SENSOR_ID_COUNT) {
@@ -94,6 +142,15 @@ void FDIR_ReportFailure(SensorID_t id, int32_t error_code) {
     sensors_health[id].error_count++;
 }
 
+/**
+ * @brief FDIR 주기적 업데이트 (50Hz)
+ * @details 실행 순서:
+ *          1. 온도 기반 센서 보호 (저온 비활성화/재활성화)
+ *          2. 타임아웃 기반 고장 검출
+ *          3. 자동 복구 시도 (센서 리셋)
+ *          4. 영구 고장 판정 (최대 복구 횟수 초과)
+ * @note App_Loop()에서 매 사이클 호출됨
+ */
 void FDIR_Update(void) {
     uint32_t now = HAL_GetTick();
     uint8_t i;
@@ -183,17 +240,35 @@ void FDIR_Update(void) {
     }
 }
 
-// Status query functions
+/* ========================================================================== */
+/* 상태 조회 함수                                                             */
+/* ========================================================================== */
+
+/**
+ * @brief 센서 상태 조회
+ * @param id 센서 ID
+ * @return FdirState_t 센서 상태 (HEALTHY/WARNING/RECOVERY/FAILURE_PERMANENT)
+ */
 FdirState_t FDIR_GetSensorState(SensorID_t id) {
     if (id >= SENSOR_ID_COUNT) return FDIR_STATE_FAILURE_PERMANENT;
     return sensors_health[id].state;
 }
 
+/**
+ * @brief 복구 시도 횟수 조회
+ * @param id 센서 ID
+ * @return uint32_t 복구 시도 횟수
+ */
 uint32_t FDIR_GetRecoveryCount(SensorID_t id) {
     if (id >= SENSOR_ID_COUNT) return 0;
     return sensors_health[id].recovery_count;
 }
 
+/**
+ * @brief 센서 정상 상태 확인
+ * @param id 센서 ID
+ * @return bool true = 정상, false = 고장/경고
+ */
 bool FDIR_IsSensorHealthy(SensorID_t id) {
     if (id >= SENSOR_ID_COUNT) {
         return false;
@@ -201,34 +276,62 @@ bool FDIR_IsSensorHealthy(SensorID_t id) {
     return (sensors_health[id].state == FDIR_STATE_HEALTHY);
 }
 
+/**
+ * @brief 센서 저온 비활성화 상태 확인
+ * @param id 센서 ID
+ * @return bool true = 저온으로 비활성화됨, false = 정상
+ */
 bool FDIR_IsSensorColdDisabled(SensorID_t id) {
     if (id >= SENSOR_ID_COUNT) return false;
     return sensor_cold_disabled[id];
 }
 
-// ===== New FDIR.md Compliance Functions =====
+/* ========================================================================== */
+/* 범위 검증 및 연속성 체크                                                    */
+/* ========================================================================== */
 
-// Range limits (from FDIR.md L122-136)
+/** @brief 기압 센서 범위 제한 (Pa) */
 #define BARO_MIN_PA     1000
 #define BARO_MAX_PA     110000
+
+/** @brief GPS 고도 범위 제한 (m) */
 #define GPS_ALT_MIN_M   (-500.0f)
 #define GPS_ALT_MAX_M   50000.0f
-#define TEMP_MIN_X100   (-8000)   // -80 degC
-#define TEMP_MAX_X100   6000      // +60 degC
 
-// Continuity check threshold (from FDIR.md L144)
+/** @brief 온도 범위 제한 (°C x 100) */
+#define TEMP_MIN_X100   (-8000)   // -80°C
+#define TEMP_MAX_X100   6000      // +60°C
+
+/** @brief 고도 점프 감지 임계값 (m) */
 #define ALT_JUMP_THRESHOLD_M  500.0f
 
-// Altitude tracking for fallback and continuity
+/** @brief 이전 GPS 고도 (연속성 체크용) */
 static float last_gps_alt_m = 0.0f;
 
+/** @brief 현재 GPS 고도 */
 static float current_gps_alt_m = 0.0f;
+
+/** @brief 현재 기압 고도 */
 static float current_baro_alt_m = 0.0f;
+
+/** @brief GPS 고도 유효성 플래그 */
 static bool gps_alt_valid = false;
+
+/** @brief 기압 고도 유효성 플래그 */
 static bool baro_alt_valid = false;
+
+/** @brief 고도 점프 검출 플래그 */
 static bool alt_jump_detected = false;
+
+/** @brief 범위 오류 검출 플래그 */
 static bool range_error_detected = false;
 
+/**
+ * @brief 기압 센서 범위 검증
+ * @param press_pa 기압 (Pa)
+ * @return bool true = 정상 범위, false = 범위 초과
+ * @details 범위: 1000 Pa ~ 110000 Pa (해발 -500m ~ 50km)
+ */
 bool FDIR_ValidateRange_Baro(uint32_t press_pa) {
     if (press_pa < BARO_MIN_PA || press_pa > BARO_MAX_PA) {
         range_error_detected = true;
@@ -241,6 +344,12 @@ bool FDIR_ValidateRange_Baro(uint32_t press_pa) {
     return true;
 }
 
+/**
+ * @brief GPS 고도 범위 검증
+ * @param alt_m GPS 고도 (m)
+ * @return bool true = 정상 범위, false = 범위 초과
+ * @details 범위: -500m ~ 50000m
+ */
 bool FDIR_ValidateRange_GPS_Alt(float alt_m) {
     if (alt_m < GPS_ALT_MIN_M || alt_m > GPS_ALT_MAX_M) {
         range_error_detected = true;
@@ -253,6 +362,12 @@ bool FDIR_ValidateRange_GPS_Alt(float alt_m) {
     return true;
 }
 
+/**
+ * @brief 온도 범위 검증
+ * @param temp_c_x100 온도 (°C x 100)
+ * @return bool true = 정상 범위, false = 범위 초과
+ * @details 범위: -80°C ~ +60°C
+ */
 bool FDIR_ValidateRange_Temp(int16_t temp_c_x100) {
     if (temp_c_x100 < TEMP_MIN_X100 || temp_c_x100 > TEMP_MAX_X100) {
         range_error_detected = true;
@@ -264,6 +379,12 @@ bool FDIR_ValidateRange_Temp(int16_t temp_c_x100) {
     return true;
 }
 
+/**
+ * @brief GPS 고도 연속성 체크
+ * @param new_alt_m 새로운 GPS 고도 (m)
+ * @return bool true = 연속적, false = 점프 검출
+ * @details 이전 고도와 500m 이상 차이나면 점프로 판정
+ */
 bool FDIR_CheckContinuity_GPS_Alt(float new_alt_m) {
     static bool first_reading = true;
     
@@ -291,6 +412,11 @@ bool FDIR_CheckContinuity_GPS_Alt(float new_alt_m) {
     return true;
 }
 
+/**
+ * @brief GPS 고도 업데이트 (범위 및 연속성 검증 포함)
+ * @param gps_alt_m GPS 고도 (m)
+ * @details 범위 및 연속성 검증 통과 시에만 고도 업데이트
+ */
 void FDIR_UpdateGPSAltitude(float gps_alt_m) {
     if (FDIR_ValidateRange_GPS_Alt(gps_alt_m) && FDIR_CheckContinuity_GPS_Alt(gps_alt_m)) {
         current_gps_alt_m = gps_alt_m;
@@ -301,6 +427,11 @@ void FDIR_UpdateGPSAltitude(float gps_alt_m) {
     }
 }
 
+/**
+ * @brief 기압 고도 업데이트
+ * @param baro_alt_m 기압 고도 (m)
+ * @details 기압 센서 상태에 따라 유효성 플래그 설정
+ */
 void FDIR_UpdateBaroAltitude(float baro_alt_m) {
     // Convert altitude back to pressure for range check (simplified)
     // This is just for internal tracking, main range check should be on raw pressure
@@ -308,6 +439,14 @@ void FDIR_UpdateBaroAltitude(float baro_alt_m) {
     baro_alt_valid = (sensors_health[SENSOR_ID_BARO].state == FDIR_STATE_HEALTHY);
 }
 
+/**
+ * @brief 백업 고도 조회 (BARO/GPS 페일오버)
+ * @return float 백업 고도 (m)
+ * @details 우선순위: BARO > GPS
+ *          - BARO 정상: 기압 고도 반환
+ *          - BARO 고장, GPS 정상: GPS 고도 반환
+ *          - 둘 다 고장: 마지막 기압 고도 반환
+ */
 float FDIR_GetBackupAltitude(void) {
     // Priority: Baro > GPS (baro is more accurate at high altitudes)
     // But if baro fails, use GPS as backup
@@ -326,6 +465,19 @@ float FDIR_GetBackupAltitude(void) {
     return current_baro_alt_m;
 }
 
+/**
+ * @brief 시스템 상태 플래그 생성 (텔레메트리용)
+ * @return uint16_t 상태 플래그 비트마스크
+ * @details 비트 플래그:
+ *          - STATUS_SYS_OK: 시스템 정상
+ *          - STATUS_GPS_WARN: GPS 경고
+ *          - STATUS_BARO_WARN: 기압계 경고
+ *          - STATUS_IMU_WARN: IMU 경고
+ *          - STATUS_TEMP_WARN: 온도 센서 경고
+ *          - STATUS_FDIR_RECOVERY: 복구 중
+ *          - STATUS_ALT_JUMP: 고도 점프 검출
+ *          - STATUS_RANGE_ERROR: 범위 오류 검출
+ */
 uint16_t FDIR_GetStatusFlags(void) {
     uint16_t flags = STATUS_SYS_OK;  // Start with OK
     

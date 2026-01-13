@@ -1,3 +1,19 @@
+/**
+ * @file sensors.c
+ * @brief 센서 드라이버 통합 모듈 - 11개 센서 인터페이스
+ * @details 센서 목록:
+ *          I2C1 (Downside): LSM6DSV16X (IMU), MLX90393 (MAG), GDK101 (RAD)
+ *          I2C3 (Upside): MS5611 (BARO), SHT31 (HUMID/TEMP), CM1107N (CO2), MCP9600 (THERMO)
+ *          UART: PMS3003 (PM), XA1110 (GPS)
+ *          1-Wire: DS18B20 x2 (배터리/보드 온도)
+ *          - 초기화: Sensors_Init() → I2C/UART/1-Wire 초기화 순서
+ *          - 주기적 읽기: Sensors_Read_All() (50Hz)
+ *          - FDIR 통합: 읽기 성공 시 FDIR_ReportSuccess() 호출
+ * @author Hyeonsu Park
+ * @date 2026-01-13
+ * @version 1.0
+ */
+
 #include "sensors.h"
 #include "main.h" /* HAL_GetTick */
 #include "bsp.h" /* BSP Layer */
@@ -119,6 +135,16 @@ static int32_t pms_write(void *handle, uint8_t *buf, uint16_t len) {
     return BSP_UART_Write(buf, len);
 }
 
+/**
+ * @brief 전체 센서 초기화
+ * @details 초기화 순서:
+ *          1. GPIO 전원 시퀀스 (리셋 핀 해제)
+ *          2. I2C1 센서 초기화 (IMU, MAG, RAD)
+ *          3. I2C3 센서 초기화 (BARO, SHT, CO2, MCP)
+ *          4. UART 센서 초기화 (PMS, GPS)
+ *          5. 1-Wire 센서 초기화 (DS18B20)
+ * @note App_Init()에서 호출됨
+ */
 void Sensors_Init(void) {
     // 1. GPIO Power Sequence (Release Resets)
 #ifndef UNIT_TEST
@@ -177,6 +203,13 @@ void Sensors_Init_1Wire(void) {
 #endif
 }
 
+/**
+ * @brief I2C1 센서 초기화 (Downside 버스)
+ * @details 초기화 센서:
+ *          - LSM6DSV16X (IMU): 480Hz ODR, High Performance, SFLP 활성화
+ *          - MLX90393 (MAG): 자기장 센서
+ *          - GDK101 (RAD): 방사선 센서
+ */
 void Sensors_Init_I2C1(void) {
 #ifndef HOST_TEST_MODE
     // MLX90393 Init
@@ -218,6 +251,15 @@ void Sensors_Init_I2C1(void) {
 #endif
 }
 
+/**
+ * @brief I2C3 센서 초기화 (Upside 버스)
+ * @details 초기화 센서:
+ *          - MS5611 (BARO): 기압 센서
+ *          - SHT31 (HUMID/TEMP): 온습도 센서
+ *          - CM1107N (CO2): 이산화탄소 센서
+ *          - MCP9600 (THERMO): 열전대 온도 센서
+ *          - SEN0321 (OZONE): 오존 센서
+ */
 void Sensors_Init_I2C3(void) {
 #ifndef HOST_TEST_MODE
     // SEN0321 Init
@@ -252,6 +294,12 @@ void Sensors_Init_I2C3(void) {
 #endif
 }
 
+/**
+ * @brief UART 센서 초기화
+ * @details 초기화 센서:
+ *          - PMS3003 (PM): 미세먼지 센서, Active Mode 설정
+ *          - XA1110 (GPS): GPS/GNSS 모듈
+ */
 void Sensors_Init_UART(void) {
 #ifndef HOST_TEST_MODE
     pms_ctx.write = pms_write;
@@ -264,6 +312,19 @@ void Sensors_Init_UART(void) {
 #endif
 }
 
+/**
+ * @brief 센서 리셋 (FDIR 복구 기능)
+ * @param id 센서 ID
+ * @details 복구 레벨:
+ *          - L3: 하드웨어 리셋 (P-MOS 전원 사이클 또는 RST 핀 토글)
+ *          - L2: 소프트웨어 리셋 (드라이버 재초기화 또는 I2C 버스 복구)
+ *          센서별 리셋 방법:
+ *          - GPS: RST 핀 토글 + 드라이버 재초기화
+ *          - IMU/MAG/RAD: P-MOS 전원 사이클 + I2C1 버스 복구
+ *          - BARO/SHT/CO2/MCP: P-MOS 전원 사이클 + I2C3 버스 복구
+ *          - PMS: SET 핀 토글
+ * @note FDIR_Update()에서 타임아웃 검출 시 호출됨
+ */
 void Sensors_Reset(SensorID_t id) {
 #ifdef UNIT_TEST
     printf("FDIR: Resetting Sensor ID %d\n", id);
@@ -376,6 +437,23 @@ void Sensors_Reset(SensorID_t id) {
 #endif
 }
 
+/**
+ * @brief 전체 센서 데이터 읽기 (50Hz)
+ * @param data 텔레메트리 페이로드 구조체 포인터
+ * @return SensorStatus_t SENSOR_OK
+ * @details 읽기 순서:
+ *          1. IMU (가속도, 자이로)
+ *          2. 자기장
+ *          3. 기압 (비차단 상태머신)
+ *          4. 온습도 (비차단, 10Hz)
+ *          5. 배터리 전압/온도 (1Hz)
+ *          6. 보드 온도
+ *
+ *          Mock 시뮬레이션 (HOST_TEST_MODE):
+ *          - 고도 증가: 2.5m/cycle (~5m/s @ 50Hz)
+ *          - 온도 감소: -0.0065°C/m (표준 대기)
+ *          - 기압 감소: 지수 함수 (P = 101325 * exp(-h/7400))
+ */
 SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
     // 1. IMU (Fast 50Hz)
     Sensors_Read_IMU(data->accel_mps2_x1000, data->gyro_rads_x1000);
@@ -420,6 +498,16 @@ SensorStatus_t Sensors_Read_All(telemetry_payload_sensor_snapshot_t *data) {
     return SENSOR_OK;
 }
 
+/**
+ * @brief IMU 데이터 읽기 (가속도, 자이로)
+ * @param accel 가속도 배열 [X, Y, Z] (m/s² x 1000)
+ * @param gyro 각속도 배열 [X, Y, Z] (rad/s x 1000)
+ * @details LSM6DSV16X:
+ *          - 가속도: FS ±2g, 해상도: 1mg
+ *          - 자이로: FS ±2000dps, 해상도: 70mdps
+ *          - 변환: accel = mg * 9.8, gyro = mdps * 0.01745
+ *          - FDIR: 읽기 성공 시 FDIR_ReportSuccess(SENSOR_ID_IMU)
+ */
 void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
 #ifndef HOST_TEST_MODE
     int16_t data_raw[3];
@@ -515,6 +603,16 @@ void Sensors_Read_Rad(uint16_t *uSvh) {
 #endif
 }
 
+/**
+ * @brief 기압 센서 데이터 읽기 (비차단 상태머신)
+ * @param press_pa 기압 (Pa)
+ * @param temp_c_x100 온도 (°C x 100)
+ * @details MS5611:
+ *          - 해상도: 0.012 mbar (0.1m 고도)
+ *          - 상태머신: IDLE → CMD_D1 → WAIT_D1 → CMD_D2 → WAIT_D2 → CALC → IDLE
+ *          - 주기: ~20ms (OSR=4096)
+ *          - Mock: 표준 대기 모델 (P = 101325 * exp(-h/7400))
+ */
 void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100) {
 #ifndef HOST_TEST_MODE
     int32_t p, t;
@@ -633,6 +731,28 @@ void Sensors_SetHeater_SHT31(uint8_t enable) {
 #endif
 }
 
+/**
+ * @brief GPS 데이터 읽기
+ * @param lat 위도 (도 x 10^7)
+ * @param lon 경도 (도 x 10^7)
+ * @param alt 고도 (m)
+ * @param fix Fix 타입 (0=없음, 1=GPS, 2=DGPS, 3=PPS)
+ * @param sats 사용 위성 수
+ * @param sats_view 총 가시 위성 수
+ * @param sats_gps GPS 위성 수
+ * @param sats_glonass GLONASS 위성 수
+ * @param sats_galileo Galileo 위성 수
+ * @param sats_beidou BeiDou 위성 수
+ * @param utc_hour UTC 시 (0-23)
+ * @param utc_min UTC 분 (0-59)
+ * @param utc_sec UTC 초 (0-59)
+ * @param utc_day UTC 일 (1-31)
+ * @param utc_month UTC 월 (1-12)
+ * @param utc_year UTC 년 (YYYY)
+ * @details XA1110:
+ *          - NMEA 파싱: GGA (위치), RMC (시간/날짜), GSV (위성)
+ *          - Mock: GGA/RMC 시뮬레이션 (48.07N, 11.31E)
+ */
 void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix, 
                       uint8_t *sats, uint8_t *sats_view,
                       uint8_t *sats_gps, uint8_t *sats_glonass,
@@ -734,6 +854,16 @@ void Sensors_Read_External(int16_t *temp_c_x100) {
 #endif
 }
 
+/**
+ * @brief IMU SFLP 자세 추정 데이터 읽기 (쿼터니언)
+ * @param quaternion 쿼터니언 배열 [x, y, z, w]
+ * @details LSM6DSV16X SFLP (Sensor Fusion Low Power):
+ *          - 내부 칼만 필터 기반 자세 추정
+ *          - 출력: Game Rotation Vector (가속도+자이로 융합, 자기장 미사용)
+ *          - FIFO 읽기: Half-Float (16비트) → Float 변환
+ *          - 정규화: w = sqrt(1 - x² - y² - z²)
+ *          - 120Hz 샘플링
+ */
 void Sensors_Read_SFLP(float quaternion[4]) {
 #ifndef HOST_TEST_MODE
     // 1. Check FIFO Status
