@@ -1,0 +1,257 @@
+Checking Core\Src\actuators.c ...
+Core\Src\actuators.c:14: [information] missingInclude: Include file: "actuators.h" not found.
+Core\Src\actuators.c:18: [information] missingInclude: Include file: "tim.h" not found.
+Checking Core\Src\actuators.c: UNIT_TEST...
+Core\Src\actuators.c:60: [style] unreadVariable: Variable 'ccr_val' is assigned a value that is never used.
+1/26 files checked 1% done
+Core\Src\actuators.c:86: [style] unreadVariable: Variable 'ccr_val' is assigned a value that is never used.
+Checking Core\Src\adc.c ...
+Core\Src\adc.c:21: [information] missingInclude: Include file: "adc.h" not found.
+2/26 files checked 3% done
+Checking Core\Src\app.c ...
+Core\Src\app.c:22: [information] missingInclude: Include file: "app.h" not found.
+Core\Src\app.c:23: [information] missingInclude: Include file: "fdir.h" not found.
+Core\Src\app.c:24: [information] missingInclude: Include file: "main.h" not found.
+Core\Src\app.c:25: [information] missingInclude: Include file: "sensors.h" not found.
+Core\Src\app.c:26: [information] missingInclude: Include file: "bsp.h" not found.
+Core\Src\app.c:27: [information] missingInclude: Include file: "pps_capture.h" not found.
+Core\Src\app.c:0: [information] normalCheckLevelMaxBranches: Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches.
+Checking Core\Src\app.c: PROFILING_PIN_Pin...
+3/26 files checked 12% done
+Checking Core\Src\bsp.c ...
+Core\Src\bsp.c:15: [information] missingInclude: Include file: "bsp.h" not found.
+Core\Src\bsp.c:16: [information] missingInclude: Include file: "main.h" not found.
+Core\Src\bsp.c:304: [style] variableScope: The scope of the variable 'byte' can be reduced.
+Core\Src\bsp.c:370: [style] variableScope: The scope of the variable 'byte' can be reduced.
+Core\Src\bsp.c:292: [style] constParameterPointer: Parameter 'buffer' can be declared as pointer to const
+Core\Src\bsp.c:358: [style] constParameterPointer: Parameter 'buffer' can be declared as pointer to const
+Checking Core\Src\bsp.c: UNIT_TEST...
+Core\Src\bsp.c:214: [style] variableScope: The scope of the variable 'tmp' can be reduced.
+Core\Src\bsp.c:267: [style] variableScope: The scope of the variable 'tmp' can be reduced.
+Core\Src\bsp.c:335: [style] variableScope: The scope of the variable 'tmp' can be reduced.
+Core\Src\bsp.c:81: [style] constParameterPointer: Parameter 'pData' can be declared as pointer to const
+Core\Src\bsp.c:126: [style] constParameterPointer: Parameter 'pData' can be declared as pointer to const
+Core\Src\bsp.c:166: [style] constParameterPointer: Parameter 'pData' can be declared as pointer to const
+Core\Src\bsp.c:205: [style] constParameterPointer: Parameter 'pData' can be declared as pointer to const
+Core\Src\bsp.c:263: [style] constParameterPointer: Parameter 'pData' can be declared as pointer to const
+Core\Src\bsp.c:281: [style] constParameterPointer: Parameter 'buffer' can be declared as pointer to const
+Core\Src\bsp.c:331: [style] constParameterPointer: Parameter 'pData' can be declared as pointer to const
+Core\Src\bsp.c:349: [style] constParameterPointer: Parameter 'buffer' can be declared as pointer to const
+4/26 files checked 21% done
+Checking Core\Src\dma.c ...
+Core\Src\dma.c:22: [information] missingInclude: Include file: "dma.h" not found.
+5/26 files checked 22% done
+Checking Core\Src\fdir.c ...
+Core\Src\fdir.c:15: [information] missingInclude: Include file: "fdir.h" not found.
+Core\Src\fdir.c:16: [information] missingInclude: Include file: "main.h" not found.
+Checking Core\Src\fdir.c: DEBUG...
+6/26 files checked 31% done
+Checking Core\Src\gpio.c ...
+Core\Src\gpio.c:22: [information] missingInclude: Include file: "gpio.h" not found.
+7/26 files checked 33% done
+Checking Core\Src\i2c.c ...
+Core\Src\i2c.c:21: [information] missingInclude: Include file: "i2c.h" not found.
+Core\Src\i2c.c:117: [style] constParameterPointer: Parameter 'i2cHandle' can be declared as pointer to const
+Core\Src\i2c.c:218: [style] constParameterPointer: Parameter 'i2cHandle' can be declared as pointer to const
+8/26 files checked 37% done
+Checking Core\Src\iwdg.c ...
+Core\Src\iwdg.c:21: [information] missingInclude: Include file: "iwdg.h" not found.
+9/26 files checked 37% done
+Checking Core\Src\kalman.c ...
+Core\Src\kalman.c:16: [information] missingInclude: Include file: "kalman.h" not found.
+Checking Core\Src\kalman.c: HOST_TEST_MODE...
+10/26 files checked 40% done
+Checking Core\Src\main.c ...
+Core\Src\main.c:10: [information] missingInclude: Include file: "main.h" not found.
+Core\Src\main.c:11: [information] missingInclude: Include file: "adc.h" not found.
+Core\Src\main.c:12: [information] missingInclude: Include file: "dma.h" not found.
+Core\Src\main.c:13: [information] missingInclude: Include file: "i2c.h" not found.
+Core\Src\main.c:14: [information] missingInclude: Include file: "iwdg.h" not found.
+Core\Src\main.c:15: [information] missingInclude: Include file: "rtc.h" not found.
+Core\Src\main.c:16: [information] missingInclude: Include file: "tim.h" not found.
+Core\Src\main.c:17: [information] missingInclude: Include file: "usart.h" not found.
+Core\Src\main.c:18: [information] missingInclude: Include file: "gpio.h" not found.
+Core\Src\main.c:23: [information] missingInclude: Include file: "app.h" not found.
+Core\Src\main.c:176: [style] constParameterPointer: Parameter 'htim' can be declared as pointer to const
+Checking Core\Src\main.c: USE_FULL_ASSERT...
+Core\Src\main.c:212: [style] constParameterPointer: Parameter 'file' can be declared as pointer to const
+11/26 files checked 43% done
+Checking Core\Src\pid.c ...
+Core\Src\pid.c:14: [information] missingInclude: Include file: "bsp.h" not found.
+Core\Src\pid.c:15: [information] missingInclude: Include file: "pid.h" not found.
+12/26 files checked 45% done
+Checking Core\Src\pps_capture.c ...
+Core\Src\pps_capture.c:15: [information] missingInclude: Include file: "pps_capture.h" not found.
+Core\Src\pps_capture.c:16: [information] missingInclude: Include file: "main.h" not found.
+Core\Src\pps_capture.c:17: [information] missingInclude: Include file: "bsp.h" not found.
+13/26 files checked 46% done
+Checking Core\Src\rtc.c ...
+Core\Src\rtc.c:21: [information] missingInclude: Include file: "rtc.h" not found.
+Core\Src\rtc.c:98: [style] constParameterPointer: Parameter 'rtcHandle' can be declared as pointer to const
+Core\Src\rtc.c:127: [style] constParameterPointer: Parameter 'rtcHandle' can be declared as pointer to const
+14/26 files checked 48% done
+Checking Core\Src\sensors.c ...
+Core\Src\sensors.c:17: [information] missingInclude: Include file: "sensors.h" not found.
+Core\Src\sensors.c:18: [information] missingInclude: Include file: "main.h" not found.
+Core\Src\sensors.c:19: [information] missingInclude: Include file: "bsp.h" not found.
+Core\Src\sensors.c:23: [information] missingInclude: Include file: "lsm6dsv16x_reg.h" not found.
+Core\Src\sensors.c:24: [information] missingInclude: Include file: "mlx90393_driver.h" not found.
+Core\Src\sensors.c:25: [information] missingInclude: Include file: "sen0321_driver.h" not found.
+Core\Src\sensors.c:26: [information] missingInclude: Include file: "pms3003_driver.h" not found.
+Core\Src\sensors.c:27: [information] missingInclude: Include file: "gdk101_driver.h" not found.
+Core\Src\sensors.c:28: [information] missingInclude: Include file: "mcp9600_driver.h" not found.
+Core\Src\sensors.c:29: [information] missingInclude: Include file: "sht31_driver.h" not found.
+Core\Src\sensors.c:30: [information] missingInclude: Include file: "ms5611_driver.h" not found.
+Core\Src\sensors.c:31: [information] missingInclude: Include file: "cm1107n_driver.h" not found.
+Core\Src\sensors.c:32: [information] missingInclude: Include file: "xa1110_driver.h" not found.
+Core\Src\sensors.c:33: [information] missingInclude: Include file: "ds18b20_driver.h" not found.
+Core\Src\sensors.c:34: [information] missingInclude: Include file: "fdir.h" not found.
+Checking Core\Src\sensors.c: HOST_TEST_MODE...
+15/26 files checked 67% done
+Checking Core\Src\stm32g4xx_hal_msp.c ...
+Core\Src\stm32g4xx_hal_msp.c:23: [information] missingInclude: Include file: "main.h" not found.
+16/26 files checked 68% done
+Checking Core\Src\stm32g4xx_hal_timebase_tim.c ...
+Core\Src\stm32g4xx_hal_timebase_tim.c:21: [information] missingInclude: Include file: "stm32g4xx_hal.h" not found.
+Core\Src\stm32g4xx_hal_timebase_tim.c:22: [information] missingInclude: Include file: "stm32g4xx_hal_tim.h" not found.
+17/26 files checked 70% done
+Checking Core\Src\stm32g4xx_it.c ...
+Core\Src\stm32g4xx_it.c:21: [information] missingInclude: Include file: "main.h" not found.
+Core\Src\stm32g4xx_it.c:22: [information] missingInclude: Include file: "stm32g4xx_it.h" not found.
+18/26 files checked 75% done
+Checking Core\Src\syscalls.c ...
+Core\Src\syscalls.c:80: [style] constParameterPointer: Parameter 'ptr' can be declared as pointer to const
+19/26 files checked 77% done
+Checking Core\Src\sysmem.c ...
+20/26 files checked 78% done
+Checking Core\Src\system_stm32g4xx.c ...
+Core\Src\system_stm32g4xx.c:78: [information] missingInclude: Include file: "stm32g4xx.h" not found.
+Checking Core\Src\system_stm32g4xx.c: HSE_VALUE...
+Checking Core\Src\system_stm32g4xx.c: HSI_VALUE...
+Checking Core\Src\system_stm32g4xx.c: USER_VECT_TAB_ADDRESS...
+Checking Core\Src\system_stm32g4xx.c: USER_VECT_TAB_ADDRESS;VECT_TAB_SRAM...
+21/26 files checked 83% done
+Checking Core\Src\telemetry.c ...
+Core\Src\telemetry.c:14: [information] missingInclude: Include file: "telemetry.h" not found.
+Core\Src\telemetry.c:15: [information] missingInclude: Include file: "main.h" not found.
+Core\Src\telemetry.c:29: [style] constParameterPointer: Parameter 'data' can be declared as pointer to const
+Core\Src\telemetry.c:139: [style] constParameterPointer: Parameter 'huart' can be declared as pointer to const
+Checking Core\Src\telemetry.c: HOST_TEST_MODE...
+Core\Src\telemetry.c:46: [style] constVariablePointer: Variable 'p' can be declared as pointer to const
+22/26 files checked 86% done
+Checking Core\Src\test_host.c ...
+Core\Src\test_host.c:4: [information] missingInclude: Include file: "main.h" not found.
+Core\Src\test_host.c:5: [information] missingInclude: Include file: "app.h" not found.
+Core\Src\test_host.c:6: [information] missingInclude: Include file: "telemetry.h" not found.
+23/26 files checked 86% done
+Checking Core\Src\tim.c ...
+Core\Src\tim.c:21: [information] missingInclude: Include file: "tim.h" not found.
+Core\Src\tim.c:211: [style] constParameterPointer: Parameter 'tim_onepulseHandle' can be declared as pointer to const
+Core\Src\tim.c:227: [style] constParameterPointer: Parameter 'tim_baseHandle' can be declared as pointer to const
+Core\Src\tim.c:253: [style] constParameterPointer: Parameter 'timHandle' can be declared as pointer to const
+Core\Src\tim.c:301: [style] constParameterPointer: Parameter 'tim_onepulseHandle' can be declared as pointer to const
+Core\Src\tim.c:317: [style] constParameterPointer: Parameter 'tim_baseHandle' can be declared as pointer to const
+24/26 files checked 91% done
+Checking Core\Src\usart.c ...
+Core\Src\usart.c:21: [information] missingInclude: Include file: "usart.h" not found.
+25/26 files checked 97% done
+Checking Core\Src\xcp.c ...
+Core\Src\xcp.c:14: [information] missingInclude: Include file: "xcp.h" not found.
+Core\Src\xcp.c:15: [information] missingInclude: Include file: "bsp.h" not found.
+Core\Src\xcp.c:0: [information] normalCheckLevelMaxBranches: Limiting analysis of branches. Use --check-level=exhaustive to analyze all branches.
+Core\Src\xcp.c:108: [style] constVariablePointer: Variable 'ptr' can be declared as pointer to const
+26/26 files checked 100% done
+Core\Src\adc.c:94: [style] unusedFunction: The function 'HAL_ADC_MspInit' is never used.
+Core\Src\adc.c:150: [style] unusedFunction: The function 'HAL_ADC_MspDeInit' is never used.
+Core\Src\app.c:97: [style] unusedFunction: The function 'App_IsLowVoltageMode' is never used.
+Core\Src\bsp.c:47: [style] unusedFunction: The function 'BSP_Sensor_PowerOn' is never used.
+Core\Src\bsp.c:232: [style] unusedFunction: The function 'BSP_UART_Read' is never used.
+Core\Src\bsp.c:402: [style] unusedFunction: The function 'BSP_Delay' is never used.
+Core\Src\fdir.c:266: [style] unusedFunction: The function 'FDIR_GetSensorState' is never used.
+Core\Src\fdir.c:278: [style] unusedFunction: The function 'FDIR_GetRecoveryCount' is never used.
+Core\Src\fdir.c:391: [style] unusedFunction: The function 'FDIR_ValidateRange_Temp' is never used.
+Core\Src\fdir.c:470: [style] unusedFunction: The function 'FDIR_GetBackupAltitude' is never used.
+Core\Src\i2c.c:117: [style] unusedFunction: The function 'HAL_I2C_MspInit' is never used.
+Core\Src\i2c.c:218: [style] unusedFunction: The function 'HAL_I2C_MspDeInit' is never used.
+Core\Src\main.c:176: [style] unusedFunction: The function 'HAL_TIM_PeriodElapsedCallback' is never used.
+Core\Src\main.c:212: [style] unusedFunction: The function 'assert_failed' is never used.
+Core\Src\pps_capture.c:54: [style] unusedFunction: The function 'PPS_GetSlot' is never used.
+Core\Src\pps_capture.c:84: [style] unusedFunction: The function 'PPS_IsSynced' is never used.
+Core\Src\pps_capture.c:93: [style] unusedFunction: The function 'PPS_GetTimeSinceLastPulse_us' is never used.
+Core\Src\pps_capture.c:106: [style] unusedFunction: The function 'HAL_GPIO_EXTI_Callback' is never used.
+Core\Src\rtc.c:98: [style] unusedFunction: The function 'HAL_RTC_MspInit' is never used.
+Core\Src\rtc.c:127: [style] unusedFunction: The function 'HAL_RTC_MspDeInit' is never used.
+Core\Src\sensors.c:77: [style] unusedFunction: The function 'Sensors_SetMockData' is never used.
+Core\Src\stm32g4xx_hal_msp.c:64: [style] unusedFunction: The function 'HAL_MspInit' is never used.
+Core\Src\stm32g4xx_hal_timebase_tim.c:41: [style] unusedFunction: The function 'HAL_InitTick' is never used.
+Core\Src\stm32g4xx_hal_timebase_tim.c:107: [style] unusedFunction: The function 'HAL_SuspendTick' is never used.
+Core\Src\stm32g4xx_hal_timebase_tim.c:119: [style] unusedFunction: The function 'HAL_ResumeTick' is never used.
+Core\Src\stm32g4xx_it.c:79: [style] unusedFunction: The function 'NMI_Handler' is never used.
+Core\Src\stm32g4xx_it.c:94: [style] unusedFunction: The function 'HardFault_Handler' is never used.
+Core\Src\stm32g4xx_it.c:109: [style] unusedFunction: The function 'MemManage_Handler' is never used.
+Core\Src\stm32g4xx_it.c:124: [style] unusedFunction: The function 'BusFault_Handler' is never used.
+Core\Src\stm32g4xx_it.c:139: [style] unusedFunction: The function 'UsageFault_Handler' is never used.
+Core\Src\stm32g4xx_it.c:154: [style] unusedFunction: The function 'SVC_Handler' is never used.
+Core\Src\stm32g4xx_it.c:167: [style] unusedFunction: The function 'DebugMon_Handler' is never used.
+Core\Src\stm32g4xx_it.c:180: [style] unusedFunction: The function 'PendSV_Handler' is never used.
+Core\Src\stm32g4xx_it.c:193: [style] unusedFunction: The function 'SysTick_Handler' is never used.
+Core\Src\stm32g4xx_it.c:214: [style] unusedFunction: The function 'PVD_PVM_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:228: [style] unusedFunction: The function 'EXTI4_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:242: [style] unusedFunction: The function 'DMA1_Channel1_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:256: [style] unusedFunction: The function 'DMA1_Channel2_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:270: [style] unusedFunction: The function 'DMA1_Channel3_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:284: [style] unusedFunction: The function 'DMA1_Channel4_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:298: [style] unusedFunction: The function 'EXTI9_5_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:311: [style] unusedFunction: The function 'TIM3_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:325: [style] unusedFunction: The function 'I2C1_EV_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:339: [style] unusedFunction: The function 'I2C1_ER_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:353: [style] unusedFunction: The function 'USART1_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:367: [style] unusedFunction: The function 'USART2_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:381: [style] unusedFunction: The function 'USART3_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:395: [style] unusedFunction: The function 'EXTI15_10_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:408: [style] unusedFunction: The function 'I2C3_EV_IRQHandler' is never used.
+Core\Src\stm32g4xx_it.c:422: [style] unusedFunction: The function 'I2C3_ER_IRQHandler' is never used.
+Core\Src\syscalls.c:44: [style] unusedFunction: The function 'initialise_monitor_handles' is never used.
+Core\Src\syscalls.c:48: [style] unusedFunction: The function '_getpid' is never used.
+Core\Src\syscalls.c:61: [style] unusedFunction: The function '_exit' is never used.
+Core\Src\syscalls.c:67: [style] unusedFunction: The function '_read' is never used.
+Core\Src\syscalls.c:80: [style] unusedFunction: The function '_write' is never used.
+Core\Src\syscalls.c:92: [style] unusedFunction: The function '_close' is never used.
+Core\Src\syscalls.c:99: [style] unusedFunction: The function '_fstat' is never used.
+Core\Src\syscalls.c:106: [style] unusedFunction: The function '_isatty' is never used.
+Core\Src\syscalls.c:112: [style] unusedFunction: The function '_lseek' is never used.
+Core\Src\syscalls.c:120: [style] unusedFunction: The function '_open' is never used.
+Core\Src\syscalls.c:128: [style] unusedFunction: The function '_wait' is never used.
+Core\Src\syscalls.c:135: [style] unusedFunction: The function '_unlink' is never used.
+Core\Src\syscalls.c:142: [style] unusedFunction: The function '_times' is never used.
+Core\Src\syscalls.c:148: [style] unusedFunction: The function '_stat' is never used.
+Core\Src\syscalls.c:155: [style] unusedFunction: The function '_link' is never used.
+Core\Src\syscalls.c:163: [style] unusedFunction: The function '_fork' is never used.
+Core\Src\syscalls.c:169: [style] unusedFunction: The function '_execve' is never used.
+Core\Src\sysmem.c:53: [style] unusedFunction: The function '_sbrk' is never used.
+Core\Src\system_stm32g4xx.c:179: [style] unusedFunction: The function 'SystemInit' is never used.
+Core\Src\system_stm32g4xx.c:228: [style] unusedFunction: The function 'SystemCoreClockUpdate' is never used.
+Core\Src\telemetry.c:139: [style] unusedFunction: The function 'HAL_UART_TxCpltCallback' is never used.
+Core\Src\tim.c:211: [style] unusedFunction: The function 'HAL_TIM_OnePulse_MspInit' is never used.
+Core\Src\tim.c:227: [style] unusedFunction: The function 'HAL_TIM_Base_MspInit' is never used.
+Core\Src\tim.c:301: [style] unusedFunction: The function 'HAL_TIM_OnePulse_MspDeInit' is never used.
+Core\Src\tim.c:317: [style] unusedFunction: The function 'HAL_TIM_Base_MspDeInit' is never used.
+Core\Src\usart.c:167: [style] unusedFunction: The function 'HAL_UART_MspInit' is never used.
+Core\Src\usart.c:347: [style] unusedFunction: The function 'HAL_UART_MspDeInit' is never used.
+Core\Src\xcp.c:62: [style] unusedFunction: The function 'XCP_ProcessCommand' is never used.
+Core\Src\fdir.c:142: [style] staticFunction: The function 'FDIR_ReportFailure' should have static linkage since it is not used outside of its translation unit.
+Core\Src\fdir.c:373: [style] staticFunction: The function 'FDIR_ValidateRange_GPS_Alt' should have static linkage since it is not used outside of its translation unit.
+Core\Src\fdir.c:408: [style] staticFunction: The function 'FDIR_CheckContinuity_GPS_Alt' should have static linkage since it is not used outside of its translation unit.
+Core\Src\main.c:121: [style] staticFunction: The function 'SystemClock_Config' should have static linkage since it is not used outside of its translation unit.
+Core\Src\sensors.c:223: [style] staticFunction: The function 'Sensors_Init_1Wire' should have static linkage since it is not used outside of its translation unit.
+Core\Src\sensors.c:236: [style] staticFunction: The function 'Sensors_Init_I2C1' should have static linkage since it is not used outside of its translation unit.
+Core\Src\sensors.c:286: [style] staticFunction: The function 'Sensors_Init_I2C3' should have static linkage since it is not used outside of its translation unit.
+Core\Src\sensors.c:332: [style] staticFunction: The function 'Sensors_Init_UART' should have static linkage since it is not used outside of its translation unit.
+Core\Src\sensors.c:638: [style] staticFunction: The function 'Sensors_Read_IMU' should have static linkage since it is not used outside of its translation unit.
+Core\Src\sensors.c:683: [style] staticFunction: The function 'Sensors_Read_Mag' should have static linkage since it is not used outside of its translation unit.
+Core\Src\sensors.c:743: [style] staticFunction: The function 'Sensors_Read_Baro' should have static linkage since it is not used outside of its translation unit.
+Core\Src\sensors.c:771: [style] staticFunction: The function 'Sensors_Read_Humid' should have static linkage since it is not used outside of its translation unit.
+Core\Src\syscalls.c:53: [style] staticFunction: The function '_kill' should have static linkage since it is not used outside of its translation unit.
+Core\Src\telemetry.c:29: [style] staticFunction: The function 'CRC16_CCITT' should have static linkage since it is not used outside of its translation unit.
+Core\Src\tim.c:253: [style] staticFunction: The function 'HAL_TIM_MspPostInit' should have static linkage since it is not used outside of its translation unit.
+nofile:0: [information] checkersReport: Active checkers: 113/975 (use --checkers-report=<filename> to see details)

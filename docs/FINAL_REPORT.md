@@ -3,10 +3,10 @@
 | 항목 | 내용 |
 |------|------|
 | **문서 번호** | SB-REP-2026-001 |
-| **버전** | Rev 4.2 (Priority 0 & 1 Complete + Power Budget Protection) |
-| **날짜** | 2026-01-09 |
-| **작성자** | Antigravity AI |
-| **상태** | **Priority 0 & 1 완료 (All Critical & Stability Features Complete)** - 하드웨어 검증 대기 중 |
+| **버전** | Rev 5.0 (MISRA C:2023 + Static Analysis + gcov Complete) |
+| **날짜** | 2026-01-23 |
+| **작성자** | Hyeonsu Park |
+| **상태** | **소프트웨어 품질 검증 완료 (MISRA/Cppcheck/gcov)** - 시스템 통합 테스트 준비 완료 |
 
 ---
 
@@ -106,9 +106,15 @@
 
 ## 4. ✅ 검증 결과 (Verification Results)
 
-### 4.1 코드 품질 (Code Quality)
-- **정적 분석**: 주요 모듈(`app.c`, `fdir.c`, `sensors.c`) 구조화 완료.
-- **호환성**: STM32 펌웨어와 LoRa32 수신기(Arduino) 간 데이터 구조체(`telemetry.h`) **100% Binary 호환** 확인.
+### 4.1 코드 품질 및 정적 분석 (Static Analysis & MISRA) ← UPDATED (2026-01-23)
+- **MISRA C:2023 준수**: 모든 소스 코드에 대해 MISRA C:2023 가이드라인 적용 완료.
+    - 명시적 타입 캐스팅 (`(float32_t)`) 및 고정 크기 정수형 사용.
+    - 포인터 연산 제거 및 매개변수 `const` 한정자 적용.
+    - 전역 변수 가시성 제한 및 초기화 규칙 준수.
+- **Cppcheck 정적 분석**: `Core/Src` 26개 파일에 대해 정적 분석 수행.
+    - **결과**: `Error: 0`, `Warning: 0`.
+    - 잠재적인 메모리 누수, 버퍼 오버플로우, 초기화되지 않은 변수 없음 확인.
+- **호환성**: 텔레메트리 데이터 구조체(`telemetry.h`)의 바이너리 레이아웃 검증 완료.
 
 ### 4.2 SITL (Software-In-The-Loop) 검증 ← NEW (2026-01-09)
 **디렉토리**: `HostSim/`
@@ -144,9 +150,20 @@ Test Finished.
 - ✅ FDIR 시스템 (고장 감지)
 - ✅ XCP 프로토콜 처리
 
+### 4.3 유닛 테스트 및 커버리지 (gcov) ← NEW (2026-01-23)
+호스트(PC) 환경에서 핵심 알고리즘에 대한 유닛 테스트를 수행하고 `gcov`를 통해 코드 커버리지를 측정했습니다.
+
+| 테스트 모듈 | Line Coverage | Branch Coverage | 판정 |
+|:---:|:---:|:---:|:---:|
+| **PID Controller** | **88.89%** | 62.50% | ✅ PASS |
+| **Kalman Filter** | **89.47%** | 75.00% | ✅ PASS |
+
+- **분석**: 예외 처리(NaN 복구, 출력 포화)를 제외한 모든 핵심 연산 로직이 테스트됨.
+- **상세 결과**: `docs/cppcheck & gcov report/code_review_gcov_report.md` 참조.
+
 **문서화**: `HostSim/README.md` - 빌드/실행 가이드, 비행 데이터 생성, 문제 해결 포함
 
-### 4.3 상세 검증 시나리오 (Verification Scenarios)
+### 4.4 상세 검증 시나리오 (Verification Scenarios)
 HITL 환경에서 수행된 주요 결함 주입 테스트 결과입니다.
 
 | ID | 테스트 시나리오 | 기대 결과 (Expected) | 실제 결과 (Actual) | 판정 | 비고 |

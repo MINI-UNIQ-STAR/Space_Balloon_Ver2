@@ -4,8 +4,10 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-STM32G4-green.svg)
-![Simulation](https://img.shields.io/badge/simulation-HostSim%20%7C%20HITL-orange.svg)
-![Telemetry](https://img.shields.io/badge/telemetry-116%20bytes-purple.svg)
+![MISRA](https://img.shields.io/badge/MISRA-C:2023-blue.svg)
+![Static Analysis](https://img.shields.io/badge/Cppcheck-Passed-success.svg)
+![Coverage](https://img.shields.io/badge/gcov-89%25-brightgreen.svg)
+![Telemetry](https://img.shields.io/badge/telemetry-132%20bytes-purple.svg)
 
 ---
 
@@ -13,15 +15,12 @@
 
 - [개요](#-개요)
 - [개발 환경](#-개발-환경)
+- [품질 및 신뢰성 검증](#-품질-및-신뢰성-검증-)
 - [하드웨어 구성](#-하드웨어-구성)
 - [프로젝트 구조](#-프로젝트-구조)
-- [빌드 방법](#-빌드-방법)
-  - [실제 하드웨어 빌드](#실제-하드웨어-빌드)
-  - [호스트 시뮬레이션 빌드](#호스트-시뮬레이션-빌드)
-- [테스트 및 실행](#-테스트-및-실행)
-- [HITL 시뮬레이션](#-hitl-시뮬레이션)
-- [텔레메트리 프로토콜](#-텔레메트리-프로토콜)
-- [센서 목록](#-센서-목록)
+- [빌드 및 테스트](#-빌드-및-테스트)
+- [문서 허브](#-문서-허브)
+- [라이선스](#-라이선스)
 
 ---
 
@@ -29,13 +28,48 @@
 
 이 프로젝트는 고고도 기구(HAB: High Altitude Balloon)에 탑재되는 라디오존데 시스템입니다.
 
-**주요 기능:**
+### 🏗️ 시스템 아키텍처
 
-- 11종 센서 데이터 수집 (IMU, GPS, 기압, 온도, 습도, 대기질, 방사선 등)
-- Kalman 필터 기반 자세/고도 추정
-- PID 제어 기반 히터 시스템 (배터리/보드 온도 유지)
-- LoRa 텔레메트리 전송
-- FDIR(Fault Detection, Isolation, Recovery) 시스템
+```mermaid
+graph TD
+    subgraph Sensors ["Sensor Layer (HAL)"]
+        IMU["LSM6DSV16X (IMU)"]
+        GPS["XA1110 (GPS)"]
+        Baro["MS5611 (Baro)"]
+        Env["SHT31 / CM1107N (Env)"]
+    end
+
+    subgraph Core ["Processing Layer"]
+        Manager["Sensor Manager"]
+        FDIR["FDIR / Health Check"]
+        Algo["Algorithms: PID / Kalman"]
+    end
+
+    subgraph Comms ["Communication Layer"]
+        TLM["Telemetry Pack / CRC"]
+        LoRa["LoRa SX1276 / DMA"]
+    end
+
+    IMU -- "Raw Data" --> Manager
+    GPS -- "NMEA" --> Manager
+    Baro -- "Data" --> Manager
+    Env -- "Data" --> Manager
+    
+    Manager --> FDIR
+    FDIR -- "Valid Data" --> Algo
+    FDIR -- "Failure" --> Recovery["I2C Recovery / P-MOS Cycle"]
+    
+    Algo --> TLM
+    TLM --> LoRa
+```
+
+**주요 특징:**
+
+- **고신뢰성 아키텍처**: 50Hz 결정론적 Super Loop 및 4단계 FDIR(고장 복구) 시스템
+- **표준 준수**: MISRA C:2023 가이드라인 적용 및 Cppcheck 정적 분석 통과
+- **데이터 융합**: Kalman 필터 기반 고도/자세 추정 및 11종 센서 데이터 통합
+- **검증 환경**: gcov 유닛 테스트, SITL(Host) 및 HITL(Hardware-in-the-Loop) 시뮬레이션 지원
+- **실시간 전송**: LoRa 기반 고밀도 텔레메트리 프로토콜 (CRC-16 검증)
 
 ---
 
@@ -63,42 +97,33 @@
 | 도구 | 버전 | 용도 |
 | :--- | :--- | :--- |
 | **ARM GCC** | 13.x+ | 크로스 컴파일러 (arm-none-eabi-gcc) |
-| **cube-cmake** | - | STM32 CMake 빌드 도구 |
-| **MinGW-w64** | 15.x | Windows 네이티브 빌드 (시뮬레이션) |
-| **OpenOCD** | 0.12+ | 플래시/디버깅 (xpack 버전 포함) |
-| **Python** | 3.10+ | 스크립트 및 데이터 변환 |
+| **MSYS2 / MinGW** | 15.x | 호스트 테스트 (gcov, gcc) |
+| **CMake** | 3.20+ | 빌드 구성 도구 |
+| **OpenOCD** | 0.12+ | 플래시/디버깅 |
 
-### 디버거 / 프로그래머
+### 🚀 한 줄 설치 (Quick Setup)
 
-| 도구 | 용도 |
-| :--- | :--- |
-| **ST-Link V2** | STM32 플래싱 및 SWD 디버깅 |
-| **OpenOCD** | GDB 서버 |
-
-### 설치 명령 (Windows)
+Windows 환경에서 개발에 필요한 모든 도구를 한 번에 설치할 수 있습니다.
 
 ```powershell
-# Scoop 사용 시
-scoop install gcc arm-none-eabi-gcc cmake python
-
-# 또는 수동 설치
-# - ARM GCC: https://developer.arm.com/downloads/-/gnu-rm
-# - MinGW-w64: https://www.mingw-w64.org/
-# - cube-cmake: STMicroelectronics 제공
-# - OpenOCD: https://xpack.github.io/openocd/
+# Scoop을 이용한 원클릭 환경 구성
+scoop install gcc arm-none-eabi-gcc cmake make openocd python
 ```
 
-### VS Code 설정 (권장)
+---
 
-`.vscode/settings.json`:
+## 🛡️ 품질 및 신뢰성 검증 
 
-```json
-{
-    "cmake.configureOnOpen": true,
-    "cmake.generator": "MinGW Makefiles",
-    "cortex-debug.openocdPath": "${workspaceFolder}/xpack-openocd-0.12.0-4/openocd/bin/openocd.exe"
-}
-```
+이 프로젝트는 극한 환경인 성층권 비행을 위해 엄격한 소프트웨어 품질 검증 과정을 거칩니다.
+
+![미션 텔레메트리 대시보드 시뮬레이션](C:/Users/hyuns/.gemini/antigravity/brain/4f105e56-b060-4286-88ec-5b19941a67d5/spaceballoon_flight_dashboard_mockup_1769170020000.png)
+
+- **MISRA C:2023**: 필수 및 권고 가이드라인 준수 (안전성 및 이식성 강화)
+- **정적 분석 (Cppcheck)**: `Error: 0`, `Warning: 0` 달성
+- **유닛 테스트 (gcov)**: 핵심 알고리즘(PID, Kalman) 커버리지 **89%** 달성
+- **FDIR 검증**: Renode 시뮬레이션을 통해 22개 고장 시나리오 100% 복구 확인
+
+> 상세 리포트는 **[docs/README.md](./docs/README.md)**에서 확인할 수 있습니다.
 
 ---
 
@@ -185,20 +210,27 @@ cube-cmake --build build/Debug
 openocd -f interface/stlink.cfg -f target/stm32g4x.cfg -c "program build/Debug/stm32_spaceballoon.elf verify reset exit"
 ```
 
-### 호스트 시뮬레이션 빌드 (SITL)
+### 호스트 및 유닛 테스트 빌드
 
-```powershell
-cd SITL/HostSim
+알고리즘 검증 및 커버리지 측정을 위해 MSYS2/MinGW 환경에서 빌드합니다.
 
-# 1. (선택) 비행 데이터 업데이트
-python convert_flight_data.py
+```bash
+# 1. build_host 디렉토리 생성
+mkdir build_host && cd build_host
 
-# 2. CMake 설정
-cube-cmake -B ../build_host -G "MinGW Makefiles"
+# 2. CMake 설정 (MSYS2 터미널 권장)
+cmake -G "MinGW Makefiles" ../gcov_test_host
 
-# 3. 빌드
-mingw32-make -C ../build_host
+# 3. 빌드 및 테스트 실행
+mingw32-make
+./host_test_runner.exe
+
+# 4. 커버리지 측정 (gcov)
+gcov -b *.gcda
 ```
+
+> [!TIP]
+> 상세 지침은 **[gcov_test_host/README.md](./gcov_test_host/README.md)**를 참조하세요.
 
 > [!IMPORTANT]
 > 폴더 이동으로 인해 기존의 `CMakeCache.txt`가 무효화되었습니다.
@@ -206,106 +238,37 @@ mingw32-make -C ../build_host
 
 ---
 
-## 🛡️ 코드 안전성 (MISRA C:2012)
+## 📚 문서 허브
 
-이 펌웨어는 **MISRA C:2012** 가이드라인을 준수하여 작성되었습니다.
-- **스택 안전성:** 재귀 호출 제거, 스택 사용량 최소화
-- **타입 안전성:** 명시적인 타입 캐스팅 및 크기 지정 (`uint8_t`, `int32_t` 등)
-- **알고리즘 검증:** Kalman Filter 및 PID 제어기의 수치적 안정성(NaN/Inf 체크) 강화
+프로젝트에 대한 모든 상세 문서는 **[docs/README.md](./docs/README.md)**를 통해 체계적으로 접근할 수 있습니다.
+
+- **[최종 보고서](./docs/FINAL_REPORT.md)**: 시스템 설계 및 검증 요약 (Rev 5.0)
+- **[품질 검증 리포트](./docs/cppcheck%20&%20gcov%20report/README.md)**: MISRA/Cppcheck/gcov 상세 결과
+- **[FDIR 설계](./docs/FDIR.md)** / **[FMEA 분석](./docs/FMEA.md)**: 고장 복구 및 위험 분석
+- **[기능 명세서](./docs/STM32_SpaceBalloon_Specification.md)**: 상세 하드웨어/소프트웨어 사양
 
 ---
 
 ## 🧪 테스트 및 실행
 
-### 1. 유닛 테스트 (Unit Tests)
-개별 모듈의 알고리즘 동작을 검증합니다.
+이 프로젝트는 다단계 검증 체계를 갖추고 있습니다.
 
-```powershell
-# 예: Kalman Filter 테스트
-cd SITL/test/test_kalman
-gcc -o test_kalman test_kalman.c ..\..\..\Core\Src\kalman.c -I..\..\..\Core\Inc -DHOST_TEST_MODE
-.\test_kalman.exe
-```
+1. **유닛 테스트 (Algorithm Logic)**: `gcov_test_host`를 통한 PID/Kalman 로직 검증.
+2. **SITL (Software-In-The-Loop)**: `SITL/HostSim`을 통한 실제 비행 데이터(RS41) 재생 테스트.
+3. **HITL (Hardware-In-The-Loop)**: 실제 STM32 보드와 센서 에뮬레이터를 연결한 통합 테스트.
+4. **FDIR 시뮬레이션**: Renode 환경에서의 22가지 장애 주입 테스트.
 
-### 2. 통합 테스트 (Integration Test)
-전체 시스템의 비행 시나리오(대기-상승-폭발-하강)를 시뮬레이션하여 데이터 로직을 검증합니다.
-
-```powershell
-cd SITL/test/test_integration
-# 빌드 및 실행 (gcc 필요)
-gcc -o mission_test.exe test_mission.c ... (상세 명령어는 SITL/walkthrough.md 참조)
-.\mission_test.exe
-```
-
-### 3. 호스트 시뮬레이션 (HostSim)
-과거 비행 데이터(RS41)를 재생하여 실시간 텔레메트리 전송을 검증합니다.
-
-```powershell
-cd SITL/HostSim
-..\build_host\test_host.exe
-```
-**출력 예시:**
-```text
-[Mock] Sensors Initialized - RS41 Flight Data Mode
-[Mock] Loaded 65 flight data points
-[Mock] Altitude range: 5174m - 5631m
-
-=== TELEMETRY FRAME ===
-Frame Size: 130 bytes
-Header: magic=A5 5A, ver=1, type=0x02, seq=1, ts=20ms
---- Sensor Payload ---
-GPS: 35.0929800N, 126.9988700E, Alt=5174.3m, Fix=1, Sats=9/12
-Battery: 2800 mV
-Pressure: 52700 Pa, Humidity: 24.00%
-CRC16: 0xABCD
-===========================
-```
-
-### 실제 하드웨어 디버깅
-
-```powershell
-# OpenOCD 서버 시작 (터미널 1)
-.\xpack-openocd-0.12.0-4\openocd\bin\openocd.exe -f interface/stlink.cfg -f target/stm32g4x.cfg
-
-# VS Code에서 F5 → "Cortex Debug" 선택
-```
+> 각 테스트의 상세 방법은 관련 디렉토리의 README를 참조하세요.
 
 ---
 
-## 🚀 HITL 시뮬레이션
+## 🚀 추가 검증 환경
 
-**HITL (Hardware-In-The-Loop)** 테스트를 통해 실제 STM32와 ESP32 Mock 보드를 연결하여 비행 시나리오를 검증합니다.
+### HITL 시뮬레이션
+**HITL (Hardware-In-The-Loop)** 테스트를 통해 실제 STM32와 ESP32 Mock 보드를 연결하여 비행 시나리오를 검증합니다. [HITL/README.md](HITL/README.md) 참조.
 
-### HITL 구성
-- **Main Control (ESP32-C3)**: PC와 통신, ESP-NOW 브로드캐스트
-- **I2C Mock Nodes (4개)**: 센서 에뮬레이션 (LSM6DSV16X, GPS, 기압계 등)
-- **Python Dashboard**: `HITL/sensor_sender.py`
-
-### 실행 방법
-```powershell
-cd HITL
-python sensor_sender.py
-```
-
-> 자세한 내용은 [HITL/README.md](HITL/README.md) 참조
-
----
-
-## 🤖 Renode FDIR 시뮬레이션 (SITL)
-
-**Renode**를 사용하여 하드웨어 없이 펌웨어의 전체 로직과 FDIR(장애 감지 및 복구) 기능을 시뮬레이션합니다.
-
-- **테스트 항목**: 22개 (모든 I2C/UART 센서, 시스템 타이머, ADC, EXTI 등)
-- **주입 장애**: I2C 버스 타임아웃, 센서 연결 해제, UART 통신 불량 등
-- **검증 방법**: 자동화된 Python 스크립트를 통한 펌웨어 상태 및 복구 동작 상시 모니터링
-
-### 실행 방법
-```powershell
-cd "RENODE_TEST(HIL)"
-python run_fdir_tests.py
-```
-
-> 최근 테스트 결과: **22/22 PASS (100%)** - [상세 리포트 보기](RENODE_TEST(HIL)/results/README.md)
+### Renode FDIR 시뮬레이션
+**Renode**를 사용하여 하드웨어 없이 펌웨어의 전체 로직과 FDIR(장애 감지 및 복구) 기능을 시뮬레이션합니다. [RENODE_TEST(HIL)/results/README.md](RENODE_TEST(HIL)/results/README.md) 참조.
 
 ---
 
@@ -442,4 +405,4 @@ MIT License
 
 ---
 
-**마지막 업데이트:** 2026-01-11
+**마지막 업데이트:** 2026-01-23

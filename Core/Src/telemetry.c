@@ -17,6 +17,7 @@
 
 #ifdef HOST_TEST_MODE
 #include <string.h>
+#include <stdio.h>
 #endif
 
 /**
