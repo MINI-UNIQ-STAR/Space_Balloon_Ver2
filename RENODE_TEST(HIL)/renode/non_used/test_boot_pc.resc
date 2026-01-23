@@ -1,0 +1,6 @@
+mach create
+machine LoadPlatformDescription @RENODE_TEST(HIL)/renode/platforms/stm32g431.repl
+sysbus LoadELF @build/Debug/stm32_spaceballoon.elf
+emulation RunFor "00:00:05"
+cpu
+q

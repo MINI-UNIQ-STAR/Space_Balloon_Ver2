@@ -1,0 +1,198 @@
+### Renode Integrated Test Script - All Sensors Validation (Phase 7)
+### STM32G431 Space Balloon Radiosonde - Full System Verification
+###
+### 목적: 8개 I2C 센서 및 UART 센서의 동시 동작 및 데이터시트 준수 여부 검증
+###
+### 사용 방법:
+###   renode --disable-xwt --console renode/scripts/test_all_sensors_phase7.resc
+###
+### 전제조건:
+###   1. 펌웨어 빌드: ../build/stm32_spaceballoon.elf
+###   2. 센서 DLL 빌드: build_dll/bin/Release/SensorPeripherals.dll (선택사항, 내장 센서 사용 시)
+###
+### 검증 대상 (주소 확인됨):
+###   [I2C1 - Downside]
+###   - LSM6DSV16X (IMU) @ 0x6B (6축 가속도/자이로)
+###   - MLX90393 (Mag)   @ 0x0C (3축 자기장)
+###   - GDK101 (Rad)     @ 0x18 (방사선)
+###
+###   [I2C3 - Upside]
+###   - SHT31 (Temp/Hum) @ 0x44 (온습도)
+###   - MS5611 (Baro)    @ 0x77 (기압/온도)
+###   - CM1107N (CO2)    @ 0x31 (UART-over-I2C 프로토콜)
+###   - MCP9600 (Thermo) @ 0x60 (열전대 온도)
+###   - SEN0321 (Ozone)  @ 0x70 (오존)
+###
+###   [UART]
+###   - XA1110 (GPS)     @ USART1
+###   - PMS3003 (PM)     @ USART3
+
+# 로그 레벨 설정
+logLevel 3
+
+echo "========================================"
+echo "Phase 7: 전체 센서 통합 테스트"
+echo "========================================"
+echo ""
+
+# 머신 생성
+mach create "radiosonde"
+
+# 센서/페리페럴 DLL 로드 (C# 센서 사용을 위해)
+# 만약 빌드된 DLL이 없다면 기본 내장 모델이나 Mock 사용
+echo "DLL 로딩..."
+# 경로는 실행 위치(renode 폴더) 기준
+python "import os; dll_path = 'build_dll/bin/Release/SensorPeripherals.dll'; self.Machine.LoadPeripheralsAssembly(dll_path) if os.path.exists(dll_path) else None"
+
+# 플랫폼 정의 로드
+echo "플랫폼 로딩..."
+machine LoadPlatformDescription @platforms/stm32g431_with_sensors.repl
+echo "  ✓ stm32g431_with_sensors.repl 로드 완료"
+
+# 펌웨어 ELF 파일 로드
+echo "펌웨어 로딩..."
+# 빌드 경로는 프로젝트 루트 기준이므로 ../../ 사용 (RENODE_TEST(HIL)/renode -> ProjectRoot/build)
+sysbus LoadELF @../../build/Debug/stm32_spaceballoon.elf
+echo "  ✓ 펌웨어 로드 완료"
+echo ""
+
+echo "========================================"
+echo "I2C 버스 구성 확인"
+echo "========================================"
+echo ""
+
+echo "[I2C1 - Downside Bus]"
+i2c1
+echo ""
+
+echo "[I2C3 - Upside Bus]"
+i2c3
+echo ""
+
+echo "========================================"
+echo "로깅 설정 (데이터시트 검증용)"
+echo "========================================"
+echo ""
+
+# I2C1 센서 로깅 (센서 등록 전에는 버스 로깅만 유효)
+logLevel 0 i2c1
+# logLevel 0 i2c1.lsm6dsv16x (DLL 로드 실패 시 객체 없음)
+
+# I2C3 센서 로깅
+logLevel 0 i2c3
+# logLevel 0 i2c3.cm1107n (Python 등록 후 가능)
+
+echo "  ✓ I2C 버스 상세 로깅 활성화"
+echo ""
+
+# CM1107N (CO2) - Python 모델 로드 (DLL 빌드 문제 우회용)
+echo "CM1107N (Python) 로딩..."
+# 절대 경로 사용 (경로 문제 해결을 위해)
+python "sensor_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\cm1107n.py'; print('Loading: ' + sensor_path); execfile(sensor_path)"
+python "self.Machine['sysbus.i2c3'].Register(CM1107N(), 0x31)"
+echo "  ✓ CM1107N Python 모델 등록 완료 (0x31)"
+
+# MS5611 (Baro) - Python 모델 로드
+echo "MS5611 (Python) 로딩..."
+python "ms_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\ms5611.py'; execfile(ms_path)"
+python "self.Machine['sysbus.i2c3'].Register(MS5611(), 0x77)"
+echo "  ✓ MS5611 Python 모델 등록 완료 (0x77)"
+
+# LSM6DSV16X (IMU) - Python 모델 로드
+echo "LSM6DSV16X (Python) 로딩..."
+python "lsm_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\lsm6dsv16x.py'; execfile(lsm_path)"
+python "self.Machine['sysbus.i2c1'].Register(LSM6DSV16X(), 0x6B)"
+echo "  ✓ LSM6DSV16X Python 모델 등록 완료 (0x6B)"
+
+# SHT31 (Humid)
+python "sht_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\sht31.py'; execfile(sht_path)"
+python "self.Machine['sysbus.i2c3'].Register(SHT31(), 0x44)"
+
+# MCP9600 (Thermo)
+python "mcp_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\mcp9600.py'; execfile(mcp_path)"
+python "self.Machine['sysbus.i2c3'].Register(MCP9600(), 0x60)"
+
+# SEN0321 (Ozone)
+python "sen_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\sen0321.py'; execfile(sen_path)"
+python "self.Machine['sysbus.i2c3'].Register(SEN0321(), 0x70)"
+
+# MLX90393 (Mag)
+python "mlx_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\mlx90393.py'; execfile(mlx_path)"
+python "self.Machine['sysbus.i2c1'].Register(MLX90393(), 0x0C)"
+
+# GDK101 (Rad)
+python "gdk_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\gdk101.py'; execfile(gdk_path)"
+python "self.Machine['sysbus.i2c1'].Register(GDK101(), 0x18)"
+
+echo "  ✓ 모든 Python 센서 모델 등록 완료"
+
+# 센서 등록 후 로깅 시도
+logLevel 0 i2c3.cm1107n
+
+echo "========================================"
+echo "시뮬레이션 시작 (10초)"
+
+echo "========================================"
+echo "I2C 버스 구성 확인"
+echo "========================================"
+echo ""
+
+echo "[I2C1 - Downside Bus]"
+i2c1
+echo ""
+
+echo "[I2C3 - Upside Bus]"
+i2c3
+echo ""
+
+echo "========================================"
+echo "로깅 설정 (데이터시트 검증용)"
+echo "========================================"
+echo ""
+
+# I2C1 센서 로깅
+logLevel 0 i2c1
+logLevel 0 i2c1.lsm6dsv16x
+logLevel 0 i2c1.mlx90393
+logLevel 0 i2c1.gdk101
+
+# I2C3 센서 로깅
+logLevel 0 i2c3
+logLevel 0 i2c3.ms5611
+logLevel 0 i2c3.sht31
+logLevel 0 i2c3.cm1107n
+logLevel 0 i2c3.mcp9600
+logLevel 0 i2c3.sen0321
+
+echo "  ✓ 모든 I2C 센서에 대해 상세 로깅 활성화"
+echo ""
+
+echo "========================================"
+echo "시뮬레이션 시작 (10초)"
+echo "========================================"
+echo ""
+echo "검증 포인트:"
+echo "1. CM1107N: UART 프로토콜(0x11...)이 아닌 I2C 프로토콜 확인"
+echo "   (주의: 펌웨어 드라이버가 UART-over-I2C를 사용하는지 로그로 확인)"
+echo "2. LSM6DSV16X: WHO_AM_I (0x0F) -> 0x70 응답 확인"
+echo "3. MS5611: PROM 읽기 및 ADC 변환 명령 확인"
+echo "4. 기타 센서들의 정상적인 Read/Write 트랜잭션 확인"
+echo ""
+
+# start 명령어 제거 (RunFor가 시작함)
+# FDIR 테스트 러너 호환을 위해 자동 실행 비활성화 (필요시 주석 해제하여 수동 실행)
+# emulation RunFor "00:00:10"
+# pause  <-- RunFor 끝나면 자동으로 멈춤 (필요시 추가)
+
+echo ""
+echo "========================================"
+echo "시뮬레이션 완료"
+echo "========================================"
+echo ""
+echo "로그를 분석하여 다음 사항을 확인하세요:"
+echo "1. [I2C3] CM1107N Read: 5바이트 응답 여부"
+echo "2. [I2C1] LSM6DSV16X: 0x0F 레지스터 접근 여부"
+echo "3. [I2C3] MS5611: 0xA0~0xAE PROM 읽기 여부"
+echo ""
+
+quit

@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RENODE_HOST = "localhost"
 RENODE_PORT = 1234
 RENODE_PATH = r"C:\Program Files\Renode\bin\Renode.exe"
-SCRIPT_PATH = "renode/scripts/test_firmware.resc"
+SCRIPT_PATH = "renode/scripts/test_all_sensors_phase7.resc"
 OUTPUT_FILE = "fdir_test_results.csv"
 
 def run_test(tn, test_case):

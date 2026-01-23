@@ -6,6 +6,9 @@ HostSim/build/
 *.d
 *.su
 
+# Tools (Renode binaries exceed GitHub 100MB limit)
+tools/
+
 # Binary Files
 *.elf
 *.bin
@@ -25,3 +28,4 @@ HostSim/build/
 Thumbs.db
 Desktop.ini
 STM32G431CBUX_FLASH.ld
+nul

@@ -1,23 +1,23 @@
-ID  , Name                              , Result, Timestamp
-U-01, Firmware Boot Verification        , PASS  , 2026-01-11 19:28:02
-U-02, GPIO Port Activity                , PASS  , 2026-01-11 19:28:13
-U-03, Timer Interrupt Test              , PASS  , 2026-01-11 19:28:19
-S-01, IMU I2C Fail (LSM6DSV16X)         , PASS  , 2026-01-11 19:28:40
-S-02, Magnetometer I2C Fail (MLX90393)  , PASS  , 2026-01-11 19:29:01
-S-03, Radiation Sensor I2C Fail (GDK101), PASS  , 2026-01-11 19:29:22
-S-04, Ozone Sensor I2C Fail (SEN0321)   , PASS  , 2026-01-11 19:29:43
-S-07, Barometer I2C Fail (MS5611)       , PASS  , 2026-01-11 19:30:04
-S-08, Humidity Sensor I2C Fail (SHT31D) , PASS  , 2026-01-11 19:30:25
-S-09, Thermocouple I2C Fail (MCP9600)   , PASS  , 2026-01-11 19:30:46
-S-11, CO2 Sensor I2C Fail (CM1107N)     , PASS  , 2026-01-11 19:31:07
-S-05, GPS UART Fail (XA1110)            , PASS  , 2026-01-11 19:31:28
-S-06, Dust Sensor UART Fail (PMS3003)   , PASS  , 2026-01-11 19:31:49
-S-10, DS18B20 1-Wire (Ext Temp)         , PASS  , 2026-01-11 19:32:05
-H-01, Kapton Heater PWM (PA6)           , PASS  , 2026-01-11 19:32:21
-H-02, Minibulb PWM (PC6)                , PASS  , 2026-01-11 19:32:38
-T-01, UART3 Periodic Activity (20ms)    , PASS  , 2026-01-11 19:32:49
-P-01, PPS Sync (GPS 1Hz)                , PASS  , 2026-01-11 19:33:05
-P-02, ADC Battery Monitor (PA1)         , PASS  , 2026-01-11 19:33:16
-P-03, Timer2 (Telemetry Tick)           , PASS  , 2026-01-11 19:33:27
-P-04, Timer6 (Main Loop Tick)           , PASS  , 2026-01-11 19:33:38
-P-06, EXTI Interrupts (Sensors)         , PASS  , 2026-01-11 19:33:49
+ID,Name,Result,Timestamp
+U-01,Firmware Boot Verification,PASS,2026-01-18 21:49:11
+U-02,GPIO Port Activity,PASS,2026-01-18 21:49:22
+U-03,Timer Interrupt Test,PASS,2026-01-18 21:49:28
+S-01,IMU I2C Fail (LSM6DSV16X),PASS,2026-01-18 21:49:49
+S-02,Magnetometer I2C Fail (MLX90393),PASS,2026-01-18 21:50:10
+S-03,Radiation Sensor I2C Fail (GDK101),PASS,2026-01-18 21:50:31
+S-04,Ozone Sensor I2C Fail (SEN0321),PASS,2026-01-18 21:50:52
+S-07,Barometer I2C Fail (MS5611),PASS,2026-01-18 21:51:13
+S-08,Humidity Sensor I2C Fail (SHT31D),PASS,2026-01-18 21:51:35
+S-09,Thermocouple I2C Fail (MCP9600),PASS,2026-01-18 21:51:56
+S-11,CO2 Sensor I2C Fail (CM1107N),PASS,2026-01-18 21:52:17
+S-05,GPS UART Fail (XA1110),PASS,2026-01-18 21:52:38
+S-06,Dust Sensor UART Fail (PMS3003),PASS,2026-01-18 21:52:59
+S-10,DS18B20 1-Wire (Ext Temp),PASS,2026-01-18 21:53:15
+H-01,Kapton Heater PWM (PA6),PASS,2026-01-18 21:53:31
+H-02,Minibulb PWM (PC6),PASS,2026-01-18 21:53:47
+T-01,UART3 Periodic Activity (20ms),PASS,2026-01-18 21:53:58
+P-01,PPS Sync (GPS 1Hz),PASS,2026-01-18 21:54:14
+P-02,ADC Battery Monitor (PA1),PASS,2026-01-18 21:54:25
+P-03,Timer2 (Telemetry Tick),PASS,2026-01-18 21:54:36
+P-04,Timer6 (Main Loop Tick),PASS,2026-01-18 21:54:47
+P-06,EXTI Interrupts (Sensors),PASS,2026-01-18 21:54:58

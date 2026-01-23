@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SensorPeripherals")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+af4f41fadba5dd2abadece8b061d8222d3f72e9e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9699d8e60104e1eb9463e2081906985ff21d17dd")]
 [assembly: System.Reflection.AssemblyProductAttribute("SensorPeripherals")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SensorPeripherals")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,0 +1,59 @@
+# Flight Logic Verification Script (Embedded Python)
+mach create "radiosonde"
+machine LoadPlatformDescription @renode/platforms/stm32g431_with_sensors.repl
+
+echo "Loading SHT31 Python Model (Embedded)..."
+
+python """
+from Antmicro.Renode.Peripherals.I2C import II2CPeripheral
+import System
+import os
+
+# Debug: Proof of Load
+try:
+    with open('sht31_embed_loaded.txt', 'w') as f:
+        f.write("LOADED")
+except: pass
+
+class SHT31(II2CPeripheral):
+    def __init__(self): 
+        self.Reset()
+    def Reset(self): 
+        self.state = "IDLE"
+        self.t = -10.0 # Cold start
+        self.rh = 50.0
+        self.heater_on = False
+    def Write(self, data):
+        if len(data) >= 2:
+            # Heater ON Command: 0x30 0x6D
+            if data[0] == 0x30 and data[1] == 0x6D:
+                self.heater_on = True
+                print(">>> HEATER ON DETECTED <<<")
+                try:
+                    with open('heater_success.txt', 'w') as f:
+                        f.write("SUCCESS: Heater Enabled")
+                except: pass
+            elif data[0] == 0x2C: 
+                self.state = "READ"
+    def Read(self, count):
+        if self.state == "READ":
+            t_raw = int((self.t + 45) * 65535 / 175)
+            # Return Temp(2)+CRC(1)+Hum(2)+CRC(1)
+            return System.Array[System.Byte]([(t_raw>>8)&0xFF, t_raw&0xFF, 0, 0, 0, 0])
+        return System.Array[System.Byte]([0]*count)
+    def FinishTransmission(self): pass
+
+# Register SHT31 to I2C3
+self.Machine['sysbus.i2c3'].Register(SHT31(), 0x44)
+"""
+
+echo "SHT31 Loaded. Loading Firmware..."
+sysbus LoadELF @../build/Debug/stm32_spaceballoon.elf
+
+echo "Injecting Battery Voltage to ALL Channels..."
+python "adc = self.Machine['sysbus.adc1']; [adc.FeedSample(2480, i) for i in range(19)]"
+
+echo "Starting Simulation (20s)..."
+emulation RunFor "00:00:20"
+
+echo "Done. Check 'heater_success.txt' in current folder."

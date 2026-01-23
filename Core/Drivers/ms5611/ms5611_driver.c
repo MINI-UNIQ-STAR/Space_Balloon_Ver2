@@ -159,13 +159,37 @@ int32_t MS5611_Read_PT(ms5611_ctx_t *ctx, int32_t *press_pa, int32_t *temp_c_x10
             int64_t dT = (int64_t)ctx->D2_raw - ((int64_t)ctx->C[5] << 8);
             
             // TEMP = 2000 + dT * C6 / 2^23
-            int64_t TEMP = 2000 + (dT * (int64_t)ctx->C[6] >> 23);
+            int64_t TEMP = 2000 + ((dT * (int64_t)ctx->C[6]) >> 23);
             
             // OFF = C2 * 2^16 + (C4 * dT) / 2^7
-            int64_t OFF = ((int64_t)ctx->C[2] << 16) + (( (int64_t)ctx->C[4] * dT ) >> 7);
+            int64_t OFF = ((int64_t)ctx->C[2] << 16) + (((int64_t)ctx->C[4] * dT) >> 7);
             
             // SENS = C1 * 2^15 + (C3 * dT) / 2^8
-            int64_t SENS = ((int64_t)ctx->C[1] << 15) + (( (int64_t)ctx->C[3] * dT ) >> 8);
+            int64_t SENS = ((int64_t)ctx->C[1] << 15) + (((int64_t)ctx->C[3] * dT) >> 8);
+            
+            // Second order temperature compensation (for low temperature accuracy)
+            int64_t T2 = 0;
+            int64_t OFF2 = 0;
+            int64_t SENS2 = 0;
+            
+            if (TEMP < 2000) {
+                // Low temperature (< 20°C)
+                T2 = (dT * dT) >> 31;
+                int64_t tempDiff = (TEMP - 2000) * (TEMP - 2000);
+                OFF2 = (5 * tempDiff) >> 1;
+                SENS2 = (5 * tempDiff) >> 2;
+                
+                if (TEMP < -1500) {
+                    // Very low temperature (< -15°C)
+                    int64_t tempDiff2 = (TEMP + 1500) * (TEMP + 1500);
+                    OFF2 += 7 * tempDiff2;
+                    SENS2 += (11 * tempDiff2) >> 1;
+                }
+            }
+            
+            TEMP -= T2;
+            OFF -= OFF2;
+            SENS -= SENS2;
             
             // P = (D1 * SENS / 2^21 - OFF) / 2^15
             int64_t P = (((ctx->D1_raw * SENS) >> 21) - OFF) >> 15;

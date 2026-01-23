@@ -81,12 +81,13 @@ i2c3: I2C.STM32F7_I2C @ sysbus 0x40007800
     ErrorInterrupt -> nvic@73
 
 // I2C3 센서들 (DLL에서 로드)
-i2c3_ms5611: Sensors.MS5611 @ i2c3 0x77
-    // 기압계 센서: 고정밀 압력 및 온도
-    // 압력 범위: 10-1200 mbar
-    // 온도 범위: -40°C ~ +85°C
-    // 해상도: 0.012 mbar
-    // 성층권 시뮬레이션: 0-40km, 10Hz
+// DLL 빌드 실패 시 에러 방지를 위해 주석 처리 (필요시 주석 해제)
+// i2c3_ms5611: Sensors.MS5611 @ i2c3 0x77
+//     // 기압계 센서: 고정밀 압력 및 온도
+//     // 압력 범위: 10-1200 mbar
+//     // 온도 범위: -40°C ~ +85°C
+//     // 해상도: 0.012 mbar
+//     // 성층권 시뮬레이션: 0-40km, 10Hz
 
 // UART1 - GPS XA1110
 usart1: UART.STM32F7_USART @ sysbus 0x40013800
@@ -134,7 +135,8 @@ tim16: Timers.STM32_Timer @ sysbus 0x40014400
 
 // DMA
 dma1: DMA.STM32DMA @ sysbus 0x40020000
-    [0-7] -> nvic@[11-17]
+    [0-6] -> nvic@[11-17]
+    [7] -> nvic@[47]
 
 dma2: DMA.STM32DMA @ sysbus 0x40020400
     [0-7] -> nvic@[56-63]

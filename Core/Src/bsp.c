@@ -56,6 +56,9 @@ void BSP_Sensor_PowerOn(void) {
     HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(SEN_RST_GPIO_Port, SEN_RST_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_SET);
     HAL_Delay(100); 
 #endif
 }

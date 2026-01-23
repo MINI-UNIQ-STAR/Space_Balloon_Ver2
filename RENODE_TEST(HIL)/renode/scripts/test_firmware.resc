@@ -42,11 +42,14 @@ include @renode/sensors/gdk101_i2c.cs
 echo "  [7/7] GPS XA1110 (GNSS)..."
 include @renode/sensors/gps_xa1110.cs
 
-echo "  [8/7] SEN0321 (Ozone)..."
-include @renode/sensors/sps30_i2c.cs
+echo "  [8/10] SEN0321 (Ozone)..."
 include @renode/sensors/sen0321_i2c.cs
-include @renode/sensors/pms3003_uart.cs
+
+echo "  [9/10] CM1107N (CO2)..."
 include @renode/sensors/cm1107n_i2c.cs
+
+echo "  [10/10] PMS3003 (PM)..."
+include @renode/sensors/pms3003_uart.cs
 
 echo "  ✓ 모든 센서 로드 완료"
 echo ""
@@ -65,7 +68,7 @@ machine LoadPlatformDescriptionFromString "i2c3: { ms5611: Sensors.MS5611 @ 0x77
 machine LoadPlatformDescriptionFromString "i2c3: { sht31d: Sensors.SHT31D @ 0x44 }"
 machine LoadPlatformDescriptionFromString "i2c3: { mcp9600: Sensors.MCP9600 @ 0x67 }"
 machine LoadPlatformDescriptionFromString "i2c3: { sen0321: Sensors.SEN0321 @ 0x79 }"
-machine LoadPlatformDescriptionFromString "i2c3: { cm1107n: Antmicro.Renode.Peripherals.I2C.CM1107N @ 0x31 }"
+machine LoadPlatformDescriptionFromString "i2c3: { cm1107n: Sensors.CM1107N @ 0x31 }"
 
 echo "  ✓ 플랫폼 로드 완료"
 echo ""
