@@ -246,6 +246,142 @@ int32_t BSP_UART_Read(uint8_t *pData, uint16_t Len) {
 }
 
 /* ========================================================================== */
+/* UART1 인터페이스 (GPS 전용)                                                */
+/* ========================================================================== */
+
+/** @brief UART1 핸들 (GPS) */
+extern UART_HandleTypeDef huart1;
+
+/**
+ * @brief UART1 데이터 전송 (GPS Config)
+ * @param pData 전송 데이터
+ * @param Len 길이
+ * @return int32_t HAL 상태
+ */
+int32_t BSP_UART1_Write(uint8_t *pData, uint16_t Len) {
+#ifndef UNIT_TEST
+    return HAL_UART_Transmit(&huart1, pData, Len, 100);
+#else
+    char tmp[128];
+    if (Len < 128) {
+        memcpy(tmp, pData, Len);
+        tmp[Len] = 0;
+        printf("UART1 TX(GPS): %s", tmp);
+    }
+    return 0;
+#endif
+}
+
+/**
+ * @brief GPS DMA 수신 시작
+ * @details Circular 모드로 수신 시작
+ */
+void BSP_UART1_Start_DMA_Rx(uint8_t *buffer, uint16_t size) {
+#ifndef UNIT_TEST
+    HAL_UART_Receive_DMA(&huart1, buffer, size);
+#endif
+}
+
+/**
+ * @brief GPS DMA 수신 데이터 처리 (Ring Buffer)
+ * @details DMA는 Circular 모드로 버퍼를 계속 채움 (Head 이동)
+ *          이 함수는 이전 위치(Tail)부터 현재 Head까지 데이터를 읽어 콜백 전달
+ */
+void BSP_UART1_Process_DMA(uint8_t *buffer, uint16_t size, void (*callback)(uint8_t)) {
+#ifndef UNIT_TEST
+    static uint16_t tail_idx = 0;
+    
+    // CNDTR: Remaining data items to transfer
+    // Head index = BufferSize - CNDTR
+    uint16_t head_idx = size - __HAL_DMA_GET_COUNTER(huart1.hdmarx);
+    
+    if (head_idx >= size) head_idx = 0; // Safety check
+
+    while (tail_idx != head_idx) {
+        // Read byte
+        uint8_t byte = buffer[tail_idx];
+        
+        // Callback process
+        if (callback) {
+            callback(byte);
+        }
+        
+        // Advance tail
+        tail_idx++;
+        if (tail_idx >= size) tail_idx = 0;
+    }
+#endif
+}
+
+/* ========================================================================== */
+/* UART2 인터페이스 (PMS3003 전용)                                            */
+/* ========================================================================== */
+
+/** @brief UART2 핸들 (PMS) */
+extern UART_HandleTypeDef huart2;
+
+/**
+ * @brief UART2 데이터 전송 (PMS Config)
+ * @param pData 전송 데이터
+ * @param Len 길이
+ * @return int32_t HAL 상태
+ */
+int32_t BSP_UART2_Write(uint8_t *pData, uint16_t Len) {
+#ifndef UNIT_TEST
+    return HAL_UART_Transmit(&huart2, pData, Len, 100);
+#else
+    char tmp[128];
+    if (Len < 128) {
+        memcpy(tmp, pData, Len);
+        tmp[Len] = 0;
+        printf("UART2 TX(PMS): %s", tmp);
+    }
+    return 0;
+#endif
+}
+
+/**
+ * @brief PMS DMA 수신 시작
+ * @details Circular 모드로 수신 시작
+ */
+void BSP_UART2_Start_DMA_Rx(uint8_t *buffer, uint16_t size) {
+#ifndef UNIT_TEST
+    HAL_UART_Receive_DMA(&huart2, buffer, size);
+#endif
+}
+
+/**
+ * @brief PMS DMA 수신 데이터 처리 (Ring Buffer)
+ */
+void BSP_UART2_Process_DMA(uint8_t *buffer, uint16_t size, void (*callback)(uint8_t)) {
+#ifndef UNIT_TEST
+    static uint16_t tail_idx = 0;
+    
+    // CNDTR: Remaining data items to transfer
+    // Head index = BufferSize - CNDTR
+    uint16_t head_idx = size - __HAL_DMA_GET_COUNTER(huart2.hdmarx);
+    
+    if (head_idx >= size) head_idx = 0; // Safety check
+
+    while (tail_idx != head_idx) {
+        // Read byte
+        uint8_t byte = buffer[tail_idx];
+        
+        // Callback process
+        if (callback) {
+            callback(byte);
+        }
+        
+        // Advance tail
+        tail_idx++;
+        if (tail_idx >= size) tail_idx = 0;
+    }
+#else
+    // Mock
+#endif
+}
+
+/* ========================================================================== */
 /* 시스템 타이머 인터페이스                                                   */
 /* ========================================================================== */
 

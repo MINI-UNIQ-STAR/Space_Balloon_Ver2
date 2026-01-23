@@ -84,7 +84,7 @@ void BSP_Sensor_PowerOn(void);
  * @param[in] Len 데이터 길이 (바이트)
  * @return int32_t 0=성공, 음수=HAL 에러 코드
  * @details HAL_I2C_Mem_Write() 래퍼 함수, 타임아웃 1000ms
- * @note I2C1 핀: PB8 (SCL), PB9 (SDA), 400kHz Fast Mode
+ * @note I2C1 핀: PB8 (SCL), PB9 (SDA), 100kHz Standard Mode
  */
 int32_t BSP_I2C1_WriteReg(uint16_t DevAddr, uint16_t Reg, uint8_t *pData, uint16_t Len);
 
@@ -135,7 +135,7 @@ int32_t BSP_I2C1_Read(uint16_t DevAddr, uint8_t *pData, uint16_t Len);
  * @param[in] Len 데이터 길이 (바이트)
  * @return int32_t 0=성공, 음수=HAL 에러 코드
  * @details HAL_I2C_Mem_Write() 래퍼 함수, 타임아웃 1000ms
- * @note I2C3 핀: PC0 (SCL), PC1 (SDA), 400kHz Fast Mode
+ * @note I2C3 핀: PC0 (SCL), PC1 (SDA), 100kHz Standard Mode
  */
 int32_t BSP_I2C3_WriteReg(uint16_t DevAddr, uint16_t Reg, uint8_t *pData, uint16_t Len);
 
@@ -179,6 +179,66 @@ int32_t BSP_UART_Write(uint8_t *pData, uint16_t Len);
 int32_t BSP_UART_Read(uint8_t *pData, uint16_t Len);
 
 /** @} */ // end of BSP_UART
+
+/**
+ * @defgroup BSP_UART1 UART1 통신 함수 (GPS 전용)
+ * @{
+ */
+
+/**
+ * @brief UART(GPS) 데이터 전송 (UART1)
+ * @param pData 전송 데이터 버퍼
+ * @param Len 데이터 길이 (바이트)
+ * @return int32_t 0 = 성공, 기타 = HAL 오류 코드
+ */
+int32_t BSP_UART1_Write(uint8_t *pData, uint16_t Len);
+
+/**
+ * @brief GPS (UART1) DMA 수신 시작
+ * @param buffer 수신 버퍼 포인터
+ * @param size 버퍼 크기
+ */
+void BSP_UART1_Start_DMA_Rx(uint8_t *buffer, uint16_t size);
+
+/**
+ * @brief GPS (UART1) 수신 데이터 처리 (Ring Buffer)
+ * @param buffer 수신 버퍼 포인터
+ * @param size 버퍼 크기
+ * @param callback 바이트 처리 콜백 함수
+ */
+void BSP_UART1_Process_DMA(uint8_t *buffer, uint16_t size, void (*callback)(uint8_t));
+
+/** @} */ // end of BSP_UART1
+
+/**
+ * @defgroup BSP_UART2 UART2 통신 함수 (PMS3003 전용)
+ * @{
+ */
+
+/**
+ * @brief UART(PMS) 데이터 전송 (UART2)
+ * @param pData 전송 데이터 버퍼
+ * @param Len 데이터 길이 (바이트)
+ * @return int32_t 0 = 성공, 기타 = HAL 오류 코드
+ */
+int32_t BSP_UART2_Write(uint8_t *pData, uint16_t Len);
+
+/**
+ * @brief PMS (UART2) DMA 수신 시작
+ * @param buffer 수신 버퍼 포인터
+ * @param size 버퍼 크기
+ */
+void BSP_UART2_Start_DMA_Rx(uint8_t *buffer, uint16_t size);
+
+/**
+ * @brief PMS (UART2) 수신 데이터 처리 (Ring Buffer)
+ * @param buffer 수신 버퍼 포인터
+ * @param size 버퍼 크기
+ * @param callback 바이트 처리 콜백 함수
+ */
+void BSP_UART2_Process_DMA(uint8_t *buffer, uint16_t size, void (*callback)(uint8_t));
+
+/** @} */ // end of BSP_UART2
 
 /**
  * @defgroup BSP_TIME 시간 관리 함수
