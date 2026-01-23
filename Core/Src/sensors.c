@@ -139,11 +139,6 @@ static int32_t platform_read_i2c3(void *handle, uint8_t reg, uint8_t *bufp, uint
     return BSP_I2C3_ReadReg((uintptr_t)handle, reg, bufp, len);
 }
 
-// 3. UART
-static int32_t pms_write(void *handle, uint8_t *buf, uint16_t len) {
-    return BSP_UART_Write(buf, len);
-}
-
 // GPS (UART1) Wrapper
 static int32_t gps_write(void *handle, uint8_t *buf, uint16_t len) {
     return BSP_UART1_Write(buf, len);
@@ -152,6 +147,15 @@ static int32_t gps_write(void *handle, uint8_t *buf, uint16_t len) {
 // PMS (UART2) Wrapper
 static int32_t pms_write_uart2(void *handle, uint8_t *buf, uint16_t len) {
     return BSP_UART2_Write(buf, len);
+}
+
+/* --- Internal Byte Handlers for DMA Processing --- */
+static void PMS_Byte_Handler(uint8_t byte) {
+    PMS_ProcessByte(&pms_ctx, byte);
+}
+
+static void GPS_Byte_Handler(uint8_t byte) {
+    XA1110_ProcessByte(&xa_ctx, byte);
 }
 
 /**
@@ -811,9 +815,6 @@ void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100) {
 void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uint16_t *pm2_5) {
 #ifndef HOST_TEST_MODE
     // Process PMS DMA Data (Run every loop ~50Hz to drain buffer)
-    void PMS_Byte_Handler(uint8_t byte) {
-        PMS_ProcessByte(&pms_ctx, byte);
-    }
     BSP_UART2_Process_DMA(pms_rx_buf, PMS_RX_BUF_SIZE, PMS_Byte_Handler);
 #endif
 
@@ -821,11 +822,6 @@ void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uin
     
     // Throttle to 1Hz (1000ms) for I2C and Updates
     if (BSP_GetTick() - last_air < 1000) {
-        // Even if we don't read new I2C data, we should update pointers with latest PMS data
-        // to prevent display lag? Or just updating telemetry once/sec is fine.
-        // But the pointers *pm1_0, *pm2_5 are updated only if we pass this check.
-        // If we want real-time update on pointers, do it here.
-        // Assuming user wants 1Hz update for telemetry.
         return; 
     }
     last_air = BSP_GetTick();
@@ -840,17 +836,6 @@ void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uin
     // Get latest data from ctx (Updated by DMA Process above)
     *pm1_0 = pms_ctx.data.PM_AE_UG_1_0;
     *pm2_5 = pms_ctx.data.PM_AE_UG_2_5;
-    
-    FDIR_ReportSuccess(SENSOR_ID_CO2);
-    FDIR_ReportSuccess(SENSOR_ID_PMS);
-#else
-    
-    // Get latest data from ctx
-    *pm1_0 = pms_ctx.data.PM_AE_UG_1_0;
-    *pm2_5 = pms_ctx.data.PM_AE_UG_2_5;
-    
-    // Auto-increment mock if zero is persisted (optional check)
-    // if (*pm2_5 == 0 && pms_ctx.data.PM_AE_UG_2_5 == 0) *pm2_5 = 0; // Keep 0
     
     FDIR_ReportSuccess(SENSOR_ID_CO2);
     FDIR_ReportSuccess(SENSOR_ID_PMS);
@@ -901,14 +886,6 @@ void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
     
     /* Process incoming DMA data from Circular Buffer */
 #ifndef HOST_TEST_MODE
-    // Callback lambda or helper? C doesn't support lambda easily.
-    // We need a helper function calling XA1110_ProcessByte(&xa_ctx, byte)
-    // Actually, we can just iterate manually here if BSP exposed pointers, 
-    // but BSP_UART1_Process_DMA takes a callback.
-    // Let's define a static helper in this file.
-    void GPS_Byte_Handler(uint8_t byte) {
-        XA1110_ProcessByte(&xa_ctx, byte);
-    }
     BSP_UART1_Process_DMA(gps_rx_buf, GPS_RX_BUF_SIZE, GPS_Byte_Handler);
 #else
     /* Mock: Feed NMEA data if fix is 0 (just to verify parsing on host) */
