@@ -32,7 +32,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MAX_NUM_DEVICES 1
+#define MAX_NUM_DEVICES 2
 
 typedef struct
 {
@@ -70,6 +70,18 @@ void ds18b20_init(void)
     attachedDevices = 0;
 
     state = STATE_SCAN;
+}
+
+void ds18b20_recovery(void) {
+    // Attempt to unstick bus
+    owTouchReset();
+    // Do NOT re-scan to avoid ID swap validation risks
+    // Just resume conversion loop
+    if (attachedDevices > 0) {
+        state = STATE_CONVERT;
+    } else {
+        state = STATE_SCAN; // If never scanned, must scan
+    }
 }
 
 bool ds18b20_work(void)
@@ -176,7 +188,7 @@ static void ds18b20_fetchTemp( uint8_t device )
 {
     if ( device < attachedDevices && devices[ device ].serial[ 0 ] != 0 )
     {
-        // uint8_t i; // Unused in single device mode
+        uint8_t i; // Used in loop below
         uint8_t b1, b2;
 
         owTouchReset();

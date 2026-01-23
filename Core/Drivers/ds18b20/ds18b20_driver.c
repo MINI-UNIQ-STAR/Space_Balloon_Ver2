@@ -11,6 +11,10 @@ void DS18B20_Init_Driver(void) {
     ds18b20_init(); // internal lib init
 }
 
+void DS18B20_Recovery(void) {
+    ds18b20_recovery();
+}
+
 int16_t DS18B20_ReadTemp_x100(uint8_t sensor_idx) {
     // In real system, we address by ROM.
     // Here we just ask for device 0 or 1 found on bus.

@@ -21,6 +21,9 @@ extern "C" {
 
 #include <stdint.h>
 
+/* MISRA C 2023: Float Type Definition */
+typedef float float32_t;
+
 /**
  * @defgroup BSP_ADDRESSES I2C 센서 주소 정의
  * @{

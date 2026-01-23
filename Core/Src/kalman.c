@@ -32,7 +32,7 @@
  *          - 고도 = 0m, 속도 = 0m/s
  *          - 공분산 = 단위 행렬
  */
-void KF_Init(KF_Handle_t *hkf, float dt, float process_noise, float meas_noise) {
+void KF_Init(KF_Handle_t *hkf, float32_t dt, float32_t process_noise, float32_t meas_noise) {
     hkf->dt = dt;
     
     /* Initial State */
@@ -65,19 +65,19 @@ void KF_Init(KF_Handle_t *hkf, float dt, float process_noise, float meas_noise) 
  */
 void KF_Predict(KF_Handle_t *hkf) {
     /* F = [1 dt; 0 1] */
-    float old_alt = hkf->x[0];
-    float old_vel = hkf->x[1];
+    float32_t old_alt = hkf->x[0];
+    float32_t old_vel = hkf->x[1];
     
     /* State Prediction: x = F * x */
     hkf->x[0] = old_alt + (old_vel * hkf->dt);
     hkf->x[1] = old_vel;
     
     /* Covariance Prediction: P = F * P * F^T + Q */
-    float p00 = hkf->P[0][0];
-    float p01 = hkf->P[0][1];
-    float p10 = hkf->P[1][0];
-    float p11 = hkf->P[1][1];
-    float dt = hkf->dt;
+    float32_t p00 = hkf->P[0][0];
+    float32_t p01 = hkf->P[0][1];
+    float32_t p10 = hkf->P[1][0];
+    float32_t p11 = hkf->P[1][1];
+    float32_t dt = hkf->dt;
     
     hkf->P[0][0] = p00 + dt * (p10 + p01) + dt * dt * p11 + hkf->Q[0][0];
     hkf->P[0][1] = p01 + dt * p11 + hkf->Q[0][1];
@@ -95,27 +95,27 @@ void KF_Predict(KF_Handle_t *hkf) {
  *          - 공분산 업데이트: P = (I - K * H) * P
  * @note KF_Predict()를 먼저 호출해야 함
  */
-void KF_Update_Altitude(KF_Handle_t *hkf, float measurement) {
+void KF_Update_Altitude(KF_Handle_t *hkf, float32_t measurement) {
     /* NOTE: KF_Predict() must be called manually by user before this function 
      * to avoid implicit recursion and strictly separate phases */
     
     /* H = [1 0], y = z - H * x */
-    float y = measurement - hkf->x[0];
+    float32_t y = measurement - hkf->x[0];
     
     /* S = H * P * H^T + R */
-    float S = hkf->P[0][0] + hkf->R;
+    float32_t S = hkf->P[0][0] + hkf->R;
     
     /* K = P * H^T * S^-1 */
-    float K0 = hkf->P[0][0] / S;
-    float K1 = hkf->P[1][0] / S;
+    float32_t K0 = hkf->P[0][0] / S;
+    float32_t K1 = hkf->P[1][0] / S;
     
     /* Update State: x = x + K * y */
     hkf->x[0] = hkf->x[0] + (K0 * y);
     hkf->x[1] = hkf->x[1] + (K1 * y);
     
     /* Update Covariance: P = (I - K * H) * P */
-    float p00 = hkf->P[0][0];
-    float p01 = hkf->P[0][1];
+    float32_t p00 = hkf->P[0][0];
+    float32_t p01 = hkf->P[0][1];
     
     hkf->P[0][0] = hkf->P[0][0] - (K0 * p00);
     hkf->P[0][1] = hkf->P[0][1] - (K0 * p01);

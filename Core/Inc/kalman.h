@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include "bsp.h" /* For float32_t definition */
 
 /**
  * @brief 칼만 필터 핸들 구조체
@@ -26,11 +27,11 @@ extern "C" {
  *          측정 모델: H = [1 0] (기압계는 고도만 측정)
  */
 typedef struct {
-    float x[2];          /**< 상태 벡터 [0]=고도(m), [1]=수직 속도(m/s) */
-    float P[2][2];       /**< 공분산 행렬 (State Covariance) */
-    float Q[2][2];       /**< 프로세스 노이즈 공분산 (Process Noise Covariance) */
-    float R;             /**< 측정 노이즈 공분산 (Measurement Noise Covariance, 스칼라) */
-    float dt;            /**< 샘플링 주기 (초, 예: 0.02s = 50Hz) */
+    float32_t x[2];          /**< 상태 벡터 [0]=고도(m), [1]=수직 속도(m/s) */
+    float32_t P[2][2];       /**< 공분산 행렬 (State Covariance) */
+    float32_t Q[2][2];       /**< 프로세스 노이즈 공분산 (Process Noise Covariance) */
+    float32_t R;             /**< 측정 노이즈 공분산 (Measurement Noise Covariance, 스칼라) */
+    float32_t dt;            /**< 샘플링 주기 (초, 예: 0.02s = 50Hz) */
 } KF_Handle_t;
 
 /**
@@ -53,7 +54,7 @@ typedef struct {
  * @note App_Init()에서 1회 호출
  *       권장 설정: KF_Init(&hkf, 0.02f, 0.5f, 0.3f)
  */
-void KF_Init(KF_Handle_t *hkf, float dt, float process_noise, float meas_noise);
+void KF_Init(KF_Handle_t *hkf, float32_t dt, float32_t process_noise, float32_t meas_noise);
 
 /**
  * @brief 칼만 필터 예측 단계 (시간 업데이트)
@@ -80,7 +81,7 @@ void KF_Predict(KF_Handle_t *hkf);
  * @note App_Loop()에서 KF_Predict() 후 호출
  *       업데이트 후 발산 체크 (KF_CheckDivergence) 권장
  */
-void KF_Update_Altitude(KF_Handle_t *hkf, float measurement);
+void KF_Update_Altitude(KF_Handle_t *hkf, float32_t measurement);
 
 /**
  * @brief 칼만 필터 발산 체크 및 복구

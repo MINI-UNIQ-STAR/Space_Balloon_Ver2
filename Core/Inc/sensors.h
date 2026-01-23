@@ -52,7 +52,9 @@ typedef enum {
     SENSOR_ID_SHT,          /**< SHT31-D (온습도, I2C3, 0x44) */
     SENSOR_ID_RAD,          /**< GDK101 (방사선, I2C1, 0x18) */
     SENSOR_ID_EXT_TEMP,     /**< MCP9600 (열전대, I2C3, 0x60) */
-    SENSOR_ID_COUNT         /**< 센서 총 개수 (9개) */
+    SENSOR_ID_TEMP_BAT,     /**< DS18B20 (Battery Temp, 1-Wire) */
+    SENSOR_ID_TEMP_BOARD,   /**< DS18B20 (Board Temp, 1-Wire) */
+    SENSOR_ID_COUNT         /**< 센서 총 개수 (11개) */
 } SensorID_t;
 
 /**
@@ -147,14 +149,14 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]);
  * @details SFLP (Sensor Fusion Low Power) 내장 칼만 필터 출력
  *          App_Loop()에서 Euler 각 (Roll, Pitch)으로 변환
  */
-void Sensors_Read_SFLP(float quaternion[4]);
+void Sensors_Read_SFLP(float32_t quaternion[4]);
 
 /**
  * @brief 자기계 데이터 읽기
  * @param[out] mag 자기장 [x, y, z] (µT)
  * @note MLX90393, I2C1, 50Hz
  */
-void Sensors_Read_Mag(float mag[3]);
+void Sensors_Read_Mag(float32_t mag[3]);
 
 /**
  * @brief 방사선 선량율 읽기
@@ -270,7 +272,7 @@ void Sensors_SetHeater_SHT31(uint8_t enable);
  *          NMEA 문장: GGA (위치), RMC (시간), GSV (위성)
  *          minmea 라이브러리 사용 (CRC 체크섬 검증)
  */
-void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float *alt, uint8_t *fix,
+void Sensors_Read_GPS(int32_t *lat, int32_t *lon, float32_t *alt, uint8_t *fix,
                       uint8_t *sats, uint8_t *sats_view,
                       uint8_t *sats_gps, uint8_t *sats_glonass,
                       uint8_t *sats_galileo, uint8_t *sats_beidou,

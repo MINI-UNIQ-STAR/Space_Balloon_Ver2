@@ -17,20 +17,21 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include "bsp.h"
 
 /**
  * @brief PID 제어기 핸들 구조체
  * @details Anti-windup 기능 포함 (MaxOutput으로 적분항 포화 방지)
  */
 typedef struct {
-    float Kp;                /**< 비례 게인 (Proportional Gain) */
-    float Ki;                /**< 적분 게인 (Integral Gain) */
-    float Kd;                /**< 미분 게인 (Derivative Gain) */
-    float MaxOutput;         /**< 최대 출력 제한 (0.0 ~ MaxOutput) */
+    float32_t Kp;                /**< 비례 게인 (Proportional Gain) */
+    float32_t Ki;                /**< 적분 게인 (Integral Gain) */
+    float32_t Kd;                /**< 미분 게인 (Derivative Gain) */
+    float32_t MaxOutput;         /**< 최대 출력 제한 (0.0 ~ MaxOutput) */
 
-    float Target;            /**< 목표값 (Setpoint, °C) */
-    float IntegratedError;   /**< 누적 오차 (Integral Error) */
-    float LastError;         /**< 이전 오차 (미분 계산용) */
+    float32_t Target;            /**< 목표값 (Setpoint, °C) */
+    float32_t IntegratedError;   /**< 누적 오차 (Integral Error) */
+    float32_t LastError;         /**< 이전 오차 (미분 계산용) */
 } PID_HandleTypeDef;
 
 /**
@@ -50,7 +51,7 @@ typedef struct {
  *          - 보드 히터: PID_Init(&hpid_brd, 500.0f, 5.0f, 0.0f, 100.0f)
  * @note App_Init()에서 1회 호출, 이후 hpid->Target 설정
  */
-void PID_Init(PID_HandleTypeDef *hpid, float Kp, float Ki, float Kd, float MaxOutput);
+void PID_Init(PID_HandleTypeDef *hpid, float32_t Kp, float32_t Ki, float32_t Kd, float32_t MaxOutput);
 
 /**
  * @brief PID 제어 업데이트 (제어 출력 계산)
@@ -68,7 +69,7 @@ void PID_Init(PID_HandleTypeDef *hpid, float Kp, float Ki, float Kd, float MaxOu
  * @note App_Loop()에서 매 주기 호출 (50Hz)
  *       출력값은 Actuators_SetHeater_XXX()로 PWM 듀티 사이클 설정
  */
-float PID_Update(PID_HandleTypeDef *hpid, float measurement, float dt);
+float32_t PID_Update(PID_HandleTypeDef *hpid, float32_t measurement, float32_t dt);
 
 /** @} */ // end of PID_FUNCTIONS
 

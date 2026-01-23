@@ -42,6 +42,7 @@ typedef enum
 
 
 void ds18b20_init(void);
+void ds18b20_recovery(void);
 bool ds18b20_work(void);
 float ds18b20_getTemp( uint8_t device );
 void ds18b20_setResolution(ds18b20_resolution_t resolution);

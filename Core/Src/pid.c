@@ -11,6 +11,7 @@
  * @version 1.0
  */
 
+#include "bsp.h" /* for float32_t */
 #include "pid.h"
 #include <stdbool.h>
 
@@ -26,7 +27,7 @@
  *          - 적분 누적 = 0
  *          - 이전 오차 = 0
  */
-void PID_Init(PID_HandleTypeDef *hpid, float Kp, float Ki, float Kd, float MaxOutput) {
+void PID_Init(PID_HandleTypeDef *hpid, float32_t Kp, float32_t Ki, float32_t Kd, float32_t MaxOutput) {
     hpid->Kp = Kp;
     hpid->Ki = Ki;
     hpid->Kd = Kd;
@@ -54,19 +55,19 @@ void PID_Init(PID_HandleTypeDef *hpid, float Kp, float Ki, float Kd, float MaxOu
  *          6. 출력: u = P + I + D
  *          7. 출력 제한: 0 ~ MaxOutput
  */
-float PID_Update(PID_HandleTypeDef *hpid, float measurement, float dt) {
-    float error = hpid->Target - measurement;
+float32_t PID_Update(PID_HandleTypeDef *hpid, float32_t measurement, float32_t dt) {
+    float32_t error = hpid->Target - measurement;
     
     /* Proportional term */
-    float p_term = hpid->Kp * error;
+    float32_t p_term = hpid->Kp * error;
     
     /* Derivative term */
-    float derivative = (error - hpid->LastError) / dt;
-    float d_term = hpid->Kd * derivative;
+    float32_t derivative = (error - hpid->LastError) / dt;
+    float32_t d_term = hpid->Kd * derivative;
     hpid->LastError = error;
     
     /* Tentative output without new I-term contribution */
-    float tentative_output = p_term + (hpid->Ki * hpid->IntegratedError) + d_term;
+    float32_t tentative_output = p_term + (hpid->Ki * hpid->IntegratedError) + d_term;
     
     /* Conditional Integration (Anti-windup):
      * Only accumulate I-term if output is not saturated.
@@ -78,8 +79,8 @@ float PID_Update(PID_HandleTypeDef *hpid, float measurement, float dt) {
         hpid->IntegratedError += error * dt;
     }
     
-    float i_term = hpid->Ki * hpid->IntegratedError;
-    float output = p_term + i_term + d_term;
+    float32_t i_term = hpid->Ki * hpid->IntegratedError;
+    float32_t output = p_term + i_term + d_term;
     
     /* Output Clamping */
     if (output > hpid->MaxOutput) {

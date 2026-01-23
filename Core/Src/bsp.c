@@ -287,7 +287,7 @@ uint16_t BSP_ADC_Read_Battery_mV(void) {
     HAL_ADC_Start(&hadc1);
     if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
         uint32_t raw = HAL_ADC_GetValue(&hadc1);
-        float voltage_mv = (raw * 3300.0f / 4096.0f) * 6.0f;
+        float32_t voltage_mv = (raw * 3300.0f / 4096.0f) * 6.0f;
         HAL_ADC_Stop(&hadc1);
         return (uint16_t)voltage_mv;
     }

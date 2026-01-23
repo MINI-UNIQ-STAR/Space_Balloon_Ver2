@@ -66,13 +66,13 @@ telemetry_frame_t telem_frame;
  * @brief 배터리 히터 제어 출력 (0.0 ~ 60.0%)
  * @details PID 제어기 출력값, 전력 예산 보호로 60% 제한
  */
-float heater_battery_cmd = 0.0f;
+float32_t heater_battery_cmd = 0.0f;
 
 /**
  * @brief 보드 히터 제어 출력 (0.0 ~ 100.0%)
  * @details PID 제어기 출력값
  */
-float heater_board_cmd = 0.0f;
+float32_t heater_board_cmd = 0.0f;
 
 /**
  * @brief 저전압 모드 상태 플래그
@@ -171,6 +171,10 @@ void App_Init(void) {
  * @note while(1) 루프에서 반복 호출, 실제 주기는 HAL_Delay(20) 또는 타이머로 제어
  */
 void App_Loop(void) {
+    /* PROFILING: Toggle Logic Probe Pin to measure Loop Jitter */
+    #ifdef PROFILING_PIN_Pin
+    HAL_GPIO_TogglePin(PROFILING_PIN_GPIO_Port, PROFILING_PIN_Pin);
+    #endif
     /* ====================================================================== */
     /* 1. 센서 데이터 수집                                                     */
     /* ====================================================================== */
@@ -227,7 +231,7 @@ void App_Loop(void) {
 
     // ** SHT31 Heater Control (Anti-condensation) **
     // Turn ON if temp < 0C, Turn OFF if temp > 2C (Hysteresis)
-    float sht31_temp_c = telem_frame.payload.sht31_temp_c_x100 / 100.0f;
+    float32_t sht31_temp_c = (float32_t)telem_frame.payload.sht31_temp_c_x100 / 100.0f;
     static uint8_t sht31_heater_on = 0;
 
     if (sht31_temp_c < 0.0f) {
@@ -263,26 +267,26 @@ void App_Loop(void) {
     /* ====================================================================== */
 
     // ** Attitude Estimation (SFLP) **
-    float quat[4]; // x, y, z, w
-    float roll_deg = 0.0f;
-    float pitch_deg = 0.0f;
+    float32_t quat[4]; // x, y, z, w
+    float32_t roll_deg = 0.0f;
+    float32_t pitch_deg = 0.0f;
 
     Sensors_Read_SFLP(quat);
 
     // Quaternion to Euler (Roll, Pitch) conversion
     // Assuming quat order: [x, y, z, w]
-    float qx = quat[0];
-    float qy = quat[1];
-    float qz = quat[2];
-    float qw = quat[3];
+    float32_t qx = quat[0];
+    float32_t qy = quat[1];
+    float32_t qz = quat[2];
+    float32_t qw = quat[3];
 
     // Roll (x-axis rotation)
-    float sinr_cosp = 2.0f * (qw * qx + qy * qz);
-    float cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
+    float32_t sinr_cosp = 2.0f * (qw * qx + qy * qz);
+    float32_t cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
     roll_deg = atan2f(sinr_cosp, cosr_cosp) * (180.0f / 3.14159265f);
 
     // Pitch (y-axis rotation)
-    float sinp = 2.0f * (qw * qy - qz * qx);
+    float32_t sinp = 2.0f * (qw * qy - qz * qx);
     if (fabsf(sinp) >= 1)
         pitch_deg = copysignf(90.0f, sinp); // use 90 degrees if out of range
     else
@@ -296,8 +300,8 @@ void App_Loop(void) {
     /* ====================================================================== */
 
     // Convert fixed point to float for Algorithms
-    float current_battery_temp = telem_frame.payload.bat_temp_c_x100 / 100.0f;
-    float current_board_temp = telem_frame.payload.board_temp_c_x100 / 100.0f;
+    float32_t current_battery_temp = telem_frame.payload.bat_temp_c_x100 / 100.0f;
+    float32_t current_board_temp = telem_frame.payload.board_temp_c_x100 / 100.0f;
 
     /* FDIR Baro Range Validation */
     if (!FDIR_ValidateRange_Baro(telem_frame.payload.ms5611_press_pa)) {
@@ -307,7 +311,7 @@ void App_Loop(void) {
     // Barometric Altitude (Approx)
     // P0=101325, Lapse Rate can be added later. Linear approx near sea level: 12Pa per meter.
     if (telem_frame.payload.ms5611_press_pa == 0) telem_frame.payload.ms5611_press_pa = 101325; // Prevent jump if 0
-    float baro_alt = (101325.0f - (float)telem_frame.payload.ms5611_press_pa) / 12.0f;
+    float32_t baro_alt = (101325.0f - (float32_t)telem_frame.payload.ms5611_press_pa) / 12.0f;
 
     // ** FDIR Baro Altitude Tracking **
     FDIR_UpdateBaroAltitude(baro_alt);

@@ -45,6 +45,15 @@
 #define CM1107N_ADDR        0x31 
 #define MCP9600_ADDR        0x60 
 
+// --- FDIR Reset Timing Constants ---
+#define RESET_DURATION_MS_DEFAULT   100
+#define RESET_DURATION_MS_GPS       100
+#define RESET_DURATION_MS_PMS       200
+
+#define RESET_WAIT_POR_MS_DEFAULT   50
+#define RESET_WAIT_POR_MS_GPS       50
+#define RESET_WAIT_POR_MS_PMS       100 
+
 // --- Driver Handles ---
 static stmdev_ctx_t lsm_ctx;
 static mlx90393_ctx_t mlx_ctx;
@@ -59,13 +68,13 @@ static xa1110_ctx_t xa_ctx;
 
 // --- Mock State ---
 #ifdef HOST_TEST_MODE
-static float mock_altitude = 100.0f;
-static float mock_temp = 15.0f;
-static float mock_pressure = 101325.0f;
+static float32_t mock_altitude = 100.0f;
+static float32_t mock_temp = 15.0f;
+static float32_t mock_pressure = 101325.0f;
 #endif
 
 #ifdef HOST_TEST_MODE
-void Sensors_SetMockData(float alt_m, float temp_c, float press_pa) {
+void Sensors_SetMockData(float32_t alt_m, float32_t temp_c, float32_t press_pa) {
     mock_altitude = alt_m;
     mock_temp = temp_c;
     mock_pressure = press_pa;
@@ -73,7 +82,7 @@ void Sensors_SetMockData(float alt_m, float temp_c, float press_pa) {
 #endif
 
 // --- Helper Functions ---
-static float half_to_float(uint16_t h) {
+static float32_t half_to_float(uint16_t h) {
     uint16_t s = (h >> 15) & 0x0001;
     uint16_t e = (h >> 10) & 0x001F;
     uint16_t m = h & 0x03FF;
@@ -81,7 +90,7 @@ static float half_to_float(uint16_t h) {
     if (e == 0) {
         if (m == 0) return (s ? -0.0f : 0.0f);
         // Denormalized number support
-        return (s ? -1.0f : 1.0f) * ldexpf((float)m, -24); 
+        return (s ? -1.0f : 1.0f) * ldexpf((float32_t)m, -24); 
     } else if (e == 31) {
         return 0.0f; // Treat Inf/NaN as 0 for safety in control loop
     }
@@ -95,7 +104,7 @@ static float half_to_float(uint16_t h) {
     
     /* MISRA C: Use memcpy instead of union type punning */
     uint32_t bits = s32 | e32 | m32;
-    float result;
+    float32_t result;
     (void)memcpy(&result, &bits, sizeof(result));
     return result;
 }
@@ -371,12 +380,20 @@ void Sensors_ProcessReset(void) {
                     HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_RESET);
                     break;
                 case SENSOR_ID_SHT:
-                    HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_SET); // P-MOS Logic (High=OFF)
-                    break;
+                    // Software Reset Command (Try valid I2C first)
+                    SHT31_Reset(&sht_ctx);
+                    // Then Bus Recovery
+                    BSP_I2C3_Recovery();
+                    reset_step = 3; // Jump to Wait for POR
+                    reset_tick_start = now; // Start timer for POR wait
+                    return;
                 case SENSOR_ID_RAD:
-                    // Software Reset Only (No Reset Pin)
+                    // Software Reset Command
+                    GDK101_Reset(&gdk_ctx);
+                    // Then Bus Recovery
                     BSP_I2C1_Recovery();
-                    reset_step = 4; // Jump to Init
+                    reset_step = 3; // Jump to Wait for POR
+                    reset_tick_start = now;
                     return;
                 case SENSOR_ID_CO2:
                     HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_RESET);
@@ -384,6 +401,18 @@ void Sensors_ProcessReset(void) {
                 case SENSOR_ID_EXT_TEMP:
                     HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_RESET);
                     break;
+                case SENSOR_ID_TEMP_BAT:
+                case SENSOR_ID_TEMP_BOARD:
+                    // 1-Wire sensors: Passive, no reset pin.
+                    // To avoid re-scanning/ID swap risk, we do NOT call Init.
+                    // We also skip to Step 4 to just call Bus Reset logic.
+                    reset_target_id = SENSOR_ID_COUNT; 
+                    
+                    // Actually, let's allow it to flow to Step 3 (Wait) then Step 4 (Recovery)
+                    // But we set reset_step to 3.
+                    reset_step = 3;
+                    reset_tick_start = now;
+                    return;
                 default:
                     // Soft Reset Only (I2C Recovery)
                     // Skip to Init step directly? Or do 9-clock recovery here?
@@ -404,9 +433,9 @@ void Sensors_ProcessReset(void) {
             // GPS needs 100ms, PMS 200ms, others 50~100ms.
             // Let's use 100ms for all generic, 200ms for PMS.
             {
-                uint32_t wait_time = 100;
-                if (reset_target_id == SENSOR_ID_PMS) wait_time = 200;
-                if (reset_target_id == SENSOR_ID_SHT) wait_time = 100;
+                uint32_t wait_time = RESET_DURATION_MS_DEFAULT;
+                if (reset_target_id == SENSOR_ID_PMS) wait_time = RESET_DURATION_MS_PMS;
+                if (reset_target_id == SENSOR_ID_SHT) wait_time = RESET_DURATION_MS_DEFAULT; // 100ms
 
                 if ((now - reset_tick_start) >= wait_time) {
                     // Time to Deassert
@@ -432,15 +461,15 @@ void Sensors_ProcessReset(void) {
                 case SENSOR_ID_PMS:
                     HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_SET);
                     break;
-                case SENSOR_ID_SHT:
-                    HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_RESET); // P-MOS Logic (Low=ON)
-                    break;
+                /* case SENSOR_ID_SHT: Removed (No Reset Pin use) */
                 /* case SENSOR_ID_RAD: Removed (No Reset Pin) */
                 case SENSOR_ID_CO2:
                     HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_SET);
                     break;
                 case SENSOR_ID_EXT_TEMP:
                     HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_SET);
+                    break;
+                default:
                     break;
             }
             
@@ -459,8 +488,9 @@ void Sensors_ProcessReset(void) {
         case 3: // Wait for POR (Power-On-Reset) / Wakeup
             // GPS 50ms, PMS 100ms, others 50ms.
             {
-                uint32_t wait_time = 50;
-                if (reset_target_id == SENSOR_ID_PMS) wait_time = 100;
+
+                uint32_t wait_time = RESET_WAIT_POR_MS_DEFAULT;
+                if (reset_target_id == SENSOR_ID_PMS) wait_time = RESET_WAIT_POR_MS_PMS;
                 
                 if ((now - reset_tick_start) >= wait_time) {
                     reset_step = 4;
@@ -491,6 +521,14 @@ void Sensors_ProcessReset(void) {
                 
                 // For PMS, no driver init needed (UART)
                 case SENSOR_ID_PMS: break; 
+                
+                case SENSOR_ID_TEMP_BAT: 
+                case SENSOR_ID_TEMP_BOARD:
+                    // Attempt Bus Reset only (No re-scan)
+                    DS18B20_Recovery();
+                    break;
+                default:
+                    break;
             }
             
             UART_LogInt("FDIR: Reset Complete ID ", reset_target_id);
@@ -587,7 +625,7 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
     // UART_Print("IMU: XL Read Success\n");
     /* Convert to m/s^2 * 1000 */
     for (idx = 0U; idx < 3U; idx++) {
-        float mg = lsm6dsv16x_from_fs2_to_mg(data_raw[idx]);
+        float32_t mg = lsm6dsv16x_from_fs2_to_mg(data_raw[idx]);
         accel[idx] = (int32_t)(mg * 9.8f); 
     }
     
@@ -600,7 +638,7 @@ void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]) {
     }
     // UART_Print("IMU: GY Read Success\n");
     for (idx = 0U; idx < 3U; idx++) {
-         float mdps = lsm6dsv16x_from_fs2000_to_mdps(data_raw[idx]);
+         float32_t mdps = lsm6dsv16x_from_fs2000_to_mdps(data_raw[idx]);
          /* rad/s * 1000. 1 mdps = 0.00001745 rad/s.
           * result = mdps * 0.01745 */
          gyro[idx] = (int32_t)(mdps * 0.01745f);
@@ -871,6 +909,8 @@ void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {
         *mv = BSP_ADC_Read_Battery_mV();
         
         *temp_c_x100 = DS18B20_ReadTemp_x100(0); // Battery Temp
+        FDIR_ReportSuccess(SENSOR_ID_TEMP_BAT);
+        
         last_bat = BSP_GetTick();
     }
     // If not updated, values remain from previous read or 0 init.
@@ -895,6 +935,7 @@ void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100) {
 void Sensors_Read_BoardTemp(int16_t *temp_c_x100) {
 #ifndef HOST_TEST_MODE
     *temp_c_x100 = DS18B20_ReadTemp_x100(1); // Board Temp
+    FDIR_ReportSuccess(SENSOR_ID_TEMP_BOARD);
 #else
     *temp_c_x100 = 2500;
 #endif
@@ -933,7 +974,9 @@ void Sensors_Read_SFLP(float quaternion[4]) {
     if (lsm6dsv16x_fifo_status_get(&lsm_ctx, &fifo_status) != 0) return;
     
     uint16_t samples = fifo_status.fifo_level;
-    if (samples == 0) return;
+    if (samples == 0) {
+        return;
+    }
     
     // Limit loop to avoid blocking too long
     if (samples > 20) samples = 20;

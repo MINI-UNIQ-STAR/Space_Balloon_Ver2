@@ -1,9 +1,13 @@
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
-# ARM GCC 툴체인 경로 설정 (프로젝트 tools 폴더 사용)
-set(ARM_TOOLCHAIN_DIR "${CMAKE_CURRENT_LIST_DIR}/../tools/10 2021.10/bin")
+# User-specified Toolchain Path
+set(ARM_TOOLCHAIN_DIR "${CMAKE_CURRENT_LIST_DIR}/../tools/arm-gnu-toolchain-15.2.rel1-mingw-w64-i686-arm-none-eabi/bin")
 set(TOOLCHAIN_PREFIX ${ARM_TOOLCHAIN_DIR}/arm-none-eabi-)
+
+# User-specified Build Tools (make, rm, etc.)
+set(BUILD_TOOLS_DIR "${CMAKE_CURRENT_LIST_DIR}/../tools/xpack-windows-build-tools-4.4.1-3/bin")
+list(APPEND CMAKE_PROGRAM_PATH "${BUILD_TOOLS_DIR}")
 
 set(CMAKE_C_COMPILER "${TOOLCHAIN_PREFIX}gcc.exe" CACHE FILEPATH "C Compiler")
 set(CMAKE_CXX_COMPILER "${TOOLCHAIN_PREFIX}g++.exe" CACHE FILEPATH "C++ Compiler")

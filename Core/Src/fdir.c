@@ -35,6 +35,8 @@ static const uint32_t sensor_timeout_ms[SENSOR_ID_COUNT] = {
     [SENSOR_ID_SHT]      = 3000,   // 1Hz → 3s timeout
     [SENSOR_ID_RAD]      = 3000,   // 1Hz → 3s timeout
     [SENSOR_ID_EXT_TEMP] = 3000,   // 1Hz → 3s timeout
+    [SENSOR_ID_TEMP_BAT] = 3000,   // 1Hz → 3s timeout
+    [SENSOR_ID_TEMP_BOARD] = 3000, // 1Hz → 3s timeout
 };
 
 /** @brief 센서별 최대 복구 시도 횟수 */
@@ -48,6 +50,8 @@ static const uint8_t sensor_max_recovery[SENSOR_ID_COUNT] = {
     [SENSOR_ID_SHT]      = 2,
     [SENSOR_ID_RAD]      = 2,
     [SENSOR_ID_EXT_TEMP] = 2,
+    [SENSOR_ID_TEMP_BAT] = 1,
+    [SENSOR_ID_TEMP_BOARD] = 1,
 };
 
 /**
@@ -65,6 +69,8 @@ static const int16_t sensor_temp_limits[SENSOR_ID_COUNT][2] = {
     [SENSOR_ID_SHT]      = {-4000, 12500},  // SHT31: -40 degC ~ +125 degC
     [SENSOR_ID_RAD]      = {-2000, 6000},   // GDK101: -20 degC ~ +60 degC *
     [SENSOR_ID_EXT_TEMP] = {-9000, 25000},  // MCP9600 (K-Type): -90 degC ~ +250 degC (Stratosphere < -60)
+    [SENSOR_ID_TEMP_BAT] = {-4000, 8500},   // DS18B20
+    [SENSOR_ID_TEMP_BOARD] = {-4000, 8500}, // DS18B20
 };
 
 /** @brief 온도 히스테리시스 (5°C = 500 x 100) */
@@ -258,7 +264,9 @@ void FDIR_Process(void) {
  * @return FdirState_t 센서 상태 (HEALTHY/WARNING/RECOVERY/FAILURE_PERMANENT)
  */
 FdirState_t FDIR_GetSensorState(SensorID_t id) {
-    if (id >= SENSOR_ID_COUNT) return FDIR_STATE_FAILURE_PERMANENT;
+    if (id >= SENSOR_ID_COUNT) {
+        return FDIR_STATE_FAILURE_PERMANENT;
+    }
     return sensors_health[id].state;
 }
 
@@ -268,7 +276,9 @@ FdirState_t FDIR_GetSensorState(SensorID_t id) {
  * @return uint32_t 복구 시도 횟수
  */
 uint32_t FDIR_GetRecoveryCount(SensorID_t id) {
-    if (id >= SENSOR_ID_COUNT) return 0;
+    if (id >= SENSOR_ID_COUNT) {
+        return 0;
+    }
     return sensors_health[id].recovery_count;
 }
 
@@ -290,7 +300,9 @@ bool FDIR_IsSensorHealthy(SensorID_t id) {
  * @return bool true = 저온으로 비활성화됨, false = 정상
  */
 bool FDIR_IsSensorColdDisabled(SensorID_t id) {
-    if (id >= SENSOR_ID_COUNT) return false;
+    if (id >= SENSOR_ID_COUNT) {
+        return false;
+    }
     return sensor_cold_disabled[id];
 }
 
@@ -314,13 +326,13 @@ bool FDIR_IsSensorColdDisabled(SensorID_t id) {
 #define ALT_JUMP_THRESHOLD_M  500.0f
 
 /** @brief 이전 GPS 고도 (연속성 체크용) */
-static float last_gps_alt_m = 0.0f;
+static float32_t last_gps_alt_m = 0.0f;
 
 /** @brief 현재 GPS 고도 */
-static float current_gps_alt_m = 0.0f;
+static float32_t current_gps_alt_m = 0.0f;
 
 /** @brief 현재 기압 고도 */
-static float current_baro_alt_m = 0.0f;
+static float32_t current_baro_alt_m = 0.0f;
 
 /** @brief GPS 고도 유효성 플래그 */
 static bool gps_alt_valid = false;
@@ -358,7 +370,7 @@ bool FDIR_ValidateRange_Baro(uint32_t press_pa) {
  * @return bool true = 정상 범위, false = 범위 초과
  * @details 범위: -500m ~ 50000m
  */
-bool FDIR_ValidateRange_GPS_Alt(float alt_m) {
+bool FDIR_ValidateRange_GPS_Alt(float32_t alt_m) {
     if (alt_m < GPS_ALT_MIN_M || alt_m > GPS_ALT_MAX_M) {
         range_error_detected = true;
         FDIR_ReportFailure(SENSOR_ID_GPS, 2);
@@ -393,7 +405,7 @@ bool FDIR_ValidateRange_Temp(int16_t temp_c_x100) {
  * @return bool true = 연속적, false = 점프 검출
  * @details 이전 고도와 500m 이상 차이나면 점프로 판정
  */
-bool FDIR_CheckContinuity_GPS_Alt(float new_alt_m) {
+bool FDIR_CheckContinuity_GPS_Alt(float32_t new_alt_m) {
     static bool first_reading = true;
     
     if (first_reading) {
@@ -402,7 +414,7 @@ bool FDIR_CheckContinuity_GPS_Alt(float new_alt_m) {
         return true;
     }
     
-    float delta = new_alt_m - last_gps_alt_m;
+    float32_t delta = new_alt_m - last_gps_alt_m;
     if (delta < 0) delta = -delta; // abs
     
     if (delta > ALT_JUMP_THRESHOLD_M) {
@@ -425,7 +437,7 @@ bool FDIR_CheckContinuity_GPS_Alt(float new_alt_m) {
  * @param gps_alt_m GPS 고도 (m)
  * @details 범위 및 연속성 검증 통과 시에만 고도 업데이트
  */
-void FDIR_UpdateGPSAltitude(float gps_alt_m) {
+void FDIR_UpdateGPSAltitude(float32_t gps_alt_m) {
     if (FDIR_ValidateRange_GPS_Alt(gps_alt_m) && FDIR_CheckContinuity_GPS_Alt(gps_alt_m)) {
         current_gps_alt_m = gps_alt_m;
         gps_alt_valid = true;
@@ -440,7 +452,7 @@ void FDIR_UpdateGPSAltitude(float gps_alt_m) {
  * @param baro_alt_m 기압 고도 (m)
  * @details 기압 센서 상태에 따라 유효성 플래그 설정
  */
-void FDIR_UpdateBaroAltitude(float baro_alt_m) {
+void FDIR_UpdateBaroAltitude(float32_t baro_alt_m) {
     // Convert altitude back to pressure for range check (simplified)
     // This is just for internal tracking, main range check should be on raw pressure
     current_baro_alt_m = baro_alt_m;
@@ -449,13 +461,13 @@ void FDIR_UpdateBaroAltitude(float baro_alt_m) {
 
 /**
  * @brief 백업 고도 조회 (BARO/GPS 페일오버)
- * @return float 백업 고도 (m)
+ * @return float32_t 백업 고도 (m)
  * @details 우선순위: BARO > GPS
  *          - BARO 정상: 기압 고도 반환
  *          - BARO 고장, GPS 정상: GPS 고도 반환
  *          - 둘 다 고장: 마지막 기압 고도 반환
  */
-float FDIR_GetBackupAltitude(void) {
+float32_t FDIR_GetBackupAltitude(void) {
     // Priority: Baro > GPS (baro is more accurate at high altitudes)
     // But if baro fails, use GPS as backup
     if (baro_alt_valid && sensors_health[SENSOR_ID_BARO].state == FDIR_STATE_HEALTHY) {

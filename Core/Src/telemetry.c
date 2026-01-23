@@ -123,7 +123,12 @@ void Telemetry_Send(telemetry_frame_t *frame) {
     tx_busy = false; 
 #else
     /* Non-blocking DMA Transmission */
+    // MISRA C 2023: Protect tx_busy race condition
+    uint32_t primask_bit = __get_PRIMASK();
+    __disable_irq();
     tx_busy = true;
+    __set_PRIMASK(primask_bit);
+    
     if (HAL_UART_Transmit_DMA(&huart3, (uint8_t*)frame, total_len) != HAL_OK) {
         // Error handling: Reset busy flag if start failed
         tx_busy = false;
