@@ -374,8 +374,10 @@ void Sensors_ProcessReset(void) {
                     HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_SET); // P-MOS Logic (High=OFF)
                     break;
                 case SENSOR_ID_RAD:
-                    HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_RESET);
-                    break;
+                    // Software Reset Only (No Reset Pin)
+                    BSP_I2C1_Recovery();
+                    reset_step = 4; // Jump to Init
+                    return;
                 case SENSOR_ID_CO2:
                     HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_RESET);
                     break;
@@ -433,9 +435,7 @@ void Sensors_ProcessReset(void) {
                 case SENSOR_ID_SHT:
                     HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_RESET); // P-MOS Logic (Low=ON)
                     break;
-                case SENSOR_ID_RAD:
-                    HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_SET);
-                    break;
+                /* case SENSOR_ID_RAD: Removed (No Reset Pin) */
                 case SENSOR_ID_CO2:
                     HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_SET);
                     break;
