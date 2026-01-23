@@ -240,6 +240,14 @@ void FDIR_Update(void) {
     }
 }
 
+/**
+ * @brief FDIR 처리 (Non-blocking Reset State Machine)
+ * @details App_Loop에서 호출하여 센서 리셋 상태 머신을 구동
+ */
+void FDIR_Process(void) {
+    Sensors_ProcessReset();
+}
+
 /* ========================================================================== */
 /* 상태 조회 함수                                                             */
 /* ========================================================================== */

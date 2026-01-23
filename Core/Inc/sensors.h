@@ -80,6 +80,12 @@ void Sensors_Init(void);
 void Sensors_Reset(SensorID_t id);
 
 /**
+ * @brief 센서 리셋 상태머신 처리 (주기적 호출)
+ * @details Sensors_Reset()으로 트리거된 리셋 작업을 비동기 처리
+ */
+void Sensors_ProcessReset(void);
+
+/**
  * @brief I2C1 버스 센서 초기화 (Downside Board)
  * @details 초기화 센서:
  *          - LSM6DSV16X (IMU): SFLP 활성화, 480Hz ODR

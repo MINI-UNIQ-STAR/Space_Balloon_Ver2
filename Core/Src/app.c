@@ -431,5 +431,6 @@ void App_Loop(void) {
     /* ====================================================================== */
 
     // 7. FDIR Update
-    FDIR_Update();
+    FDIR_Process(); // Drive the reset state machine
+    FDIR_Update();  // Check for new failures
 }

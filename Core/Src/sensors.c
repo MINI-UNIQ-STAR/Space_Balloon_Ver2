@@ -325,116 +325,178 @@ void Sensors_Init_UART(void) {
  *          - PMS: SET 핀 토글
  * @note FDIR_Update()에서 타임아웃 검출 시 호출됨
  */
+// Non-blocking Reset State Machine Variables
+static SensorID_t reset_target_id = SENSOR_ID_COUNT; // Idle
+static uint8_t reset_step = 0;
+static uint32_t reset_tick_start = 0;
+
+
+
 void Sensors_Reset(SensorID_t id) {
-#ifdef UNIT_TEST
-    printf("FDIR: Resetting Sensor ID %d\n", id);
-    return;
-#endif
+    // Just trigger the reset if idle
+    if (reset_target_id == SENSOR_ID_COUNT) {
+        UART_LogInt("FDIR: Trigger Reset ID ", id);
+        reset_target_id = id;
+        reset_step = 0;
+    } else {
+        // Busy with another reset. Drop this request or queue? 
+        // Dropping is fine, FDIR will retry later on next timeout.
+        UART_LogInt("FDIR: Reset Busy, Skip ID ", id);
+    }
+}
 
-#ifndef UNIT_TEST
-    UART_LogInt("FDIR: Reset Configured for Sensor ID ", id);
-    switch(id) {
-        case SENSOR_ID_GPS:
-            // L3: Hard Reset (PA9: GPS_nRST - active low)
-            HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: Soft Reset - Reinitialize driver
-            XA1110_Init(&xa_ctx);
+void Sensors_ProcessReset(void) {
+    if (reset_target_id == SENSOR_ID_COUNT) return;
+
+    uint32_t now = HAL_GetTick();
+
+    switch (reset_step) {
+        case 0: // Start: Assert Reset Pin
+            // L3: Hard Reset (Activate Reset Pin)
+            // Logic copied from original Sensors_Reset ASSERT phase
+            switch(reset_target_id) {
+                case SENSOR_ID_GPS:
+                    HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_RESET);
+                    break;
+                case SENSOR_ID_IMU:
+                    HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_RESET);
+                    break;
+                case SENSOR_ID_MAG:
+                    HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_RESET);
+                    break;
+                case SENSOR_ID_BARO:
+                    HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_RESET);
+                    break;
+                case SENSOR_ID_PMS:
+                    HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_RESET);
+                    break;
+                case SENSOR_ID_SHT:
+                    HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_SET); // P-MOS Logic (High=OFF)
+                    break;
+                case SENSOR_ID_RAD:
+                    HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_RESET);
+                    break;
+                case SENSOR_ID_CO2:
+                    HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_RESET);
+                    break;
+                case SENSOR_ID_EXT_TEMP:
+                    HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_RESET);
+                    break;
+                default:
+                    // Soft Reset Only (I2C Recovery)
+                    // Skip to Init step directly? Or do 9-clock recovery here?
+                    // Let's do I2C recovery immediately then finish.
+                    if (reset_target_id == SENSOR_ID_MAG || reset_target_id == SENSOR_ID_IMU || reset_target_id == SENSOR_ID_RAD) {
+                        BSP_I2C1_Recovery();
+                    } else {
+                        BSP_I2C3_Recovery();
+                    }
+                    reset_target_id = SENSOR_ID_COUNT; // Done
+                    return;
+            }
+            reset_tick_start = now;
+            reset_step = 1;
             break;
 
-        case SENSOR_ID_IMU:
-            // L3: P-MOS Power Cycle (PB13: LSM_RST)
-            HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(50);
-            HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: I2C bus recovery
-            BSP_I2C1_Recovery();
-            break;
+        case 1: // Wait for Assert Duration
+            // GPS needs 100ms, PMS 200ms, others 50~100ms.
+            // Let's use 100ms for all generic, 200ms for PMS.
+            {
+                uint32_t wait_time = 100;
+                if (reset_target_id == SENSOR_ID_PMS) wait_time = 200;
+                if (reset_target_id == SENSOR_ID_SHT) wait_time = 100;
 
-        case SENSOR_ID_MAG:
-            // L3: P-MOS Power Cycle (PB14: MLX_nRST - active low for this sensor)
-            HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(50);
-            HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: I2C bus recovery
-            BSP_I2C1_Recovery();
-            break;
-
-        case SENSOR_ID_BARO:
-            // L3: P-MOS Power Cycle (PA5: MS_RST)
-            HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(50);
-            HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: I2C bus recovery
-            BSP_I2C3_Recovery();
-            break;
-
-        case SENSOR_ID_PMS:
-            // L3: SET Pin Toggle (PB10: PMS_SET - active high)
-            HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_RESET);
-            HAL_Delay(200);  // PMS3003 needs longer delay
-            HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_SET);
-            HAL_Delay(100);
-            // L2: No driver reinit needed for UART sensor
-            break;
-
-        case SENSOR_ID_SHT:
-            // L3: P-MOS Power Cycle (PB11: SHT_RST - P-MOS: HIGH=OFF, LOW=ON)
-            HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_SET);  // Turn OFF
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_RESET); // Turn ON
-            HAL_Delay(50);
-            // L2: I2C bus recovery
-            BSP_I2C3_Recovery();
-            break;
-
-        case SENSOR_ID_RAD:
-            // L3: P-MOS Power Cycle (PB2: GDK_RST)
-            HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: I2C bus recovery
-            BSP_I2C1_Recovery();
-            break;
-
-        case SENSOR_ID_CO2:
-            // L3: P-MOS Power Cycle (PB0: CM1107N_RST)
-            HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: I2C bus recovery
-            BSP_I2C3_Recovery();
-            break;
-
-        case SENSOR_ID_EXT_TEMP:
-            // L3: P-MOS Power Cycle (PA4: MCP_RST)
-            HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: I2C bus recovery
-            BSP_I2C3_Recovery();
-            break;
-
-        default:
-            // For unknown sensors, try I2C bus recovery based on which bus they're on
-            if (id == SENSOR_ID_MAG || id == SENSOR_ID_IMU || id == SENSOR_ID_RAD) {
-                // Downside sensors on I2C1
-                BSP_I2C1_Recovery();
-            } else {
-                // Upside sensors on I2C3
-                BSP_I2C3_Recovery();
+                if ((now - reset_tick_start) >= wait_time) {
+                    // Time to Deassert
+                    reset_step = 2;
+                }
             }
             break;
+
+        case 2: // Deassert Reset Pin (Release)
+            switch(reset_target_id) {
+                case SENSOR_ID_GPS:
+                    HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
+                    break;
+                case SENSOR_ID_IMU:
+                    HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_SET);
+                    break;
+                case SENSOR_ID_MAG:
+                    HAL_GPIO_WritePin(MLX_RST_GPIO_Port, MLX_RST_Pin, GPIO_PIN_SET);
+                    break;
+                case SENSOR_ID_BARO:
+                    HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_SET);
+                    break;
+                case SENSOR_ID_PMS:
+                    HAL_GPIO_WritePin(PMS_SET_GPIO_Port, PMS_SET_Pin, GPIO_PIN_SET);
+                    break;
+                case SENSOR_ID_SHT:
+                    HAL_GPIO_WritePin(SHT_RST_GPIO_Port, SHT_RST_Pin, GPIO_PIN_RESET); // P-MOS Logic (Low=ON)
+                    break;
+                case SENSOR_ID_RAD:
+                    HAL_GPIO_WritePin(GDK_RST_GPIO_Port, GDK_RST_Pin, GPIO_PIN_SET);
+                    break;
+                case SENSOR_ID_CO2:
+                    HAL_GPIO_WritePin(CM1107N_RST_GPIO_Port, CM1107N_RST_Pin, GPIO_PIN_SET);
+                    break;
+                case SENSOR_ID_EXT_TEMP:
+                    HAL_GPIO_WritePin(MCP_RST_GPIO_Port, MCP_RST_Pin, GPIO_PIN_SET);
+                    break;
+            }
+            
+            // Perform I2C Bus Recovery while we wait for Power-On-Reset (POR)?
+            // Better to do it now.
+            if (reset_target_id == SENSOR_ID_MAG || reset_target_id == SENSOR_ID_IMU || reset_target_id == SENSOR_ID_RAD) {
+                BSP_I2C1_Recovery();
+            } else if (reset_target_id != SENSOR_ID_GPS && reset_target_id != SENSOR_ID_PMS) {
+                BSP_I2C3_Recovery();
+            }
+
+            reset_tick_start = now;
+            reset_step = 3;
+            break;
+
+        case 3: // Wait for POR (Power-On-Reset) / Wakeup
+            // GPS 50ms, PMS 100ms, others 50ms.
+            {
+                uint32_t wait_time = 50;
+                if (reset_target_id == SENSOR_ID_PMS) wait_time = 100;
+                
+                if ((now - reset_tick_start) >= wait_time) {
+                    reset_step = 4;
+                }
+            }
+            break;
+
+        case 4: // Re-Initialize Driver
+            switch(reset_target_id) {
+                case SENSOR_ID_GPS: XA1110_Init(&xa_ctx); break;
+                
+                // For I2C sensors, just calling Init usually re-writes configs.
+                case SENSOR_ID_IMU: Sensors_Init_I2C1(); break; // Re-init whole bus safely?
+                // Calling whole bus init might be heavy or disrupt others?
+                // Ideally call specific init.
+                // But Sensors_Init_I2C1() does minimal config.
+                // Let's call specific init if possible, or just the bus init for simplicity.
+                // Given the current structure, specific init calls are inside Sensors_Init_I2C1.
+                // Let's copy specific init logic or call the group init.
+                // Group init is safer to ensure bus state.
+                case SENSOR_ID_MAG: MLX90393_Init(&mlx_ctx); break;
+                
+                case SENSOR_ID_BARO: MS5611_Init(&ms_ctx); break;
+                case SENSOR_ID_SHT: SHT31_Init(&sht_ctx); break;
+                case SENSOR_ID_CO2: CM1107N_Init(&cm_ctx); break;
+                case SENSOR_ID_EXT_TEMP: MCP9600_Init(&mcp_ctx); break;
+                case SENSOR_ID_RAD: GDK101_Init(&gdk_ctx); break;
+                
+                // For PMS, no driver init needed (UART)
+                case SENSOR_ID_PMS: break; 
+            }
+            
+            UART_LogInt("FDIR: Reset Complete ID ", reset_target_id);
+            reset_target_id = SENSOR_ID_COUNT; // Finish
+            break;
     }
-#endif
 }
 
 /**

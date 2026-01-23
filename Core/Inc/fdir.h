@@ -77,6 +77,13 @@ void FDIR_Init(void);
 void FDIR_Update(void);
 
 /**
+ * @brief FDIR 초기화 (Blocking Reset State Machine)
+ * @details App_Loop에서 호출하여 비동기 리셋 처리
+ */
+void FDIR_Process(void);
+
+
+/**
  * @brief 센서 정상 동작 보고
  * @param[in] sensor_id 센서 ID
  * @details Sensors_Read_XXX() 함수에서 성공 시 호출

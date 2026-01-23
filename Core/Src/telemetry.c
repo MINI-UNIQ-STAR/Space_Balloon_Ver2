@@ -13,9 +13,10 @@
 
 #include "telemetry.h"
 #include "main.h"
+#include <stdbool.h>
 
 #ifdef HOST_TEST_MODE
-#include <stdio.h>
+#include <string.h>
 #endif
 
 /**
@@ -98,11 +99,19 @@ static void Telemetry_PrintFrame(telemetry_frame_t *frame) {
 }
 #endif
 
+extern UART_HandleTypeDef huart3;
+static volatile bool tx_busy = false;
+
 void Telemetry_Send(telemetry_frame_t *frame) {
+    if (tx_busy) {
+        // Previous transmission still in progress.
+        // Skip this frame to preserve real-time loop.
+        return;
+    }
+
     /* Frame size = sizeof(telemetry_frame_t).
      * CRC applies to bytes 0 to end-3 (Total - 2 bytes for CRC)
      */
-    
     uint16_t total_len = sizeof(telemetry_frame_t);
     uint16_t crc_len = total_len - 2U;
     
@@ -110,9 +119,20 @@ void Telemetry_Send(telemetry_frame_t *frame) {
     
 #ifdef HOST_TEST_MODE
     Telemetry_PrintFrame(frame);
+    // Simulate DMA completion for test
+    tx_busy = false; 
 #else
-    /* Actual UART Transmission to LoRa32 via UART3 */
-    extern UART_HandleTypeDef huart3;
-    HAL_UART_Transmit(&huart3, (uint8_t*)frame, total_len, 100);
+    /* Non-blocking DMA Transmission */
+    tx_busy = true;
+    if (HAL_UART_Transmit_DMA(&huart3, (uint8_t*)frame, total_len) != HAL_OK) {
+        // Error handling: Reset busy flag if start failed
+        tx_busy = false;
+    }
 #endif
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART3) {
+        tx_busy = false;
+    }
 }
