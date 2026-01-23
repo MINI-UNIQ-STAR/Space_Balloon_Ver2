@@ -204,9 +204,11 @@ extern UART_HandleTypeDef huart3;
  */
 int32_t BSP_UART_Write(uint8_t *pData, uint16_t Len) {
 #ifndef UNIT_TEST
-    // Assuming UART3 for general sensor bus or debug
-    return HAL_UART_Transmit(&huart3, pData, Len, 100);
-    // return 0;
+    // Ensure last transmission is complete (safety for 50Hz loop)
+    // At 115200bps, 148B takes ~13ms. 20ms loop has enough margin.
+    while (huart3.gState != HAL_UART_STATE_READY && huart3.gState != HAL_UART_STATE_BUSY_RX);
+    
+    return HAL_UART_Transmit_DMA(&huart3, pData, Len);
 #else
     // Mock Print
     char tmp[128];
