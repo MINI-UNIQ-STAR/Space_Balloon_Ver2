@@ -176,6 +176,7 @@ FMEA(Failure Mode and Effects Analysis)는 잠재적 고장 모드를 식별하�
 | W-02 | 무한 루프 | 논리 오류 | 시스템 정지 | 5 | 1 | 1 | 5 | WDT 활성화 |
 | W-03 | 메모리 누수 | 동적 할당 | 점진적 실패 | 4 | 1 | 4 | 16 | 정적 메모리만 사용 |
 | W-04 | ISR 지연 | 우선순위 역전 | 데이터 손실 | 3 | 2 | 3 | 18 | NVIC 우선순위 설계 |
+| W-07 | 차단형 지연 (Blocking) | HAL_Delay 사용 | Watchdog Reset | 5 | 3 | 2 | 30 | **Non-blocking FDIR 구현 (2026-01-23)** |
 
 ### Kalman 필터
 

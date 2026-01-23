@@ -33,9 +33,10 @@ Env/Battery: 1Hz (1000ms)
 ```
 
 ## FDIR 통합
+## FDIR 통합
 - ✅ 각 `Read_*()` 함수에서 `FDIR_ReportSuccess()` 호출
 - ✅ 드라이버 반환값 검사 (LSM/MLX/MS5611 등)
-- ✅ `Sensors_Reset()`을 통한 하드웨어 복구 로직 구현
+- ✅ `Sensors_ProcessReset()` 비차단 상태 머신 구현 (기존 차단형 HAL_Delay 제거)
 - ✅ 22종 시뮬레이션 테스트를 통한 로직 검증 완료
 - ✅ 11개 센서 통합 (I2C1, I2C3, UART, 1-Wire)
 - ✅ 비차단 상태머신 기반 기압/온습도 읽기

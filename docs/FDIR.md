@@ -163,64 +163,51 @@ if (abs(gps_alt - last_alt) > 500.0f) {  // 500m 이상 점프
 | L3 | 하드 리셋 | GPIO 파워 사이클 |
 | L4 | 영구 비활성화 | 해당 센서 무시 |
 
-### 복구 시퀀스
+### 복구 시퀀스 (Non-blocking State Machine)
 
-**✅ 구현 완료 (2026-01-09) - Core/Src/sensors.c:238-348**
+**✅ 구현 업데이트 (2026-01-23) - Core/Src/sensors.c:357-538**
 
-모든 센서에 대한 하드웨어 복구 로직이 완전히 구현되었습니다.
+기존의 차단형(Blocking) `HAL_Delay` 방식을 제거하고, **비차단 상태 머신(Non-blocking State Machine)**을 도입하여 메인 루프의 실시간성(50Hz)을 보장합니다.
 
-**실제 구현 예시 (Core/Src/sensors.c:238-348)**:
+**상태 머신 로직 (`Sensors_ProcessReset`)**:
+1.  **Step 0 (ASSERT)**: 리셋 핀(RST)을 Low로 설정 (하드웨어 리셋 시작)
+2.  **Step 1 (WAIT_ASSERT)**: `HAL_GetTick()`을 사용하여 설정된 시간(100ms~200ms) 동안 대기 (루프 차단 없는 지연)
+3.  **Step 2 (DEASSERT)**: 리셋 핀을 High로 설정 및 I2C 버스 복구 수행
+4.  **Step 3 (WAIT_POR)**: 센서의 Power-On-Reset 완료까지 대기 (50ms~100ms)
+5.  **Step 4 (RE-INIT)**: 센서 드라이버 재초기화
+
+**실제 구현 예시 (Core/Src/sensors.c)**:
 ```c
-void Sensors_Reset(SensorID_t id) {
-#ifdef UNIT_TEST
-    printf("FDIR: Resetting Sensor ID %d\n", id);
-    return;
-#endif
+void Sensors_ProcessReset(void) {
+    if (reset_target_id == SENSOR_ID_COUNT) return;
+    uint32_t now = HAL_GetTick();
 
-#ifndef UNIT_TEST
-    switch(id) {
-        case SENSOR_ID_GPS:
-            // L3: 하드 리셋 (PA9: GPS_nRST - active low)
-            HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(100);
-            HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: 소프트 리셋
-            XA1110_Init(&xa_ctx);
+    switch (reset_step) {
+        case 0: // Start: Assert Reset Pin
+            switch(reset_target_id) {
+                case SENSOR_ID_GPS:
+                    HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_RESET);
+                    break;
+                // ... (다른 센서 처리)
+            }
+            reset_tick_start = now;
+            reset_step = 1;
             break;
 
-        case SENSOR_ID_IMU:
-            // L3: P-MOS 전원 사이클 (PB13: LSM_RST)
-            HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(50);
-            HAL_GPIO_WritePin(LSM_RST_GPIO_Port, LSM_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: I2C 버스 복구
-            BSP_I2C1_Recovery();
-            break;
-
-        case SENSOR_ID_BARO:
-            // L3: P-MOS 전원 사이클 (PA5: MS_RST)
-            HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_RESET);
-            HAL_Delay(50);
-            HAL_GPIO_WritePin(MS_RST_GPIO_Port, MS_RST_Pin, GPIO_PIN_SET);
-            HAL_Delay(50);
-            // L2: I2C 버스 복구
-            BSP_I2C3_Recovery();
-            break;
-
-        // ... (전체 9개 센서에 대한 복구 로직 구현됨)
-
-        default:
-            // 기본 동작: I2C 버스 복구 시도
-            if (id == SENSOR_ID_MAG || id == SENSOR_ID_IMU || id == SENSOR_ID_RAD) {
-                BSP_I2C1_Recovery();
-            } else {
-                BSP_I2C3_Recovery();
+        case 1: // Wait for Assert Duration
+            if ((now - reset_tick_start) >= 100) { // 100ms 경과 확인
+                reset_step = 2;
             }
             break;
+
+        case 2: // Deassert & Bus Recovery
+            HAL_GPIO_WritePin(XA1110_RST_GPIO_Port, XA1110_RST_Pin, GPIO_PIN_SET);
+            if (Is_I2C_Sensor(reset_target_id)) BSP_I2C1_Recovery(); // 예시
+            reset_step = 3;
+            break;
+
+        // ... (Step 3: Wait POR, Step 4: Re-Init)
     }
-#endif
 }
 ```
 
