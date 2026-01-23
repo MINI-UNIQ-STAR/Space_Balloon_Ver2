@@ -12,10 +12,10 @@
  * @version 1.0
  */
 
-#pragma warning(disable:4819)
 #include "fdir.h"
 #include "main.h"
 #include <stdio.h>
+#include <inttypes.h>  /* MISRA C:2023 - PRIu32 for portable printf */
 
 /* ========================================================================== */
 /* 전역 변수 정의                                                              */
@@ -226,8 +226,8 @@ void FDIR_Update(void) {
             sensors_health[i].state = FDIR_STATE_WARNING;
             
             #ifdef DEBUG
-            printf("FDIR: Sensor %d Timeout (%lu ms). Recovery %lu/%d\n", 
-                   i, diff, sensors_health[i].recovery_count + 1, sensor_max_recovery[i]);
+            printf("FDIR: Sensor %d Timeout (%" PRIu32 " ms). Recovery %" PRIu32 "/%d\n", 
+                   i, diff, sensors_health[i].recovery_count + 1U, sensor_max_recovery[i]);
             #endif
             
             Sensors_Reset((SensorID_t)i);
@@ -357,7 +357,7 @@ bool FDIR_ValidateRange_Baro(uint32_t press_pa) {
         range_error_detected = true;
         FDIR_ReportFailure(SENSOR_ID_BARO, 1);
         #ifdef DEBUG
-        printf("FDIR: Baro range error: %lu Pa\n", press_pa);
+        printf("FDIR: Baro range error: %" PRIu32 " Pa\n", press_pa);
         #endif
         return false;
     }

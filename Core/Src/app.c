@@ -29,6 +29,11 @@
 #include <stdbool.h>
 #include <math.h>
 
+/* MISRA C:2023 - Named constants for magic numbers */
+#define M_PI_F          3.14159265f
+#define RAD_TO_DEG_F    (180.0f / M_PI_F)
+#define TEMP_SCALE_F    100.0f
+
 /* ========================================================================== */
 /* 전역 변수 정의                                                              */
 /* ========================================================================== */
@@ -283,14 +288,15 @@ void App_Loop(void) {
     // Roll (x-axis rotation)
     float32_t sinr_cosp = 2.0f * (qw * qx + qy * qz);
     float32_t cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
-    roll_deg = atan2f(sinr_cosp, cosr_cosp) * (180.0f / 3.14159265f);
+    roll_deg = atan2f(sinr_cosp, cosr_cosp) * RAD_TO_DEG_F;
 
     // Pitch (y-axis rotation)
     float32_t sinp = 2.0f * (qw * qy - qz * qx);
-    if (fabsf(sinp) >= 1)
+    if (fabsf(sinp) >= 1.0f) {
         pitch_deg = copysignf(90.0f, sinp); // use 90 degrees if out of range
-    else
-        pitch_deg = asinf(sinp) * (180.0f / 3.14159265f);
+    } else {
+        pitch_deg = asinf(sinp) * RAD_TO_DEG_F;
+    }
 
     telem_frame.payload.kf_roll_deg = roll_deg;
     telem_frame.payload.kf_pitch_deg = pitch_deg;
@@ -300,8 +306,8 @@ void App_Loop(void) {
     /* ====================================================================== */
 
     // Convert fixed point to float for Algorithms
-    float32_t current_battery_temp = telem_frame.payload.bat_temp_c_x100 / 100.0f;
-    float32_t current_board_temp = telem_frame.payload.board_temp_c_x100 / 100.0f;
+    float32_t current_battery_temp = (float32_t)telem_frame.payload.bat_temp_c_x100 / TEMP_SCALE_F;
+    float32_t current_board_temp = (float32_t)telem_frame.payload.board_temp_c_x100 / TEMP_SCALE_F;
 
     /* FDIR Baro Range Validation */
     if (!FDIR_ValidateRange_Baro(telem_frame.payload.ms5611_press_pa)) {
