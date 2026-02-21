@@ -20,6 +20,29 @@
 # User is free to modify the file as much as necessary
 #
 
+# Linux CI에서 toolchain preset 없이 진입해도 ARM GCC를 강제 사용
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_SYSTEM_NAME Generic CACHE STRING "Target system" FORCE)
+    set(CMAKE_SYSTEM_PROCESSOR arm CACHE STRING "Target CPU" FORCE)
+
+    # CMake의 compiler check 링크 단계에서 nosys syscall stub 사용
+    set(CMAKE_C_COMPILER "${CMAKE_CURRENT_LIST_DIR}/cmake/arm-none-eabi-gcc-wrapper.sh" CACHE FILEPATH "C Compiler" FORCE)
+    set(CMAKE_CXX_COMPILER "${CMAKE_CURRENT_LIST_DIR}/cmake/arm-none-eabi-gxx-wrapper.sh" CACHE FILEPATH "C++ Compiler" FORCE)
+    set(CMAKE_ASM_COMPILER "/usr/bin/arm-none-eabi-gcc" CACHE FILEPATH "ASM Compiler" FORCE)
+
+    find_program(ARM_OBJCOPY arm-none-eabi-objcopy)
+    if(ARM_OBJCOPY)
+        set(CMAKE_OBJCOPY "${ARM_OBJCOPY}" CACHE FILEPATH "objcopy" FORCE)
+    endif()
+
+    find_program(ARM_SIZE arm-none-eabi-size)
+    if(ARM_SIZE)
+        set(CMAKE_SIZE "${ARM_SIZE}" CACHE FILEPATH "size" FORCE)
+    endif()
+
+    set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY CACHE STRING "" FORCE)
+endif()
+
 # Core project settings
 project("stm32_spaceballoon")
 enable_language(C CXX ASM)

@@ -1,20 +1,19 @@
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
-# User-specified Toolchain Path
-set(ARM_TOOLCHAIN_DIR "${CMAKE_CURRENT_LIST_DIR}/../tools/arm-gnu-toolchain-15.2.rel1-mingw-w64-i686-arm-none-eabi/bin")
-set(TOOLCHAIN_PREFIX ${ARM_TOOLCHAIN_DIR}/arm-none-eabi-)
+# Linux CI/개발환경 기준: PATH에서 arm-none-eabi 툴체인을 탐색
+find_program(ARM_GCC arm-none-eabi-gcc REQUIRED)
+find_program(ARM_GXX arm-none-eabi-g++ REQUIRED)
+find_program(ARM_OBJCOPY arm-none-eabi-objcopy REQUIRED)
+find_program(ARM_SIZE arm-none-eabi-size REQUIRED)
 
-# User-specified Build Tools (make, rm, etc.)
-set(BUILD_TOOLS_DIR "${CMAKE_CURRENT_LIST_DIR}/../tools/xpack-windows-build-tools-4.4.1-3/bin")
-list(APPEND CMAKE_PROGRAM_PATH "${BUILD_TOOLS_DIR}")
+set(CMAKE_C_COMPILER "${ARM_GCC}" CACHE FILEPATH "C Compiler")
+set(CMAKE_CXX_COMPILER "${ARM_GXX}" CACHE FILEPATH "C++ Compiler")
+set(CMAKE_ASM_COMPILER "${ARM_GCC}" CACHE FILEPATH "ASM Compiler")
+set(CMAKE_OBJCOPY "${ARM_OBJCOPY}" CACHE FILEPATH "objcopy")
+set(CMAKE_SIZE "${ARM_SIZE}" CACHE FILEPATH "size")
 
-set(CMAKE_C_COMPILER "${TOOLCHAIN_PREFIX}gcc.exe" CACHE FILEPATH "C Compiler")
-set(CMAKE_CXX_COMPILER "${TOOLCHAIN_PREFIX}g++.exe" CACHE FILEPATH "C++ Compiler")
-set(CMAKE_ASM_COMPILER "${TOOLCHAIN_PREFIX}gcc.exe" CACHE FILEPATH "ASM Compiler")
-set(CMAKE_OBJCOPY "${TOOLCHAIN_PREFIX}objcopy.exe" CACHE FILEPATH "objcopy")
-set(CMAKE_SIZE "${TOOLCHAIN_PREFIX}size.exe" CACHE FILEPATH "size")
-
+# bare-metal 환경에서 try_compile 링크 단계 제거
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
