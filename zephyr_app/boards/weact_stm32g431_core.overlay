@@ -1,0 +1,100 @@
+/*
+ * Space Balloon Ver2 - Device Tree Overlay for weact STM32G431CBU6
+ * 
+ * 센서 구성:
+ *   I2C1: LSM6DSV16X (IMU), MLX90393 (자기계), GDK101 (방사선)
+ *   I2C3: MS5607 (기압), SHT3x (온습도), MCP9600 (열전대), CM1107N (CO2), SEN0321 (오존)
+ *   UART1: GPS (XA1110)
+ *   UART2: 미세먼지 (PMS3003)
+ *   1-Wire: DS18B20 (온도)
+ */
+
+#include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+
+/* I2C1 센서 (Downside Board) */
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	
+	lsm6dsv16x: lsm6dsv16x@6b {
+		compatible = "st,lsm6dsv16x";
+		reg = <0x6b>;
+		odr = <LSM6DSV16X_DT_ODR_AT_120Hz>;
+		accel-range = <16>;
+		gyro-range = <2000>;
+	};
+	
+	mlx90393: mlx90393@0c {
+		compatible = "melexis,mlx90393";  /* 직접 구현 필요 */
+		reg = <0x0c>;
+	};
+	
+	gdk101: gdk101@18 {
+		compatible = "fuka,gdk101";  /* 직접 구현 필요 */
+		reg = <0x18>;
+	};
+};
+
+/* I2C3 센서 (Upside Board) */
+&i2c2 {  /* Note: Zephyr maps I2C3 to i2c2 on some boards */
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	
+	ms5607: ms5607@77 {
+		compatible = "meas,ms5607";  /* MS5611 호환 */
+		reg = <0x77>;
+	};
+	
+	sht3x: shtcx@44 {
+		compatible = "sensirion,shtcx";
+		reg = <0x44>;
+		chip = "SHT3XDIS";
+	};
+	
+	mcp9600: mcp9600@60 {
+		compatible = "microchip,mcp9600";
+		reg = <0x60>;
+		thermocouple-type = "K";
+	};
+	
+	cm1107n: cm1107n@31 {
+		compatible = "cubic,cm1107n";  /* 직접 구현 필요 */
+		reg = <0x31>;
+	};
+	
+	sen0321: sen0321@70 {
+		compatible = "dfrobot,sen0321";  /* 직접 구현 필요 */
+		reg = <0x70>;
+	};
+};
+
+/* UART1 - GPS */
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	
+	gps: gnss {
+		compatible = "gnss-nmea-generic";
+	};
+};
+
+/* UART2 - 미세먼지 */
+&usart2 {
+	status = "okay";
+	current-speed = <9600>;
+	
+	pms: pms7003 {
+		compatible = "plantower,pms7003";  /* PMS3003 호환 */
+	};
+};
+
+/* 1-Wire - DS18B20 */
+&w1 {
+	status = "okay";
+	
+	ds18b20: ds18b20 {
+		compatible = "maxim,ds18b20";
+		family-code = <0x28>;
+		resolution = <12>;
+	};
+};

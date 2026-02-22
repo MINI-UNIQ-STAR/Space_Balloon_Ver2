@@ -19,8 +19,16 @@ set(PORTED_SOURCES
     src/actuators_zephyr.c
 )
 
+# 직접 구현한 센서 드라이버
+set(CUSTOM_SENSOR_SOURCES
+    src/sensors/mlx90393.c
+    src/sensors/gdk101.c
+    src/sensors/cm1107n.c
+    src/sensors/sen0321.c
+)
+
 # Zephyr 앱으로 빌드
-target_sources(app PRIVATE ${PORTED_SOURCES})
+target_sources(app PRIVATE ${PORTED_SOURCES} ${CUSTOM_SENSOR_SOURCES})
 
 # Include 경로
 target_include_directories(app PRIVATE
