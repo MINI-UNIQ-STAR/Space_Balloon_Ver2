@@ -35,9 +35,11 @@ zephyr_app/
 
 | 타겟 | 용도 | Flash | RAM |
 |------|------|-------|-----|
-| `qemu_cortex_m3` | QEMU 시뮬레이션 | 44KB (17%) | 13KB (21%) |
+| `qemu_cortex_m3` | QEMU 시뮬레이션 | 52KB (20%) | 13KB (21%) |
 | `weact_stm32g431_core` | weact STM32G431CBU6 | 53KB (40%) | 14KB (43%) |
 | `nucleo_g431rb` | Nucleo-G431RB 보드 | 53KB (40%) | 14KB (43%) |
+
+> **참고**: QEMU에서는 실제 센서 하드웨어가 없어서 고정값이 출력됩니다. 실제 하드웨어에서는 센서 데이터가 정상적으로 출력됩니다.
 
 ---
 
