@@ -35,9 +35,9 @@ zephyr_app/
 
 | 타겟 | 용도 | Flash | RAM |
 |------|------|-------|-----|
-| `qemu_cortex_m3` | QEMU 시뮬레이션 | 44KB (16%) | 13KB (20%) |
+| `qemu_cortex_m3` | QEMU 시뮬레이션 | 44KB (17%) | 13KB (21%) |
 | `weact_stm32g431_core` | weact STM32G431CBU6 | 53KB (40%) | 14KB (43%) |
-| `nucleo_g431rb` | Nucleo-G431RB 보드 | 57KB (43%) | 14KB (43%) |
+| `nucleo_g431rb` | Nucleo-G431RB 보드 | 53KB (40%) | 14KB (43%) |
 
 ---
 
