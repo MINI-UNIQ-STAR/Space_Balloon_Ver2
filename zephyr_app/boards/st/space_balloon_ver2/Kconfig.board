@@ -1,0 +1,15 @@
+# Space Balloon Ver2 Board Configuration
+
+config BOARD_SPACE_BALLOON_VER2
+	bool "Space Balloon Ver2 Radiosonde"
+	depends on SOC_STM32G431XX
+	select SOC_STM32G431XX
+	help
+	  Space Balloon high-altitude radiosonde based on STM32G431CBU6.
+	  
+	  Features:
+	  - Cortex-M4F @ 170MHz
+	  - 128KB Flash, 32KB RAM
+	  - 9x I2C/UART sensors
+	  - 2x PWM heaters
+	  - Telemetry output via UART3
