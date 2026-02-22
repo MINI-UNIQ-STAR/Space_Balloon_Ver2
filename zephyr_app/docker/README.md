@@ -5,8 +5,9 @@
 ### Build Docker Image
 
 ```bash
-cd docker
-docker build -t space-balloon-ver2:latest .
+# 프로젝트 루트에서 실행
+cd Space_Balloon_Ver2
+docker build -t space-balloon-ver2:latest -f zephyr_app/docker/Dockerfile .
 ```
 
 ### Run Container
@@ -40,7 +41,7 @@ docker run -it --rm --privileged -v /dev/bus/usb:/dev/bus/usb space-balloon-ver2
 ### Export Image
 
 ```bash
-cd docker
+cd Space_Balloon_Ver2/zephyr_app/docker
 ./export.sh
 ```
 
@@ -59,18 +60,19 @@ docker run -it --rm space-balloon-ver2:latest
 ## Directory Structure
 
 ```
-docker/
-├── Dockerfile      # Docker image definition
-├── build.sh        # Build script
-├── flash.sh        # Flash script
-├── export.sh       # Export image for transfer
-└── README.md       # This file
-
-zephyr_app/         # Project source (copied into image)
-├── CMakeLists.txt
-├── prj.conf
-├── src/
-└── include/
+Space_Balloon_Ver2/
+├── zephyr_app/           # Project source
+│   ├── CMakeLists.txt
+│   ├── prj.conf
+│   ├── src/
+│   ├── include/
+│   ├── boards/
+│   └── docker/
+│       ├── Dockerfile    # Docker image definition
+│       ├── build.sh      # Build script
+│       ├── flash.sh      # Flash script
+│       ├── export.sh     # Export image for transfer
+│       └── README.md     # This file
 ```
 
 ## Requirements
@@ -79,6 +81,15 @@ zephyr_app/         # Project source (copied into image)
 - ST-Link V2/V3 (for flashing)
 - USB permissions (for flashing)
 
+## Image Contents
+
+| Component | Version |
+|-----------|---------|
+| Ubuntu | 22.04 |
+| Zephyr SDK | 0.16.8 |
+| Python | 3.x |
+| ARM Toolchain | Included |
+
 ## Image Size
 
 - Base image: ~500MB
@@ -86,8 +97,17 @@ zephyr_app/         # Project source (copied into image)
 - Total: ~2GB
 - Export file: ~1GB (compressed)
 
+## Supported Targets
+
+| Target | Description |
+|--------|-------------|
+| `qemu_cortex_m3` | QEMU simulation |
+| `weact_stm32g431_core` | weact STM32G431CBU6 |
+| `nucleo_g431rb` | Nucleo-G431RB |
+
 ## Notes
 
 - The image includes full Zephyr SDK and toolchain
 - Build artifacts are stored in `/workspace/space_balloon_ver2/build/`
 - For flashing, run container with `--privileged` flag
+- All 11 sensor drivers are included

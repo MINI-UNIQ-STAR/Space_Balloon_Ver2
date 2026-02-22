@@ -1,11 +1,13 @@
 # Space Balloon Ver2 - Zephyr RTOS Build Environment
 # Multi-platform Docker image for building and flashing
+#
+# Build: docker build -t space-balloon-ver2:latest -f zephyr_app/docker/Dockerfile .
 
 FROM ubuntu:22.04
 
 LABEL maintainer="Hyeonsu Park"
 LABEL description="Zephyr RTOS build environment for Space Balloon Ver2"
-LABEL version="1.0"
+LABEL version="2.0"
 
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -45,8 +47,7 @@ WORKDIR /workspace
 RUN wget -q https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.8/zephyr-sdk-0.16.8_linux-x86_64.tar.xz \
     && tar xf zephyr-sdk-0.16.8_linux-x86_64.tar.xz \
     && mv zephyr-sdk-0.16.8 /opt/zephyr-sdk \
-    && rm zephyr-sdk-0.16.8_linux-x86_64.tar.xz \
-    && /opt/zephyr-sdk/setup.sh
+    && rm zephyr-sdk-0.16.8_linux-x86_64.tar.xz
 
 # Initialize Zephyr project
 RUN west init /workspace/zephyrproject
@@ -61,16 +62,13 @@ RUN pip3 install -r /workspace/zephyrproject/zephyr/scripts/requirements.txt
 ENV ZEPHYR_BASE=/workspace/zephyrproject/zephyr
 ENV ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
 
-# Copy project source
+# Copy project source (from project root context)
 COPY zephyr_app /workspace/space_balloon_ver2
 
-# Build script
-COPY build.sh /workspace/build.sh
-RUN chmod +x /workspace/build.sh
-
-# Flash script
-COPY flash.sh /workspace/flash.sh
-RUN chmod +x /workspace/flash.sh
+# Copy scripts
+COPY zephyr_app/docker/build.sh /workspace/build.sh
+COPY zephyr_app/docker/flash.sh /workspace/flash.sh
+RUN chmod +x /workspace/build.sh /workspace/flash.sh
 
 WORKDIR /workspace
 
