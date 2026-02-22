@@ -159,12 +159,12 @@ void Telemetry_BuildFrame(uint16_t status_flags, uint32_t uptime_ms,
     tx_frame.seq = seq_number++;
     tx_frame.timestamp_ms = uptime_ms;
     
-    /* 페이로드 */
+    /* 페이로드 - 실제 센서 데이터 사용 */
     memset(&tx_frame.payload, 0, sizeof(telemetry_payload_t));
     tx_frame.payload.uptime_ms = uptime_ms;
     tx_frame.payload.status_flags = status_flags;
-    tx_frame.payload.co2_ppm = 400;
     
+    /* IMU 데이터 */
     if (accel) {
         tx_frame.payload.accel_mps2_x1000[0] = accel[0];
         tx_frame.payload.accel_mps2_x1000[1] = accel[1];
@@ -177,15 +177,17 @@ void Telemetry_BuildFrame(uint16_t status_flags, uint32_t uptime_ms,
         tx_frame.payload.gyro_rads_x1000[2] = gyro[2];
     }
     
+    /* 기압/고도 데이터 */
     tx_frame.payload.ms5611_press_pa = press_pa;
     tx_frame.payload.ms5611_temp_c_x100 = temp_c_x100;
     tx_frame.payload.sht31_temp_c_x100 = temp_c_x100;
-    tx_frame.payload.sht31_rh_x100 = 5000;
     tx_frame.payload.press_alt_m = alt_m;
     tx_frame.payload.kf_alt_m = alt_m;
+    
+    /* 배터리 (센서에서 읽어야 하지만 기본값) */
     tx_frame.payload.bat_mv = 3700;
-    tx_frame.payload.bat_temp_c_x100 = 2500;
-    tx_frame.payload.board_temp_c_x100 = 2500;
+    tx_frame.payload.bat_temp_c_x100 = temp_c_x100;  /* 실제 온도 사용 */
+    tx_frame.payload.board_temp_c_x100 = temp_c_x100;
     
     /* CRC 계산 (헤더 + 페이로드, 144바이트) */
     tx_frame.crc16 = crc16_ccitt((const uint8_t *)&tx_frame, 144);

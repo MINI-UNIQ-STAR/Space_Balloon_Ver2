@@ -21,20 +21,31 @@ static struct k_thread fdir_thread;
 static struct k_thread sensor_thread;
 static struct k_thread telemetry_thread;
 
-/* 센서 데이터 */
+/* 센서 데이터 - 실제 센서에서 읽은 값 저장 */
 static struct {
     int32_t accel[3];
     int32_t gyro[3];
     uint32_t pressure_pa;
     int16_t temp_c_x100;
+    uint16_t humid_rh_x100;
+    int16_t external_temp_c_x100;
+    uint16_t co2_ppm;
+    int16_t ozone_ppb;
+    uint16_t radiation_usvh_x100;
     float altitude_m;
     uint32_t update_count;
-} sim_data;
+} sensor_data;
 
 /* 센서 함수 선언 */
 extern void Sensors_Init(void);
-extern void Sensors_Read_All(void *data);
 extern void Sensors_Read_IMU(int32_t accel[3], int32_t gyro[3]);
+extern void Sensors_Read_Baro(uint32_t *press_pa, int16_t *temp_c_x100);
+extern void Sensors_Read_Humid(int16_t *temp_c_x100, uint16_t *rh_x100);
+extern void Sensors_Read_External(int16_t *temp_c_x100);
+extern void Sensors_Read_AirQuality(uint16_t *co2, int16_t *ozone, uint16_t *pm1_0, uint16_t *pm2_5);
+extern void Sensors_Read_Rad(uint16_t *usvh);
+extern void Sensors_Read_BoardTemp(int16_t *temp_c_x100);
+extern void Sensors_Read_Battery(uint16_t *mv, int16_t *temp_c_x100);
 
 /* 텔레메트리 함수 선언 */
 extern void Telemetry_Init(void);
@@ -42,6 +53,24 @@ extern void Telemetry_Process(uint16_t status_flags, uint32_t uptime_ms,
                               int32_t accel[3], int32_t gyro[3],
                               uint32_t press_pa, int16_t temp_c_x100,
                               float alt_m);
+
+/* 고도 계산 (기압 기반) */
+static float calculate_altitude(uint32_t press_pa) {
+    /* 국제 표준 대기 모델 */
+    const float P0 = 101325.0f;  /* 해면 기압 (Pa) */
+    const float T0 = 288.15f;    /* 해면 온도 (K) */
+    const float L = 0.0065f;     /* 기온 감률 (K/m) */
+    const float R = 8.31447f;    /* 기체 상수 */
+    const float M = 0.0289644f;  /* 공기 몰질량 (kg/mol) */
+    const float g = 9.80665f;    /* 중력가속도 */
+    
+    if (press_pa <= 0) return 0.0f;
+    
+    float P = (float)press_pa;
+    float alt = (T0 / L) * (1.0f - powf(P / P0, (R * L) / (g * M)));
+    
+    return alt;
+}
 
 /**
  * @brief FDIR 스레드 (50Hz)
@@ -62,37 +91,42 @@ static void fdir_thread_fn(void *p1, void *p2, void *p3) {
 static void sensor_thread_fn(void *p1, void *p2, void *p3) {
     LOG_INF("Sensor thread started");
     
-    uint32_t fault_inject_count = 0;
-    
     while (1) {
         uint32_t now = k_uptime_get_32();
-        sim_data.update_count++;
+        sensor_data.update_count++;
         
-        /* 실제 센서 데이터 읽기 */
-        Sensors_Read_IMU(sim_data.accel, sim_data.gyro);
+        /* 실제 센서에서 데이터 읽기 */
+        Sensors_Read_IMU(sensor_data.accel, sensor_data.gyro);
+        Sensors_Read_Baro(&sensor_data.pressure_pa, &sensor_data.temp_c_x100);
+        Sensors_Read_Humid(&sensor_data.temp_c_x100, &sensor_data.humid_rh_x100);
+        Sensors_Read_External(&sensor_data.external_temp_c_x100);
         
-        /* 고도 시뮬레이션 */
-        sim_data.altitude_m += 0.1f;
-        sim_data.pressure_pa = 101325 - (uint32_t)(sim_data.altitude_m * 12);
-        sim_data.temp_c_x100 = 2500 - (int16_t)(sim_data.altitude_m / 100.0f * 650);
+        /* 공기질 센서 */
+        uint16_t pm1_0, pm2_5;
+        Sensors_Read_AirQuality(&sensor_data.co2_ppm, &sensor_data.ozone_ppb, 
+                                &pm1_0, &pm2_5);
         
-        /* FDIR에 정상 보고 */
-        FDIR_ReportOK(SENSOR_ID_BARO, now);
-        FDIR_ReportOK(SENSOR_ID_GPS, now);
+        /* 방사선 센서 */
+        Sensors_Read_Rad(&sensor_data.radiation_usvh_x100);
         
-        /* 온도 보호 테스트 */
-        FDIR_CheckTemperatureProtection(sim_data.temp_c_x100);
+        /* 고도 계산 */
+        sensor_data.altitude_m = calculate_altitude(sensor_data.pressure_pa);
+        
+        /* 온도 보호 */
+        FDIR_CheckTemperatureProtection(sensor_data.temp_c_x100);
         
         /* FDIR 범위 검증 */
-        FDIR_ValidateRange_Baro(sim_data.pressure_pa);
+        FDIR_ValidateRange_Baro(sensor_data.pressure_pa);
         
         /* 상태 플래그 확인 */
         uint16_t flags = FDIR_GetStatusFlags();
         
-        if (sim_data.update_count % 50 == 0) {
-            LOG_INF("Sensors: accel=[%d,%d,%d], press=%" PRIu32 "Pa, alt=%.1fm, flags=0x%04X",
-                    sim_data.accel[0], sim_data.accel[1], sim_data.accel[2],
-                    sim_data.pressure_pa, sim_data.altitude_m, flags);
+        /* 주기적 로그 (1초마다) */
+        if (sensor_data.update_count % 10 == 0) {
+            LOG_INF("Sensors: accel=[%d,%d,%d], press=%uPa, alt=%.1fm, temp=%.1fC, flags=0x%04X",
+                    sensor_data.accel[0], sensor_data.accel[1], sensor_data.accel[2],
+                    sensor_data.pressure_pa, sensor_data.altitude_m, 
+                    sensor_data.temp_c_x100 / 100.0f, flags);
         }
         
         k_msleep(100);  /* 10 Hz */
@@ -111,9 +145,9 @@ static void telemetry_thread_fn(void *p1, void *p2, void *p3) {
         
         /* UART3로 148바이트 프레임 전송 */
         Telemetry_Process(flags, now,
-                          sim_data.accel, sim_data.gyro,
-                          sim_data.pressure_pa, sim_data.temp_c_x100,
-                          sim_data.altitude_m);
+                          sensor_data.accel, sensor_data.gyro,
+                          sensor_data.pressure_pa, sensor_data.temp_c_x100,
+                          sensor_data.altitude_m);
         
         k_msleep(20);  /* 50 Hz */
     }
