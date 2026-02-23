@@ -18,6 +18,21 @@
 #include <inttypes.h>  /* MISRA C:2023 - PRIu32 for portable printf */
 
 /* ========================================================================== */
+/* RENODE 디버그 출력 (경량화)                                                 */
+/* ========================================================================== */
+#ifdef RENODE_DEBUG
+/* UART2를 이용한 FDIR 상태 로깅 (Renode 시뮬레이션용) */
+extern UART_HandleTypeDef huart2;
+#define FDIR_DEBUG(fmt, ...) do { \
+    char _dbg_buf[80]; \
+    int _len = snprintf(_dbg_buf, sizeof(_dbg_buf), "[FDIR] " fmt "\n", ##__VA_ARGS__); \
+    HAL_UART_Transmit(&huart2, (uint8_t*)_dbg_buf, _len, 10); \
+} while(0)
+#else
+#define FDIR_DEBUG(fmt, ...) ((void)0)
+#endif
+
+/* ========================================================================== */
 /* 전역 변수 정의                                                              */
 /* ========================================================================== */
 
@@ -172,10 +187,8 @@ void FDIR_Update(void) {
             sensor_cold_disabled[i] = true;
             sensors_health[i].enabled = false;
             sensors_health[i].state = FDIR_STATE_WARNING; // Mark as warning, not permanent failure
-            #ifdef DEBUG
-            printf("FDIR: Sensor %d COLD DISABLED (%.1f degC < %.1f degC)\n", 
-                   i, current_ext_temp_x100/100.0f, min_temp/100.0f);
-            #endif
+            FDIR_DEBUG("Sensor %d COLD DISABLED (%.1f C < %.1f C)", 
+                   (int)i, current_ext_temp_x100/100.0f, min_temp/100.0f);
             
             // Physically disable if applicable
             if (i == SENSOR_ID_PMS) {
@@ -196,10 +209,8 @@ void FDIR_Update(void) {
             sensors_health[i].recovery_count = 0;
             sensors_health[i].last_valid_update_ms = now;
             sensors_health[i].state = FDIR_STATE_RECOVERY;
-            #ifdef DEBUG
-            printf("FDIR: Sensor %d WARM RECOVERY (%.1f degC)\n", 
-                   i, current_ext_temp_x100/100.0f);
-            #endif
+            FDIR_DEBUG("Sensor %d WARM RECOVERY (%.1f C)", 
+                   (int)i, current_ext_temp_x100/100.0f);
             
             // Physically re-enable
             if (i == SENSOR_ID_PMS) {
@@ -225,10 +236,8 @@ void FDIR_Update(void) {
         if (diff > timeout) {
             sensors_health[i].state = FDIR_STATE_WARNING;
             
-            #ifdef DEBUG
-            printf("FDIR: Sensor %d Timeout (%" PRIu32 " ms). Recovery %" PRIu32 "/%d\n", 
-                   i, diff, sensors_health[i].recovery_count + 1U, sensor_max_recovery[i]);
-            #endif
+            FDIR_DEBUG("Sensor %d Timeout (%" PRIu32 " ms). Recovery %" PRIu32 "/%d", 
+                   (int)i, diff, sensors_health[i].recovery_count + 1U, (int)sensor_max_recovery[i]);
             
             Sensors_Reset((SensorID_t)i);
             
@@ -238,9 +247,7 @@ void FDIR_Update(void) {
             
             if (sensors_health[i].recovery_count >= sensor_max_recovery[i]) {
                 sensors_health[i].state = FDIR_STATE_FAILURE_PERMANENT;
-                #ifdef DEBUG
-                printf("FDIR: Sensor %d PERMANENT FAILURE\n", i);
-                #endif
+                FDIR_DEBUG("Sensor %d PERMANENT FAILURE", (int)i);
             }
         }
     }
@@ -356,9 +363,7 @@ bool FDIR_ValidateRange_Baro(uint32_t press_pa) {
     if (press_pa < BARO_MIN_PA || press_pa > BARO_MAX_PA) {
         range_error_detected = true;
         FDIR_ReportFailure(SENSOR_ID_BARO, 1);
-        #ifdef DEBUG
-        printf("FDIR: Baro range error: %" PRIu32 " Pa\n", press_pa);
-        #endif
+        FDIR_DEBUG("Baro range error: %" PRIu32 " Pa", press_pa);
         return false;
     }
     return true;
@@ -374,9 +379,7 @@ bool FDIR_ValidateRange_GPS_Alt(float32_t alt_m) {
     if (alt_m < GPS_ALT_MIN_M || alt_m > GPS_ALT_MAX_M) {
         range_error_detected = true;
         FDIR_ReportFailure(SENSOR_ID_GPS, 2);
-        #ifdef DEBUG
-        printf("FDIR: GPS altitude range error: %.1f m\n", alt_m);
-        #endif
+        FDIR_DEBUG("GPS altitude range error: %.1f m", alt_m);
         return false;
     }
     return true;
@@ -391,9 +394,7 @@ bool FDIR_ValidateRange_GPS_Alt(float32_t alt_m) {
 bool FDIR_ValidateRange_Temp(int16_t temp_c_x100) {
     if (temp_c_x100 < TEMP_MIN_X100 || temp_c_x100 > TEMP_MAX_X100) {
         range_error_detected = true;
-        #ifdef DEBUG
-        printf("FDIR: Temp range error: %.1f C\n", temp_c_x100 / 100.0f);
-        #endif
+        FDIR_DEBUG("Temp range error: %.1f C", temp_c_x100 / 100.0f);
         return false;
     }
     return true;
@@ -419,10 +420,8 @@ bool FDIR_CheckContinuity_GPS_Alt(float32_t new_alt_m) {
     
     if (delta > ALT_JUMP_THRESHOLD_M) {
         alt_jump_detected = true;
-        #ifdef DEBUG
-        printf("FDIR: GPS altitude jump detected: %.1f -> %.1f (delta=%.1fm)\n", 
+        FDIR_DEBUG("GPS altitude jump: %.1f -> %.1f (delta=%.1fm)", 
                last_gps_alt_m, new_alt_m, delta);
-        #endif
         // Don't update last value on jump detection
         return false;
     }
@@ -475,9 +474,7 @@ float32_t FDIR_GetBackupAltitude(void) {
     }
     
     if (gps_alt_valid && sensors_health[SENSOR_ID_GPS].state == FDIR_STATE_HEALTHY) {
-        #ifdef DEBUG
-        printf("FDIR: Using GPS altitude as backup: %.1f m\n", current_gps_alt_m);
-        #endif
+        FDIR_DEBUG("Using GPS altitude as backup: %.1f m", current_gps_alt_m);
         return current_gps_alt_m;
     }
     

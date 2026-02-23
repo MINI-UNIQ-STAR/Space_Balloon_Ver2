@@ -1,11 +1,32 @@
+/**
+ * @file telemetry.c
+ * @brief 텔레메트리 프레임 생성 및 전송
+ * @details 148바이트 센서 스냅샷 프레임 (50Hz)
+ *          - 헤더: Magic(2), Version(1), Type(1), Seq(4), Timestamp(4), PayloadLen(2)
+ *          - 페이로드: 센서 데이터 (134바이트)
+ *          - CRC16: CCITT-FALSE (Poly 0x1021, Init 0xFFFF)
+ *          - 전송: UART3 (115200 bps)
+ * @author Hyeonsu Park
+ * @date 2026-01-13
+ * @version 1.0
+ */
+
 #include "telemetry.h"
 #include "main.h"
+#include <stdbool.h>
 
 #ifdef HOST_TEST_MODE
+#include <string.h>
 #include <stdio.h>
 #endif
 
-/* CRC16-CCITT FALSE (Poly 0x1021, Init 0xFFFF) */
+/**
+ * @brief CRC16-CCITT 계산 (CCITT-FALSE)
+ * @param data 데이터 버퍼
+ * @param length 데이터 길이 (바이트)
+ * @return uint16_t CRC16 값
+ * @details 다항식: 0x1021, 초기값: 0xFFFF, XOR Out: 0x0000
+ */
 uint16_t CRC16_CCITT(uint8_t *data, uint16_t length) {
     uint16_t crc = 0xFFFFU;
     for (uint16_t i = 0; i < length; i++) {
@@ -79,18 +100,19 @@ static void Telemetry_PrintFrame(telemetry_frame_t *frame) {
 }
 #endif
 
+extern UART_HandleTypeDef huart3;
+static volatile bool tx_busy = false;
+
 void Telemetry_Send(telemetry_frame_t *frame) {
-    /* 1. Calculate CRC over Header (excluding CRC field) + Payload
-     * Header is 12 bytes. payload is variable.
-     * Total length to CRC = sizeof(header before crc) + payload_len
-     * Actually, let's just calc CRC over the whole structure excluding the last 2 bytes?
-     * Structure alignment might be tricky. Safest is to just cast to uint8_t* 
-     */
-    
+    if (tx_busy) {
+        // Previous transmission still in progress.
+        // Skip this frame to preserve real-time loop.
+        return;
+    }
+
     /* Frame size = sizeof(telemetry_frame_t).
      * CRC applies to bytes 0 to end-3 (Total - 2 bytes for CRC)
      */
-    
     uint16_t total_len = sizeof(telemetry_frame_t);
     uint16_t crc_len = total_len - 2U;
     
@@ -98,13 +120,25 @@ void Telemetry_Send(telemetry_frame_t *frame) {
     
 #ifdef HOST_TEST_MODE
     Telemetry_PrintFrame(frame);
+    // Simulate DMA completion for test
+    tx_busy = false; 
+#else
+    /* Non-blocking DMA Transmission */
+    // MISRA C 2023: Protect tx_busy race condition
+    uint32_t primask_bit = __get_PRIMASK();
+    __disable_irq();
+    tx_busy = true;
+    __set_PRIMASK(primask_bit);
+    
+    if (HAL_UART_Transmit_DMA(&huart3, (uint8_t*)frame, total_len) != HAL_OK) {
+        // Error handling: Reset busy flag if start failed
+        tx_busy = false;
+    }
 #endif
-    
-    /* 2. Send via UART
-     * Assuming UART3 is used for LoRa as per spec
-     * extern UART_HandleTypeDef huart3;
-     * HAL_UART_Transmit(&huart3, (uint8_t*)frame, total_len, 100);
-     */
-    
-    /* Mock Send (No-op) */
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART3) {
+        tx_busy = false;
+    }
 }

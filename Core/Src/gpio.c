@@ -56,15 +56,15 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, CM1107N_RST_Pin|SEN_RST_Pin|GDK_RST_Pin|PMS_SET_Pin
                           |SHT_RST_Pin|LSM_RST_Pin|MLX_RST_Pin|DS18B20_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PAPin PAPin PAPin PAPin */
+  /*Configure GPIO pins : MCP_RST_Pin MS_RST_Pin XA1110_Wake_Pin XA1110_RST_Pin */
   GPIO_InitStruct.Pin = MCP_RST_Pin|MS_RST_Pin|XA1110_Wake_Pin|XA1110_RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin PBPin PBPin
-                           PBPin PBPin PBPin */
+  /*Configure GPIO pins : CM1107N_RST_Pin SEN_RST_Pin GDK_RST_Pin PMS_SET_Pin
+                           SHT_RST_Pin LSM_RST_Pin MLX_RST_Pin */
   GPIO_InitStruct.Pin = CM1107N_RST_Pin|SEN_RST_Pin|GDK_RST_Pin|PMS_SET_Pin
                           |SHT_RST_Pin|LSM_RST_Pin|MLX_RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -72,13 +72,13 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin PBPin PBPin */
+  /*Configure GPIO pins : XA1110_INT_Pin XA1110_PPS_Pin LSM_INT_Pin MLX_INT_Pin */
   GPIO_InitStruct.Pin = XA1110_INT_Pin|XA1110_PPS_Pin|LSM_INT_Pin|MLX_INT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PtPin */
+  /*Configure GPIO pin : DS18B20_Pin */
   GPIO_InitStruct.Pin = DS18B20_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;

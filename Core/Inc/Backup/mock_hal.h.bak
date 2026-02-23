@@ -2,7 +2,6 @@
  * @file mock_hal.h
  * @brief HAL Mock for Host Testing (SITL Mode)
  * @details Provides minimal HAL type definitions for PC-based testing
- *          When HOST_TEST_MODE is defined, uses external mock functions
  */
 
 #ifndef MOCK_HAL_H
@@ -76,33 +75,7 @@ typedef struct {
     void *Instance;
 } TIM_HandleTypeDef;
 
-/* Mock GPIO Port Pointers - Use unique addresses for comparison */
-#define GPIOA ((GPIO_TypeDef*)0x48000000U)
-#define GPIOB ((GPIO_TypeDef*)0x48000400U)
-#define GPIOC ((GPIO_TypeDef*)0x48000800U)
-
-/* Mock USART Pointers */
-#define USART1 ((void*)1)
-#define USART2 ((void*)2)
-#define USART3 ((void*)3)
-
-/* Mock I2C Pointers */
-#define I2C1 ((void*)1)
-#define I2C3 ((void*)3)
-
-/* ========================================================================== */
-/* Mock Functions - External declarations for HOST_TEST_MODE                */
-/* ========================================================================== */
-
-#ifdef HOST_TEST_MODE
-/* External mock functions - defined in mock_dependencies.c */
-extern uint32_t HAL_GetTick(void);
-extern void HAL_Delay(uint32_t ms);
-extern void HAL_GPIO_WritePin(GPIO_TypeDef *port, uint16_t pin, GPIO_PinState state);
-extern GPIO_PinState HAL_GPIO_ReadPin(GPIO_TypeDef *port, uint16_t pin);
-extern void HAL_GPIO_TogglePin(GPIO_TypeDef *port, uint16_t pin);
-#else
-/* Inline stubs for non-test builds */
+/* Mock Functions */
 static inline uint32_t HAL_GetTick(void) {
     static uint32_t tick = 0;
     return tick++;
@@ -124,6 +97,19 @@ static inline GPIO_PinState HAL_GPIO_ReadPin(GPIO_TypeDef *port, uint16_t pin) {
 static inline void HAL_GPIO_TogglePin(GPIO_TypeDef *port, uint16_t pin) {
     (void)port; (void)pin;
 }
-#endif /* HOST_TEST_MODE */
+
+/* Mock GPIO Port Pointers */
+#define GPIOA ((GPIO_TypeDef*)0)
+#define GPIOB ((GPIO_TypeDef*)0)
+#define GPIOC ((GPIO_TypeDef*)0)
+
+/* Mock USART Pointers */
+#define USART1 ((void*)1)
+#define USART2 ((void*)2)
+#define USART3 ((void*)3)
+
+/* Mock I2C Pointers */
+#define I2C1 ((void*)1)
+#define I2C3 ((void*)3)
 
 #endif /* MOCK_HAL_H */
