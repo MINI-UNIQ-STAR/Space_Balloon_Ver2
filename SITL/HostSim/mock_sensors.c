@@ -377,3 +377,15 @@ void Sensors_SetHeater_SHT31(uint8_t enable) {
     (void)enable;
     printf("[Mock] SHT31 Heater Set: %d\n", enable);
 }
+
+
+/** @brief PPS 캡처 초기화 (Mock) */
+void PPS_Init(void) {
+    printf("[Mock] PPS_Init called\n");
+}
+
+/** @brief 센서 리셋 처리 (Mock) */
+void Sensors_ProcessReset(void) {
+    // No-op for SITL
+}
+

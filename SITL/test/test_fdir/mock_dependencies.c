@@ -28,12 +28,13 @@ static int pms_set_state = -1;
 
 /** @brief HAL_GPIO_WritePin Mock 구현 - PMS 핀 상태 캡처 */
 void HAL_GPIO_WritePin(void* GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState) {
-    // 디버그 출력 (필요 시 활성화)
-    // printf("DEBUG: MockGPIO Write: Port=%p, Pin=%u, State=%d (Expected Port=%p, Pin=%u)\n", 
-    //        GPIOx, GPIO_Pin, PinState, PMS_SET_GPIO_Port, PMS_SET_Pin);
-    
     // PMS SET 핀 제어 여부 확인
-    if (GPIOx == PMS_SET_GPIO_Port && GPIO_Pin == PMS_SET_Pin) {
+    // GPIOB는 실제 STM32에서 0x48000400, mock에서 0xB
+    // 두 주소 모두 PMS_SET 핀으로 간주
+    uintptr_t port_addr = (uintptr_t)GPIOx;
+    bool is_gpio_b = (port_addr == 0xB || port_addr == 0x48000400);
+    
+    if (is_gpio_b && GPIO_Pin == GPIO_PIN_10) {
         pms_set_state = PinState;
     }
 }
@@ -74,4 +75,9 @@ int MockSensors_GetResetCount(void) {
 /** @brief 마지막 리셋 센서 ID 조회 Helper */
 int MockSensors_GetLastResetSensor(void) {
     return (int)last_reset_sensor;
+}
+
+/** @brief 센서 리셋 처리 (Mock) */
+void Sensors_ProcessReset(void) {
+    // Non-blocking reset state machine - no-op for unit tests
 }

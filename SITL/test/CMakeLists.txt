@@ -3,8 +3,10 @@ project(UnitTests C)
 
 set(CMAKE_C_STANDARD 11)
 
-# Definitions for Host Test Mode
+# Link math library
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lm")
 
+# Definitions for Host Test Mode
 add_definitions(-DUNIT_TEST)
 
 # Include Directories
@@ -25,9 +27,9 @@ set(DRIVER_INCLUDES
 
 include_directories(
     unity_minimal
-    ${CMAKE_CURRENT_SOURCE_DIR}/../HostSim/mock_inc # Prioritize Mocks
+    ${CMAKE_CURRENT_SOURCE_DIR}/../HostSim/mock_inc
     ../../Core/Inc
-    test_fdir # For mock_dependencies.h
+    test_fdir
     ${DRIVER_INCLUDES}
 )
 
@@ -54,7 +56,7 @@ target_include_directories(test_fdir_runner PRIVATE
 # --- Test PID ---
 add_executable(test_pid_runner
     test_pid/test_main.c
-    ../Core/Src/pid.c
+    ../../Core/Src/pid.c
     ${UNITY_SRC}
 )
 
@@ -68,7 +70,7 @@ target_include_directories(test_pid_runner PRIVATE
 # --- Test Kalman ---
 add_executable(test_kalman_runner
     test_kalman/test_main.c
-    ../Core/Src/kalman.c
+    ../../Core/Src/kalman.c
     ${UNITY_SRC}
 )
 
@@ -131,6 +133,8 @@ add_executable(test_integration_runner
 )
 
 target_compile_definitions(test_integration_runner PRIVATE HOST_TEST_MODE)
+
+target_link_libraries(test_integration_runner PRIVATE m)
 
 target_include_directories(test_integration_runner PRIVATE
     unity_minimal
