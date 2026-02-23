@@ -1,0 +1,18 @@
+if BOARD_STM32G431CBU6
+
+config GPIO
+	default y
+
+config SERIAL
+	default y
+
+config UART_CONSOLE
+	default y
+
+config CONSOLE
+	default y
+
+config CLOCK_CONTROL
+	default y
+
+endif

@@ -1,0 +1,131 @@
+### FDIR Test Script v2 - Telemetry-Based Verification
+### STM32G431 Space Balloon Radiosonde - Enhanced FDIR Testing
+###
+### Purpose: Verify FDIR state machine through telemetry status_flags
+###
+### Usage:
+###   cd RENODE_TEST(HIL)/renode
+###   renode --disable-xwt --port 1234 --plain
+###   (monitor) include @scripts/test_fdir_v2.resc
+###   (monitor) start
+###
+### Features:
+###   - Telemetry frame parsing (148 bytes at 50Hz)
+###   - FDIR status_flags verification
+###   - Fault injection support
+###   - Recovery sequence testing
+
+# Log level
+logLevel 3
+
+echo "========================================"
+echo "FDIR Test v2 - Telemetry Verification"
+echo "========================================"
+
+# Create machine
+mach create "radiosonde"
+
+echo "Loading platform..."
+machine LoadPlatformDescription @platforms/stm32g431_with_sensors.repl
+echo "  ✓ Platform loaded"
+
+# Load firmware FIRST (before sensors so we know the machine exists)
+echo "Loading firmware..."
+sysbus LoadELF @../../build/stm32_spaceballoon
+echo "  ✓ Firmware loaded"
+
+echo "Loading sensors..."
+
+# I2C1 Sensors (Downside) - using Python models
+# LSM6DSV16X (IMU) @ 0x6B
+python "
+class LSM6DSV16X:
+    def __init__(self):
+        self.reg = 0
+        self.who_am_i = 0x70
+    def Reset(self):
+        pass
+    def Write(self, data):
+        if len(data) > 0:
+            self.reg = data[0]
+    def Read(self, count):
+        import System
+        resp = []
+        for i in range(count):
+            r = self.reg + i
+            if r == 0x0F:
+                resp.append(0x70)
+            else:
+                resp.append(0)
+        return System.Array[System.Byte](resp)
+    def FinishTransmission(self):
+        pass
+"
+python "self.Machine['sysbus.i2c1'].Register(LSM6DSV16X(), 0x6B)"
+echo "  ✓ LSM6DSV16X @ 0x6B (I2C1)"
+
+# MS5611 (Barometer) @ 0x77
+python "
+class MS5611:
+    def __init__(self):
+        self.state = 'IDLE'
+        self.prom = [0, 40127, 36924, 23317, 23282, 32463, 28312, 0]
+        self.adc = 6000000
+    def Reset(self):
+        pass
+    def Write(self, data):
+        import System
+        if len(data) == 0: return
+        cmd = data[0]
+        if 0xA0 <= cmd <= 0xAE:
+            self.state = 'PROM'
+            self.idx = (cmd - 0xA0) >> 1
+        elif cmd == 0x00:
+            self.state = 'ADC'
+    def Read(self, count):
+        import System
+        if self.state == 'PROM' and self.idx < len(self.prom):
+            v = self.prom[self.idx]
+            return System.Array[System.Byte]([(v>>8)&0xFF, v&0xFF])
+        elif self.state == 'ADC':
+            return System.Array[System.Byte]([(self.adc>>16)&0xFF, (self.adc>>8)&0xFF, self.adc&0xFF])
+        return System.Array[System.Byte]([0]*count)
+    def FinishTransmission(self):
+        pass
+"
+python "self.Machine['sysbus.i2c3'].Register(MS5611(), 0x77)"
+echo "  ✓ MS5611 @ 0x77 (I2C3)"
+
+# SHT31 (Humidity) @ 0x44
+python "
+class SHT31:
+    def __init__(self): pass
+    def Reset(self): pass
+    def Write(self, data): pass
+    def Read(self, count):
+        import System
+        return System.Array[System.Byte]([0x30, 0x65, 0x41, 0x88, 0x0F, 0x4D])
+    def FinishTransmission(self): pass
+"
+python "self.Machine['sysbus.i2c3'].Register(SHT31(), 0x44)"
+echo "  ✓ SHT31 @ 0x44 (I2C3)"
+
+echo ""
+echo "========================================"
+echo "Sensor Configuration"
+echo "========================================"
+echo ""
+echo "I2C1: LSM6DSV16X @ 0x6B (IMU)"
+echo "I2C3: MS5611 @ 0x77 (Baro), SHT31 @ 0x44 (Humid)"
+echo ""
+echo "UART:"
+echo "  - USART3: Telemetry Output (50Hz)"
+echo ""
+
+echo ""
+echo "========================================"
+echo "Ready. Use 'start' to begin simulation."
+echo "========================================"
+echo ""
+echo "Available peripherals:"
+showPeripherals

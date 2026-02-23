@@ -1,0 +1,44 @@
+### FDIR Test - Linux Compatible (Absolute Paths)
+### Uses external Python sensor file
+
+logLevel 2
+
+echo "============================================"
+echo "FDIR Test - Telemetry Verification"
+echo "============================================"
+
+# Create machine
+mach create "radiosonde"
+
+# Load platform
+machine LoadPlatformDescription @/home/uniqstar-sw/Space_Balloon_Ver2/RENODE_TEST(HIL)/renode/platforms/stm32g431.repl
+
+# Load firmware
+echo "Loading firmware..."
+sysbus LoadELF @/home/uniqstar-sw/Space_Balloon_Ver2/build/stm32_spaceballoon
+echo "  Done"
+
+# Load and register sensors from Python file (absolute path)
+echo "Loading sensors..."
+python "exec(open('/home/uniqstar-sw/Space_Balloon_Ver2/RENODE_TEST(HIL)/renode/sensors/minimal_sensors.py').read())"
+python "self.Machine['sysbus.i2c1'].Register(LSM6DSV16X(), 0x6B)"
+echo "  LSM6DSV16X @ 0x6B (IMU)"
+
+python "self.Machine['sysbus.i2c3'].Register(MS5611(), 0x77)"
+echo "  MS5611 @ 0x77 (Baro)"
+
+python "self.Machine['sysbus.i2c3'].Register(SHT31(), 0x44)"
+echo "  SHT31 @ 0x44 (Humid)"
+
+# Show peripherals
+echo ""
+echo "=== Registered Peripherals ==="
+peripherals
+
+echo ""
+echo "============================================"
+echo "Commands:"
+echo "  start                          - Begin"
+echo "  emulation RunFor '00:00:05'    - Run 5s"
+echo "  i2c1.Unregister(i2c1_lsm6dsv16x) - Fault"
+echo "============================================"

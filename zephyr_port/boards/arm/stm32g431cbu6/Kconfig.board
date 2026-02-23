@@ -1,0 +1,3 @@
+config BOARD_STM32G431CBU6
+	bool "STM32G431CBU6 custom board"
+	depends on SOC_SERIES_STM32G4X

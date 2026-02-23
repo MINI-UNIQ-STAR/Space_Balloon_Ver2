@@ -8,48 +8,51 @@
     <LangVersion>latest</LangVersion>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutDir>bin/</OutDir>
   </PropertyGroup>
 
-  <!--
-    Renode DLL 경로 설정
-    환경 변수 RENODE_ROOT를 통해 지정하거나,
-    또는 이 파일을 직접 수정하여 경로를 설정하세요.
-
-    예시:
-    Windows: C:\Program Files\Renode\bin
-    Linux: /opt/renode/bin
-    macOS: /Applications/Renode.app/Contents/MacOS
-  -->
+  <!-- Renode Linux path -->
   <PropertyGroup>
-    <RenodePath Condition="'$(RENODE_ROOT)' != ''">$(RENODE_ROOT)</RenodePath>
-    <RenodePath Condition="'$(RenodePath)' == ''">C:\Program Files\Renode\bin</RenodePath>
+    <RenodePath>/opt/renode_1.15.3_portable/bin</RenodePath>
   </PropertyGroup>
 
-  <!-- Renode DLL 참조 (EXE 직접 참조 시도) -->
+  <!-- Renode DLL 참조 -->
   <ItemGroup>
     <Reference Include="Renode">
-      <HintPath>$(RenodePath)\Renode.exe</HintPath>
+      <HintPath>$(RenodePath)/Renode.exe</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- 기존 DLL 참조는 파일이 없을 경우 무시되거나 에러 발생. 
-         Renode.exe에 통합된 경우 위 참조만으로 충분할 수 있음. -->
+    <Reference Include="Antmicro.Renode">
+      <HintPath>$(RenodePath)/Antmicro.Renode.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Antmicro.Renode.Core">
+      <HintPath>$(RenodePath)/Antmicro.Renode.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Antmicro.Renode.Peripherals">
+      <HintPath>$(RenodePath)/Antmicro.Renode.Peripherals.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Antmicro.Renode.Logging">
+      <HintPath>$(RenodePath)/Antmicro.Renode.Logging.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <!-- 센서 C# 파일들 포함 -->
   <ItemGroup>
-    <Compile Include="..\sensors\ms5611_i2c.cs" />
-    <Compile Include="..\sensors\cm1107n_i2c.cs" />
-    <Compile Include="..\sensors\lsm6dsv16x_i2c.cs" />
-    <Compile Include="..\sensors\sht31d_i2c.cs" />
-    <Compile Include="..\sensors\sen0321_i2c.cs" />
-    <Compile Include="..\sensors\mcp9600_i2c.cs" />
-    <Compile Include="..\sensors\gdk101_i2c.cs" />
-    <Compile Include="..\sensors\mlx90393_i2c.cs" />
-    <!-- GPS 센서는 UART 인터페이스 필요 -->
-    <!-- <Compile Include="..\sensors\gps_xa1110.cs" /> -->
+    <Compile Include="..\sensors\ms5611_i2c.cs" Link="sensors\ms5611_i2c.cs" />
+    <Compile Include="..\sensors\cm1107n_i2c.cs" Link="sensors\cm1107n_i2c.cs" />
+    <Compile Include="..\sensors\lsm6dsv16x_i2c.cs" Link="sensors\lsm6dsv16x_i2c.cs" />
+    <Compile Include="..\sensors\sht31d_i2c.cs" Link="sensors\sht31d_i2c.cs" />
+    <Compile Include="..\sensors\sen0321_i2c.cs" Link="sensors\sen0321_i2c.cs" />
+    <Compile Include="..\sensors\mcp9600_i2c.cs" Link="sensors\mcp9600_i2c.cs" />
+    <Compile Include="..\sensors\gdk101_i2c.cs" Link="sensors\gdk101_i2c.cs" />
+    <Compile Include="..\sensors\mlx90393_i2c.cs" Link="sensors\mlx90393_i2c.cs" />
   </ItemGroup>
 
-  <!-- 경고 억제 (Renode API 호환성) -->
+  <!-- 경고 억제 -->
   <PropertyGroup>
     <NoWarn>$(NoWarn);CS0618;CS0612</NoWarn>
   </PropertyGroup>

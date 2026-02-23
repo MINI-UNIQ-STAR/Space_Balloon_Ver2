@@ -1,0 +1,67 @@
+### Minimal FDIR Test - Python Sensors Only
+### Linux/Renode 1.15+ compatible
+
+logLevel 2
+
+echo "============================================"
+echo "FDIR Minimal Test"
+echo "============================================"
+
+# Create machine
+mach create "radiosonde"
+
+# Load basic platform (no sensors in .repl)
+machine LoadPlatformDescription @platforms/stm32g431.repl
+
+# Load firmware
+echo "Loading firmware..."
+sysbus LoadELF @../../build/stm32_spaceballoon
+echo "  Done"
+
+# Register Python sensors on I2C buses
+echo "Registering sensors..."
+
+# IMU (I2C1 @ 0x6B)
+python "
+class LSM6DSV16X:
+    def __init__(self): self.reg = 0
+    def Reset(self): pass
+    def Write(self, data):
+        if len(data) > 0: self.reg = data[0]
+    def Read(self, count):
+        import System
+        r = []
+        for i in range(count):
+            if self.reg + i == 0x0F: r.append(0x70)
+            else: r.append(0)
+        return System.Array[System.Byte](r)
+    def FinishTransmission(self): pass
+"
+python "self.Machine['sysbus.i2c1'].Register(LSM6DSV16X(), 0x6B)"
+echo "  LSM6DSV16X @ 0x6B"
+
+# Barometer (I2C3 @ 0x77)
+python "
+class MS5611:
+    def __init__(self): self.prom = [0, 40127, 36924, 23317, 23282, 32463, 28312, 0]
+    def Reset(self): pass
+    def Write(self, data):
+        if len(data) == 0: return
+        if 0xA0 <= data[0] <= 0xAE: self.idx = (data[0] - 0xA0) >> 1
+    def Read(self, count):
+        import System
+        if hasattr(self, 'idx') and self.idx < len(self.prom):
+            v = self.prom[self.idx]
+            return System.Array[System.Byte]([(v>>8)&0xFF, v&0xFF])
+        return System.Array[System.Byte]([0]*count)
+    def FinishTransmission(self): pass
+"
+python "self.Machine['sysbus.i2c3'].Register(MS5611(), 0x77)"
+echo "  MS5611 @ 0x77"
+
+echo ""
+echo "============================================"
+echo "Ready. Commands:"
+echo "  start                 - Begin simulation"
+echo "  emulation RunFor '00:00:05' - Run 5 seconds"
+echo "============================================"

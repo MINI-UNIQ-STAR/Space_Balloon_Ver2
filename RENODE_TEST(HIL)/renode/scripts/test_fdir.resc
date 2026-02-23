@@ -1,0 +1,35 @@
+
+# FDIR 검증용 고장 주입 테스트 (Fault Injection)
+# 시나리오: 정상 부팅 -> 5초 후 센서(IMU) 고장 유발 -> FDIR 반응 확인
+
+logLevel 3
+
+mach create "spaceballoon"
+
+# 1. 플랫폼 및 센서 로드
+machine LoadPlatformDescription @/home/uniqstar-sw/Space_Balloon_Ver2/RENODE_TEST(HIL)/renode/platforms/stm32g431.repl
+include @/home/uniqstar-sw/Space_Balloon_Ver2/RENODE_TEST(HIL)/renode/sensors/lsm6dsv16x_i2c.cs
+include @/home/uniqstar-sw/Space_Balloon_Ver2/RENODE_TEST(HIL)/renode/sensors/ms5611_i2c.cs
+machine LoadPlatformDescriptionFromString "lsm6dsv16x: Sensors.LSM6DSV16X @ i2c1 0x6A"
+machine LoadPlatformDescriptionFromString "ms5611: Sensors.MS5611 @ i2c3 0x77"
+
+# 2. 펌웨어 로드
+sysbus LoadELF @/home/uniqstar-sw/Space_Balloon_Ver2/build/stm32_spaceballoon
+
+# 3. UART 로그 파일 저장 설정 (usart3)
+# 터미널 창 대신 파일에 로그 기록
+sysbus.usart3 CreateFileBackend "/tmp/cfs_fdir_test.log" true
+
+# 4. 고장 주입 로직
+macro fail_scenario
+    echo "시뮬레이션 시작 (T+0)"
+    emulation RunFor "00:00:05"
+    echo "[Renode] 🚨 FAULT INJECTION: Disconnecting IMU..."
+    sysbus.i2c1 Unregister sysbus.i2c1.lsm6dsv16x
+    echo "[Renode] 💀 FAULT INJECTED: IMU is gone!"
+    emulation RunFor "00:00:05"
+    echo "시뮬레이션 종료 (T+10)"
+end
+
+# 5. 실행
+runMacro $fail_scenario

@@ -1,0 +1,29 @@
+### FDIR Test - No External Sensors (Firmware should timeout and set FDIR flags)
+### This tests if firmware boots and FDIR detects sensor failures
+
+logLevel 2
+
+echo "============================================"
+echo "FDIR Timeout Test (No Sensors)"
+echo "============================================"
+
+# Create machine
+mach create "radiosonde"
+
+# Load platform - this has I2C1, I2C3, UART3
+machine LoadPlatformDescription @/home/uniqstar-sw/Space_Balloon_Ver2/RENODE_TEST(HIL)/renode/platforms/stm32g431.repl
+
+# Load firmware
+echo "Loading firmware..."
+sysbus LoadELF @/home/uniqstar-sw/Space_Balloon_Ver2/build/stm32_spaceballoon
+echo "  Done"
+
+echo ""
+echo "============================================"
+echo "This test runs firmware WITHOUT sensors."
+echo "Expected: FDIR detects timeout and sets status flags."
+echo "============================================"
+echo ""
+echo "Commands:"
+echo "  start                          - Begin simulation"
+echo "============================================"

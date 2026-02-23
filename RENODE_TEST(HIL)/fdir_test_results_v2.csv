@@ -1,0 +1,2 @@
+ID,Name,Result,Reason,FrameCount,StatusFlags,Timestamp
+U-01,Firmware Boot Verification,FAIL,Only 0 frames received (expected 10),0,0x0000,2026-02-22 17:32:50

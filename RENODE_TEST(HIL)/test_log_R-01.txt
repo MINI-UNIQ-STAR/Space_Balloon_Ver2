@@ -1,0 +1,9 @@
+pause
+Pausing emulation...
+(monitor) logLevel 0 sysbus.usart3
+Could not find emulation element or backend named: sysbus.usart3
+(monitor) start
+Starting emulation...
+(monitor) sysbus Unregister i2c1_lsm6dsv16x
+No such command or device: sysbus
+(monitor) 
