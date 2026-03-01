@@ -8,6 +8,7 @@ This directory contains the unified Docker environment for **Space Balloon Ver2*
 - **ARM GNU Toolchain** (gcc-arm-none-eabi)
 - **Renode (v1.15.3)**
 - **Cppcheck (v2.13.0)**
+- **ESP-IDF (v5.5.1)**
 - **Python 3.10+** (with all necessary testing packages)
 
 ## Quick Start
@@ -60,6 +61,16 @@ bash /home/uniqstar-sw/embedded-lab/gates/gate_runner.sh /workspace stm32 --only
 ```bash
 cd /workspace/tests/RENODE_TEST\(HIL\)
 python3 run_fdir_tests.py
+```
+
+### Build ESP32 Telemetry RX (ESP-IDF)
+```bash
+# 1. Activate ESP-IDF environment
+get_idf
+
+# 2. Build project
+cd /workspace/telemetry/telemetry_rx_idf/telemetry_rx
+idf.py build
 ```
 
 ## Requirements

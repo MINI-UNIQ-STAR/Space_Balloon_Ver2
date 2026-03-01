@@ -66,7 +66,9 @@ graph TD
 **주요 특징:**
 
 - **고신뢰성 아키텍처**: 50Hz 결정론적 Super Loop 및 4단계 FDIR(고장 복구) 시스템
-- **표준 준수**: MISRA C:2023 가이드라인 적용 및 Cppcheck 정적 분석 통과
+- **Renode (v1.15.3)**: FDIR HIL 시뮬레이션 및 검증
+- **Cppcheck (v2.13.0)**: 정적 분석(Gate 2) 자동화
+- **ESP-IDF (v5.5.1)**: 텔레메트리 수신기(ESP32) 개발 환경
 - **데이터 융합**: Kalman 필터 기반 고도/자세 추정 및 11종 센서 데이터 통합
 - **검증 환경**: gcov 유닛 테스트, SITL(Host) 및 HITL(Hardware-in-the-Loop) 시뮬레이션 지원
 - **실시간 전송**: LoRa 기반 고밀도 텔레메트리 프로토콜 (CRC-16 검증)
