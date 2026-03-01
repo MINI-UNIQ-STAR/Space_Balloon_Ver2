@@ -6,8 +6,6 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     container_name: space-balloon-dev
-    volumes:
-      - .:/workspace
     privileged: true
     network_mode: host
     environment:
@@ -15,7 +13,7 @@ services:
     volumes:
       - .:/workspace
       - /tmp/.X11-unix:/tmp/.X11-unix
-      - /dev/bus/usb:/dev/bus/usb
+      - /dev:/dev
     stdin_open: true
     tty: true
     working_dir: /workspace

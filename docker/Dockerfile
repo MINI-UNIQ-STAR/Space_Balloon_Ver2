@@ -37,6 +37,8 @@ RUN apt-get update && apt-get install -y \
     usbutils \
     udev \
     cppcheck \
+    openocd \
+    minicom \
     # QEMU for ARM and ESP32
     qemu-system-arm \
     qemu-system-xtensa \

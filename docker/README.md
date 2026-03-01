@@ -47,6 +47,13 @@ mkdir build && cd build
 cmake .. && make
 ```
 
+### Flash STM32 Bare-metal
+Ensure the ST-Link is connected via USB.
+```bash
+cd /workspace/stm32cube
+openocd -f interface/stlink.cfg -f target/stm32g4x.cfg -c "program build/stm32_spaceballoon.elf verify reset exit"
+```
+
 ### Build Zephyr App
 ```bash
 cd /workspace/zephyrRTOS/zephyr_app
@@ -72,6 +79,13 @@ get_idf
 # 2. Build project
 cd /workspace/telemetry/telemetry_rx_idf/telemetry_rx
 idf.py build
+```
+
+### Flash ESP32 Telemetry RX
+Ensure the ESP32 is connected via USB (e.g., `/dev/ttyUSB0`).
+```bash
+cd /workspace/telemetry/telemetry_rx_idf/telemetry_rx
+idf.py -p /dev/ttyUSB0 flash monitor
 ```
 
 ## Requirements
