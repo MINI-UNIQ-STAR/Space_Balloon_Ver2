@@ -29,7 +29,11 @@
     @brief  Instantiates a new MCP9600 class
 */
 /**************************************************************************/
-Adafruit_MCP9600::Adafruit_MCP9600() { _device_id = 0x40; }
+Adafruit_MCP9600::Adafruit_MCP9600() {
+  _device_id = 0x40;
+  i2c_dev = NULL;
+  _config_reg = NULL;
+}
 
 /**************************************************************************/
 /*!

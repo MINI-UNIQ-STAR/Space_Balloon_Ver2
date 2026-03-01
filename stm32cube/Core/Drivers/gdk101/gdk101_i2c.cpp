@@ -3,6 +3,13 @@
 
 GDK101_I2C::GDK101_I2C(uint8_t addr) {
   _addr = addr;
+  mea_10min_avg = 0.0f;
+  mea_1min_avg = 0.0f;
+  gdk_status = 0;
+  mea_time_min = 0;
+  mea_time_sec = 0;
+  fw_version = 0.0f;
+  vib = false;
 }
 
 void GDK101_I2C::init() {
@@ -18,7 +25,7 @@ bool GDK101_I2C::reset() {
   return val;
 }
 
-void GDK101_I2C::update_all(){
+void GDK101_I2C::update_all() {
   get_10min_avg();
   get_1min_avg();
   get_vib();
@@ -27,7 +34,7 @@ void GDK101_I2C::update_all(){
   get_measuring_time_sec();
 }
 
-float GDK101_I2C::get_fw_version(){
+float GDK101_I2C::get_fw_version() {
   gamma_mod_read(READ_FIRMWARE);
   fw_version = rw_buffer[0] + (float)rw_buffer[1] / 10;
   return fw_version;
@@ -45,39 +52,38 @@ float GDK101_I2C::get_1min_avg() {
   return mea_1min_avg;
 }
 
-bool GDK101_I2C::get_vib(){
+bool GDK101_I2C::get_vib() {
   gamma_mod_read(READ_STATUS);
   vib = rw_buffer[1];
   return vib;
 }
 
-uint8_t GDK101_I2C::get_status(){
-  //0 = Ready, 1 = 10min Waiting, 2 = Normal
+uint8_t GDK101_I2C::get_status() {
+  // 0 = Ready, 1 = 10min Waiting, 2 = Normal
   gamma_mod_read(READ_STATUS);
   gdk_status = rw_buffer[0];
   return gdk_status;
 }
 
-uint8_t GDK101_I2C::get_measuring_time_min(){
+uint8_t GDK101_I2C::get_measuring_time_min() {
   gamma_mod_read(READ_MEASURING_TIME);
   mea_time_min = rw_buffer[0];
   return mea_time_min;
 }
 
-uint8_t GDK101_I2C::get_measuring_time_sec(){
+uint8_t GDK101_I2C::get_measuring_time_sec() {
   gamma_mod_read(READ_MEASURING_TIME);
   mea_time_sec = rw_buffer[1];
   return mea_time_sec;
 }
 
-float GDK101_I2C::to_rtg(float usv){
-   float rtg;
-   rtg = usv * SV_TO_RTG_CONST;
-   return rtg;
+float GDK101_I2C::to_rtg(float usv) {
+  float rtg;
+  rtg = usv * SV_TO_RTG_CONST;
+  return rtg;
 }
 
-
-//PRIVATE
+// PRIVATE
 
 void GDK101_I2C::gamma_mod_read(uint8_t reg) {
   Wire.begin();
@@ -88,8 +94,7 @@ void GDK101_I2C::gamma_mod_read(uint8_t reg) {
   delay(10);
   Wire.requestFrom(_addr, lg);
   uint8_t i = 0;
-  while (Wire.available())
-  {
+  while (Wire.available()) {
     rw_buffer[i] = Wire.read();
     i++;
   }

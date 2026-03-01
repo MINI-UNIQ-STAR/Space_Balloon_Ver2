@@ -142,15 +142,15 @@ static void oled_task(void *pvParameters) {
   while (1) {
     ssd1306_clear();
 
-    snprintf(buf, sizeof(buf), "RX: %lu CRC: %lu", state.rx_count,
-             state.crc_errors);
+    snprintf(buf, sizeof(buf), "RX: %lu CRC: %lu",
+             (unsigned long)state.rx_count, (unsigned long)state.crc_errors);
     ssd1306_print(0, 0, buf);
 
-    snprintf(buf, sizeof(buf), "SD: %lu %s", state.sd_writes,
+    snprintf(buf, sizeof(buf), "SD: %lu %s", (unsigned long)state.sd_writes,
              state.sd_ok ? "OK" : "ERR");
     ssd1306_print(1, 0, buf);
 
-    snprintf(buf, sizeof(buf), "LoRa: %lu", state.lora_tx);
+    snprintf(buf, sizeof(buf), "LoRa: %lu", (unsigned long)state.lora_tx);
     ssd1306_print(2, 0, buf);
 
     snprintf(buf, sizeof(buf), "Alt: %.1fm", state.alt);
@@ -274,8 +274,9 @@ static void sd_task(void *pvParameters) {
           dy++;
         } // rough day rollover
 
-        fprintf(file, "%lld,%u,%lu,0x%04X,", esp_timer_get_time() / 1000, f.seq,
-                f.timestamp_ms, f.payload.status_flags);
+        fprintf(file, "%lld,%u,%lu,0x%04X,",
+                (long long)(esp_timer_get_time() / 1000), f.seq,
+                (unsigned long)f.timestamp_ms, f.payload.status_flags);
         fprintf(file, "%04u-%02u-%02uT%02u:%02u:%02u,", yr, mo, dy, hr, mn, sc);
         fprintf(file, "%.7f,%.7f,%.2f,%u,%u,", f.payload.gps_lat_deg_e7 / 1e7,
                 f.payload.gps_lon_deg_e7 / 1e7, f.payload.gps_alt_m,
@@ -294,7 +295,8 @@ static void sd_task(void *pvParameters) {
                 f.payload.external_temp_c_x100 / 100.0,
                 f.payload.sht31_temp_c_x100 / 100.0,
                 f.payload.bat_temp_c_x100 / 100.0);
-        fprintf(file, "%lu,%.2f,%.2f,", f.payload.ms5611_press_pa,
+        fprintf(file, "%lu,%.2f,%.2f,",
+                (unsigned long)f.payload.ms5611_press_pa,
                 f.payload.ms5611_temp_c_x100 / 100.0,
                 f.payload.sht31_rh_x100 / 100.0);
         fprintf(file, "%u,%u,%u,%u,%d,%.2f,", f.payload.co2_ppm,

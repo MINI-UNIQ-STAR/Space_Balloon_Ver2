@@ -20,7 +20,17 @@
 /**
  * Instantiates a new Adafruit_MLX90393 class instance
  */
-Adafruit_MLX90393::Adafruit_MLX90393(void) {}
+Adafruit_MLX90393::Adafruit_MLX90393(void) {
+  _gain = MLX90393_GAIN_1X;
+  _res_x = MLX90393_RES_16;
+  _res_y = MLX90393_RES_16;
+  _res_z = MLX90393_RES_16;
+  _dig_filt = MLX90393_FILTER_0;
+  _osr = MLX90393_OSR_0;
+  _cspin = 0;
+  i2c_dev = NULL;
+  spi_dev = NULL;
+}
 
 /*!
  *    @brief  Sets up the hardware and initializes I2C
