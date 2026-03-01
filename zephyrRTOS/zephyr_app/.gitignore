@@ -1,0 +1,19 @@
+# Space Balloon Ver2 - Zephyr RTOS Port
+
+# Build outputs
+build/
+*.elf
+*.bin
+*.hex
+
+# IDE
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
