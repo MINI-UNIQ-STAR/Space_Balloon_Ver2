@@ -9,6 +9,7 @@ This directory contains the unified Docker environment for **Space Balloon Ver2*
 - **Renode (v1.15.3)**
 - **Cppcheck (v2.13.0)**
 - **ESP-IDF (v5.5.1)**
+- **QEMU** (ARM & Xtensa)
 - **Python 3.10+** (with all necessary testing packages)
 
 ## Quick Start
