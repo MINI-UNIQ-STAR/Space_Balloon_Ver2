@@ -101,10 +101,20 @@ graph TD
 | **CMake** | 3.20+ | 빌드 구성 도구 |
 | **OpenOCD** | 0.12+ | 플래시/디버깅 |
 
-### 🚀 한 줄 설치 (Quick Setup)
+### 🚀 통합 개발 환경 (Quick Setup)
 
-Windows 환경에서 개발에 필요한 모든 도구를 한 번에 설치할 수 있습니다.
+모든 개발 도구가 포함된 **통합 Docker 환경** 사용을 권장합니다.
 
+```bash
+# 1. 이미지 빌드 및 실행 (프로젝트 루트에서)
+chmod +x docker/build_docker.sh
+./docker/build_docker.sh
+
+# 2. 컨테이너 접속
+docker run -it --rm --privileged -v $(pwd):/workspace space-balloon-dev:latest bash
+```
+
+Docker 없이 로컬(Windows)에서 직접 구성할 경우:
 ```powershell
 # Scoop을 이용한 원클릭 환경 구성
 scoop install gcc arm-none-eabi-gcc cmake make openocd python
@@ -119,8 +129,8 @@ scoop install gcc arm-none-eabi-gcc cmake make openocd python
 ![미션 텔레메트리 대시보드 시뮬레이션](C:/Users/hyuns/.gemini/antigravity/brain/4f105e56-b060-4286-88ec-5b19941a67d5/spaceballoon_flight_dashboard_mockup_1769170020000.png)
 
 - **MISRA C:2023**: 필수 및 권고 가이드라인 준수 (안전성 및 이식성 강화)
-- **정적 분석 (Cppcheck)**: `Error: 0`, `Warning: 0` 달성
-- **유닛 테스트 (gcov)**: 핵심 알고리즘(PID, Kalman) 커버리지 **89%** 달성
+- **정적 분석 (Cppcheck)**: `Error: 0`, `Warning: 0` 달성 (Gate 2 통과)
+- **유닛 테스트 (gcov)**: 핵심 알고리즘(PID, Kalman) 커버리지 **89%** 달성 (Gate 3 통과)
 - **FDIR 검증**: Renode 시뮬레이션을 통해 22개 고장 시나리오 100% 복구 확인
 
 > 상세 리포트는 **[docs/README.md](./docs/README.md)**에서 확인할 수 있습니다.
@@ -150,26 +160,31 @@ scoop install gcc arm-none-eabi-gcc cmake make openocd python
 
 ```text
 stm32_spaceballoon/
-├── Core/
-│   ├── Inc/                    # 헤더 파일
-│   │   ├── app.h
-│   │   ├── sensors.h
-│   │   ├── telemetry.h
-│   │   ├── kalman.h
-│   │   ├── pid.h
-│   │   └── fdir.h
-│   ├── Src/                    # 소스 파일
-│   │   ├── app.c               # 메인 애플리케이션 로직
-│   │   ├── sensors.c           # 센서 드라이버 통합
-│   │   ├── telemetry.c         # 텔레메트리 패킹/CRC
-│   │   ├── kalman.c            # Kalman 필터
-│   │   ├── pid.c               # PID 제어기
-│   │   └── fdir.c              # 오류 감지/복구
-│   └── Drivers/                # 개별 센서 드라이버
-│       ├── lsm6dsv16x/
-│       ├── mlx90393/
-│       ├── ms5611/
-│       └── ...
+├── docker/                     # [NEW] 통합 Docker 개발 환경 (Dockerfile, scripts)
+├── stm32cube/                  # STM32 Bare-metal 앱 (기존 메인)
+│   ├── Core/                   # Inc/Src/Drivers (센서 알고리즘 및 드라이버)
+│   │   ├── Inc/                    # 헤더 파일
+│   │   │   ├── app.h
+│   │   │   ├── sensors.h
+│   │   │   ├── telemetry.h
+│   │   │   ├── kalman.h
+│   │   │   ├── pid.h
+│   │   │   └── fdir.h
+│   │   ├── Src/                    # 소스 파일
+│   │   │   ├── app.c               # 메인 애플리케이션 로직
+│   │   │   ├── sensors.c           # 센서 드라이버 통합
+│   │   │   ├── telemetry.c         # 텔레메트리 패킹/CRC
+│   │   │   ├── kalman.c            # Kalman 필터
+│   │   │   ├── pid.c               # PID 제어기
+│   │   │   └── fdir.c              # 오류 감지/복구
+│   │   └── Drivers/                # 개별 센서 드라이버
+│   │       ├── lsm6dsv16x/
+│   │       ├── mlx90393/
+│   │       ├── ms5611/
+│   │       └── ...
+│   └── Drivers/                # HAL/CMSIS 드라이버
+├── zephyrRTOS/                 # Zephyr RTOS 포팅 작업용 폴더
+│   └── zephyr_app/             # Zephyr 기반 애플리케이션
 ├── RENODE_TEST(HIL)/           # Renode 시뮬레이션 환경 (HIL/SITL)
 │   ├── renode/                 # Renode 플랫폼 및 스크립트
 │   ├── run_fdir_tests.py       # 자동화된 FDIR 테스트 러너
@@ -181,7 +196,9 @@ stm32_spaceballoon/
 │   ├── build_host/             # HostSim 빌드 결과물
 │   └── build_test/             # Unit Test 빌드 결과물
 ├── HITL/                       # Hardware-In-The-Loop 시나리오 및 대시보드
-├── cmake/
+├── telemetry/                  # ESP32 기반 원격 수신기 (IDF)
+├── docs/                       # 설계 및 분석 문서
+├── cmake/                      # 툴체인 설정
 │   └── gcc-arm-none-eabi.cmake # 툴체인 설정
 ├── CMakeLists.txt              # 메인 빌드 설정
 ├── CMakePresets.json           # Debug/Release 프리셋
@@ -194,10 +211,21 @@ stm32_spaceballoon/
 
 ### 요구사항
 
-- **실제 하드웨어**: ARM GCC Toolchain, cube-cmake, OpenOCD
-- **시뮬레이션**: MinGW-w64, cube-cmake, Python 3.x
+- **Docker (권장)**: 모든 도구가 포함된 일관된 환경 제공
+- **로컬 빌드**: ARM GCC Toolchain, cube-cmake, OpenOCD, Python 3.x
 
-### 실제 하드웨어 빌드
+### 실제 하드웨어 빌드 (Docker 사용 시)
+```bash
+# 1. 컨테이너 접속
+docker exec -it space-balloon-dev bash
+
+# 2. STM32Cube 빌드
+cd /workspace/stm32cube
+mkdir build && cd build
+cmake .. && make
+```
+
+### 실제 하드웨어 빌드 (로컬 사용 시)
 
 ```powershell
 # 1. Debug 프리셋 선택 (VS Code에서)
@@ -232,10 +260,6 @@ gcov -b *.gcda
 > [!TIP]
 > 상세 지침은 **[gcov_test_host/README.md](./gcov_test_host/README.md)**를 참조하세요.
 
-> [!IMPORTANT]
-> 폴더 이동으로 인해 기존의 `CMakeCache.txt`가 무효화되었습니다.
-> 통합된 `SITL/build_host` 와 `SITL/build_test`에서 다시 빌드하실 때, **기존 빌드 폴더를 삭제하거나 `CMakeCache.txt`를 제거**한 후 다시 생성해야 정상적으로 빌드됩니다.
-
 ---
 
 ## 📚 문서 허브
@@ -253,7 +277,7 @@ gcov -b *.gcda
 
 이 프로젝트는 다단계 검증 체계를 갖추고 있습니다.
 
-1. **유닛 테스트 (Algorithm Logic)**: `gcov_test_host`를 통한 PID/Kalman 로직 검증.
+1. **유닛 테스트 (Algorithm Logic)**: `SITL/test`를 통한 PID/Kalman 로직 검증.
 2. **SITL (Software-In-The-Loop)**: `SITL/HostSim`을 통한 실제 비행 데이터(RS41) 재생 테스트.
 3. **HITL (Hardware-In-The-Loop)**: 실제 STM32 보드와 센서 에뮬레이터를 연결한 통합 테스트.
 4. **FDIR 시뮬레이션**: Renode 환경에서의 22가지 장애 주입 테스트.
@@ -405,4 +429,4 @@ MIT License
 
 ---
 
-**마지막 업데이트:** 2026-01-23
+**마지막 업데이트:** 2026-03-01

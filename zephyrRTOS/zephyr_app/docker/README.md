@@ -1,5 +1,8 @@
 # Space Balloon Ver2 - Docker Build Environment
 
+> [!IMPORTANT]
+> **권장 사항**: 이 개별 Docker 환경 대신 프로젝트 루트의 [통합 Docker 환경](../../../docker/README.md) 사용을 권장합니다. 통합 환경은 Zephyr뿐만 아니라 STM32 베어메탈, Renode, 정적 분석 도구를 모두 포함하고 있습니다.
+
 ## Quick Start
 
 ### Build Docker Image
