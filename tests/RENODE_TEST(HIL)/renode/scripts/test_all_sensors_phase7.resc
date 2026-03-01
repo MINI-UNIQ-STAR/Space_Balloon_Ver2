@@ -44,15 +44,15 @@ echo "DLL 로딩..."
 # 경로는 실행 위치(renode 폴더) 기준
 python "import os; dll_path = 'build_dll/bin/Release/SensorPeripherals.dll'; self.Machine.LoadPeripheralsAssembly(dll_path) if os.path.exists(dll_path) else None"
 
-# 플랫폼 정의 로드
+# 플랫폼 정의 로딩
 echo "플랫폼 로딩..."
-machine LoadPlatformDescription @platforms/stm32g431_with_sensors.repl
+machine LoadPlatformDescription @renode/platforms/stm32g431_with_sensors.repl
 echo "  ✓ stm32g431_with_sensors.repl 로드 완료"
 
 # 펌웨어 ELF 파일 로드
 echo "펌웨어 로딩..."
-# 빌드 경로는 프로젝트 루트 기준이므로 ../../ 사용 (RENODE_TEST(HIL)/renode -> ProjectRoot/build)
-sysbus LoadELF @../../build/Debug/stm32_spaceballoon.elf
+# 빌드 경로는 프로젝트 루트 기준이므로 ../../ 사용 (RENODE_TEST(HIL) -> ProjectRoot/stm32cube/build/Debug)
+sysbus LoadELF @../../stm32cube/build/Debug/stm32_spaceballoon.elf
 echo "  ✓ 펌웨어 로드 완료"
 echo ""
 
@@ -87,41 +87,40 @@ echo ""
 
 # CM1107N (CO2) - Python 모델 로드 (DLL 빌드 문제 우회용)
 echo "CM1107N (Python) 로딩..."
-# 절대 경로 사용 (경로 문제 해결을 위해)
-python "sensor_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\cm1107n.py'; print('Loading: ' + sensor_path); execfile(sensor_path)"
+python "import os; sensor_path = os.path.join(os.getcwd(), 'renode', 'sensors', 'cm1107n.py'); print('Loading: ' + sensor_path); execfile(sensor_path)"
 python "self.Machine['sysbus.i2c3'].Register(CM1107N(), 0x31)"
 echo "  ✓ CM1107N Python 모델 등록 완료 (0x31)"
 
 # MS5611 (Baro) - Python 모델 로드
 echo "MS5611 (Python) 로딩..."
-python "ms_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\ms5611.py'; execfile(ms_path)"
+python "import os; ms_path = os.path.join(os.getcwd(), 'renode', 'sensors', 'ms5611.py'); execfile(ms_path)"
 python "self.Machine['sysbus.i2c3'].Register(MS5611(), 0x77)"
 echo "  ✓ MS5611 Python 모델 등록 완료 (0x77)"
 
 # LSM6DSV16X (IMU) - Python 모델 로드
 echo "LSM6DSV16X (Python) 로딩..."
-python "lsm_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\lsm6dsv16x.py'; execfile(lsm_path)"
+python "import os; lsm_path = os.path.join(os.getcwd(), 'renode', 'sensors', 'lsm6dsv16x.py'); execfile(lsm_path)"
 python "self.Machine['sysbus.i2c1'].Register(LSM6DSV16X(), 0x6B)"
 echo "  ✓ LSM6DSV16X Python 모델 등록 완료 (0x6B)"
 
 # SHT31 (Humid)
-python "sht_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\sht31.py'; execfile(sht_path)"
+python "import os; sht_path = os.path.join(os.getcwd(), 'renode', 'sensors', 'sht31.py'); execfile(sht_path)"
 python "self.Machine['sysbus.i2c3'].Register(SHT31(), 0x44)"
 
 # MCP9600 (Thermo)
-python "mcp_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\mcp9600.py'; execfile(mcp_path)"
+python "import os; mcp_path = os.path.join(os.getcwd(), 'renode', 'sensors', 'mcp9600.py'); execfile(mcp_path)"
 python "self.Machine['sysbus.i2c3'].Register(MCP9600(), 0x60)"
 
 # SEN0321 (Ozone)
-python "sen_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\sen0321.py'; execfile(sen_path)"
+python "import os; sen_path = os.path.join(os.getcwd(), 'renode', 'sensors', 'sen0321.py'); execfile(sen_path)"
 python "self.Machine['sysbus.i2c3'].Register(SEN0321(), 0x70)"
 
 # MLX90393 (Mag)
-python "mlx_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\mlx90393.py'; execfile(mlx_path)"
+python "import os; mlx_path = os.path.join(os.getcwd(), 'renode', 'sensors', 'mlx90393.py'); execfile(mlx_path)"
 python "self.Machine['sysbus.i2c1'].Register(MLX90393(), 0x0C)"
 
 # GDK101 (Rad)
-python "gdk_path = r'C:\Users\hyuns\Desktop\project\SpaceBalloon_2.0\spaceballoon_stm32_lora32\RENODE_TEST(HIL)\renode\sensors\gdk101.py'; execfile(gdk_path)"
+python "import os; gdk_path = os.path.join(os.getcwd(), 'renode', 'sensors', 'gdk101.py'); execfile(gdk_path)"
 python "self.Machine['sysbus.i2c1'].Register(GDK101(), 0x18)"
 
 echo "  ✓ 모든 Python 센서 모델 등록 완료"

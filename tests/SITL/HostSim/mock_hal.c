@@ -21,7 +21,7 @@
 void Error_Handler(void) { printf("Error_Handler called\n"); }
 
 /** @brief 시스템 클럭 주파수 (170MHz 시뮬레이션) */
-uint32_t SystemCoreClock = 170000000; 
+uint32_t SystemCoreClock = 170000000;
 
 // HAL Tick
 static uint32_t mock_tick = 0;
@@ -47,55 +47,107 @@ void MockHAL_AdvanceTick(uint32_t ms) { mock_tick += ms; }
 
 // I2C Stubs
 /** @brief I2C 메모리 읽기 스텁 */
-HAL_StatusTypeDef HAL_I2C_Mem_Read(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
-    memset(pData, 0, Size);
-    return HAL_OK;
+HAL_StatusTypeDef HAL_I2C_Mem_Read(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
+                                   uint16_t MemAddress, uint16_t MemAddSize,
+                                   uint8_t *pData, uint16_t Size,
+                                   uint32_t Timeout) {
+  memset(pData, 0, Size);
+  return HAL_OK;
 }
 /** @brief I2C 메모리 쓰기 스텁 */
-HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress, uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
-    return HAL_OK;
+HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c,
+                                    uint16_t DevAddress, uint16_t MemAddress,
+                                    uint16_t MemAddSize, uint8_t *pData,
+                                    uint16_t Size, uint32_t Timeout) {
+  return HAL_OK;
 }
 /** @brief I2C 마스터 전송 스텁 */
-HAL_StatusTypeDef HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
-    return HAL_OK;
+HAL_StatusTypeDef HAL_I2C_Master_Transmit(I2C_HandleTypeDef *hi2c,
+                                          uint16_t DevAddress, uint8_t *pData,
+                                          uint16_t Size, uint32_t Timeout) {
+  return HAL_OK;
 }
 /** @brief I2C 마스터 수신 스텁 */
-HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
-    memset(pData, 0, Size);
-    return HAL_OK;
+HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef *hi2c,
+                                         uint16_t DevAddress, uint8_t *pData,
+                                         uint16_t Size, uint32_t Timeout) {
+  memset(pData, 0, Size);
+  return HAL_OK;
 }
 
 // GPIO Stubs
 /** @brief GPIO 핀 쓰기 스텁 */
-void HAL_GPIO_WritePin(void* GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState) {}
+void HAL_GPIO_WritePin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin,
+                       GPIO_PinState PinState) {
+  (void)GPIOx;
+  (void)GPIO_Pin;
+  (void)PinState;
+}
 /** @brief GPIO 핀 읽기 스텁 (항상 HIGH 리턴) */
-GPIO_PinState HAL_GPIO_ReadPin(void* GPIOx, uint16_t GPIO_Pin) { return GPIO_PIN_SET; }
+GPIO_PinState HAL_GPIO_ReadPin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) {
+  (void)GPIOx;
+  (void)GPIO_Pin;
+  return GPIO_PIN_SET;
+}
 /** @brief GPIO 초기화 스텁 */
-void HAL_GPIO_Init(void* GPIOx, GPIO_InitTypeDef *GPIO_Init) {}
+void HAL_GPIO_Init(GPIO_TypeDef *GPIOx, GPIO_InitTypeDef *GPIO_Init) {
+  (void)GPIOx;
+  (void)GPIO_Init;
+}
+/** @brief GPIO 토글 스텁 */
+void HAL_GPIO_TogglePin(GPIO_TypeDef *port, uint16_t pin) {
+  (void)port;
+  (void)pin;
+}
 
 // UART Stubs
-/** 
+/**
  * @brief UART 전송 스텁
  * @details UART 출력을 stdout(콘솔)으로 리다이렉션하여 디버깅 지원
  */
-HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
-    // Print to console for debug
-    for(int i=0; i<Size && pData[i]!=0; i++) putchar(pData[i]);
-    return HAL_OK;
+HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData,
+                                    uint16_t Size, uint32_t Timeout) {
+  // Print to console for debug
+  for (int i = 0; i < Size && pData[i] != 0; i++)
+    putchar(pData[i]);
+  return HAL_OK;
 }
 /** @brief UART 수신 스텁 (타임아웃 반환) */
-HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout) {
-    return HAL_TIMEOUT;
+HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData,
+                                   uint16_t Size, uint32_t Timeout) {
+  return HAL_TIMEOUT;
 }
 
 // ADC Stubs
 /** @brief ADC 시작 스텁 */
-HAL_StatusTypeDef HAL_ADC_Start(ADC_HandleTypeDef* hadc) { return HAL_OK; }
+HAL_StatusTypeDef HAL_ADC_Start(ADC_HandleTypeDef *hadc) { return HAL_OK; }
 /** @brief ADC 변환 대기 스텁 */
-HAL_StatusTypeDef HAL_ADC_PollForConversion(ADC_HandleTypeDef* hadc, uint32_t Timeout) { return HAL_OK; }
+HAL_StatusTypeDef HAL_ADC_PollForConversion(ADC_HandleTypeDef *hadc,
+                                            uint32_t Timeout) {
+  return HAL_OK;
+}
 /** @brief ADC 값 읽기 스텁 (고정값 2048 리턴) */
-uint32_t HAL_ADC_GetValue(ADC_HandleTypeDef* hadc) { return 2048; }
+uint32_t HAL_ADC_GetValue(ADC_HandleTypeDef *hadc) { return 2048; }
 /** @brief ADC 정지 스텁 */
-HAL_StatusTypeDef HAL_ADC_Stop(ADC_HandleTypeDef* hadc) { return HAL_OK; }
+HAL_StatusTypeDef HAL_ADC_Stop(ADC_HandleTypeDef *hadc) { return HAL_OK; }
 
-// Note: Actuator stubs removed - use Core/Src/actuators.c or add them conditionally
+// TIM/PWM Stubs
+HAL_StatusTypeDef HAL_TIM_PWM_Start(TIM_HandleTypeDef *htim, uint32_t Channel) {
+  (void)htim;
+  (void)Channel;
+  return HAL_OK;
+}
+HAL_StatusTypeDef HAL_TIM_PWM_Stop(TIM_HandleTypeDef *htim, uint32_t Channel) {
+  (void)htim;
+  (void)Channel;
+  return HAL_OK;
+}
+void __HAL_TIM_SET_COMPARE(TIM_HandleTypeDef *htim, uint32_t Channel,
+                           uint32_t Compare) {
+  (void)htim;
+  (void)Channel;
+  (void)Compare;
+}
+
+// Common HAL
+HAL_StatusTypeDef HAL_Init(void) { return HAL_OK; }

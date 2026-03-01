@@ -1,4 +1,4 @@
-# Install script for directory: /home/uniqstar-sw/Space_Balloon_Ver2/SITL/test
+# Install script for directory: /home/uniqstar-sw/Desktop/Project/Space_Balloon_Ver2/tests/SITL/test
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/uniqstar-sw/Space_Balloon_Ver2/SITL/test/build_linux/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/uniqstar-sw/Desktop/Project/Space_Balloon_Ver2/tests/SITL/test/build_linux/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

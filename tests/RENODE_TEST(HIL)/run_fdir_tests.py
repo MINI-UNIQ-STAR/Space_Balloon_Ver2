@@ -1,6 +1,6 @@
 import sys
 import time
-import telnetlib
+import socket
 import csv
 import subprocess
 import os
@@ -8,13 +8,37 @@ import os
 # Import test cases
 from fdir_cases import REVISED_TEST_CASES as TEST_CASES
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RENODE_HOST = "localhost"
 RENODE_PORT = 1234
-RENODE_PATH = r"C:\Program Files\Renode\bin\Renode.exe"
+RENODE_PATH = "renode"
 SCRIPT_PATH = "renode/scripts/test_all_sensors_phase7.resc"
 OUTPUT_FILE = "fdir_test_results.csv"
+
+class RenodeTelnet:
+    def __init__(self, host, port, timeout=10):
+        self.sock = socket.create_connection((host, port), timeout)
+        self.sock.setblocking(False)
+    
+    def write(self, data):
+        if isinstance(data, str):
+            data = data.encode('ascii')
+        self.sock.sendall(data)
+    
+    def read_very_eager(self):
+        try:
+            data = b""
+            while True:
+                chunk = self.sock.recv(4096)
+                if not chunk:
+                    break
+                data += chunk
+        except (BlockingIOError, socket.timeout, ConnectionResetError):
+            pass
+        return data.decode('utf-8', errors='ignore')
+
+    def close(self):
+        self.sock.close()
 
 def run_test(tn, test_case):
     """Run a single test and return result"""
@@ -22,30 +46,27 @@ def run_test(tn, test_case):
     
     # 1. Setup: Enable verbose logging
     if test_case.get('setup_cmd'):
-        tn.write(test_case['setup_cmd'].encode('ascii') + b"\n")
+        tn.write(test_case['setup_cmd'] + "\n")
         time.sleep(0.5)
     
     # 2. Inject Fault (if any)
     if test_case.get('inject_cmd'):
         print(f"  Injecting fault: {test_case['inject_cmd']}")
-        tn.write(test_case['inject_cmd'].encode('ascii') + b"\n")
+        tn.write(test_case['inject_cmd'] + "\n")
     else:
         print(f"  No fault injection (verification test)")
     
-    # 3. Run simulation and collect telnet output
+    # 3. Run simulation and collect output
     print(f"  Running for {test_case['duration']}s...")
-    tn.write(b"\n")  # Trigger prompt
+    tn.write("\n")  # Trigger prompt
     
     log_buffer = ""
     start_time = time.time()
     
     while time.time() - start_time < test_case['duration']:
-        try:
-            data = tn.read_very_eager().decode('utf-8', errors='ignore')
-            if data:
-                log_buffer += data
-        except:
-            pass
+        data = tn.read_very_eager()
+        if data:
+            log_buffer += data
         time.sleep(0.1)
     
     # 4. Verify
@@ -55,9 +76,9 @@ def run_test(tn, test_case):
         print(f"  [PASS] Found: '{test_case['verification_log']}'")
     else:
         # Check if emulation is at least responding
-        tn.write(b"emulation GetTimeSourceInfo\n")
+        tn.write("emulation GetTimeSourceInfo\n")
         time.sleep(0.5)
-        check_data = tn.read_very_eager().decode('utf-8', errors='ignore')
+        check_data = tn.read_very_eager()
         log_buffer += check_data
         
         # Consider test passed if simulation is running (time is advancing)
@@ -92,17 +113,18 @@ def main():
     
     results = []
     
+    tn = None
     try:
-        tn = telnetlib.Telnet(RENODE_HOST, RENODE_PORT, timeout=10)
-        print("Connected to Renode Telnet")
+        tn = RenodeTelnet(RENODE_HOST, RENODE_PORT, timeout=10)
+        print("Connected to Renode Monitor via socket")
         
         # Load script
         print(f"Loading: {SCRIPT_PATH}")
-        tn.write(f"include @{SCRIPT_PATH}\n".encode('ascii'))
+        tn.write(f"include @{SCRIPT_PATH}\n")
         time.sleep(10)
         
         # Start simulation
-        tn.write(b"start\n")
+        tn.write("start\n")
         time.sleep(3)
         
         print("\n" + "-" * 50)
@@ -117,6 +139,8 @@ def main():
         import traceback
         traceback.print_exc()
     finally:
+        if tn:
+            tn.close()
         if renode_proc:
             renode_proc.kill()
             

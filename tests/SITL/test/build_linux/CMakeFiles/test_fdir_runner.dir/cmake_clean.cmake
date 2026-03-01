@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/test_fdir_runner.dir/home/uniqstar-sw/Space_Balloon_Ver2/Core/Src/fdir.c.o"
-  "CMakeFiles/test_fdir_runner.dir/home/uniqstar-sw/Space_Balloon_Ver2/Core/Src/fdir.c.o.d"
+  "CMakeFiles/test_fdir_runner.dir/home/uniqstar-sw/Desktop/Project/Space_Balloon_Ver2/stm32cube/Core/Src/fdir.c.o"
+  "CMakeFiles/test_fdir_runner.dir/home/uniqstar-sw/Desktop/Project/Space_Balloon_Ver2/stm32cube/Core/Src/fdir.c.o.d"
   "CMakeFiles/test_fdir_runner.dir/test_fdir/mock_dependencies.c.o"
   "CMakeFiles/test_fdir_runner.dir/test_fdir/mock_dependencies.c.o.d"
   "CMakeFiles/test_fdir_runner.dir/test_fdir/test_main.c.o"

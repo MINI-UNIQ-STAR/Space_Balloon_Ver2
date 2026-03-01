@@ -8,7 +8,6 @@ HostSim/build/
 *.su
 
 # Tools (Renode binaries exceed GitHub 100MB limit)
-tools/
 
 # Binary Files
 *.elf
