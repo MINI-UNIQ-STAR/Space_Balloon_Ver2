@@ -79,7 +79,7 @@ RUN wget -q https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16
 # Install Renode (Portable version)
 RUN wget -q https://github.com/renode/renode/releases/download/v1.15.3/renode-1.15.3.linux-portable.tar.gz \
     && tar xf renode-1.15.3.linux-portable.tar.gz \
-    && mv renode-1.15.3_portable /opt/renode \
+    && mv renode*portable /opt/renode \
     && rm renode-1.15.3.linux-portable.tar.gz
 ENV PATH="/opt/renode:${PATH}"
 
