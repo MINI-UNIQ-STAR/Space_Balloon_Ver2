@@ -1,6 +1,6 @@
 # HITL 시뮬레이션 시스템 (5-Board 최적화 구성)
 
-이 디렉토리는 스페이스발룬 프로젝트의 **HITL (Hardware-In-The-Loop)** 시뮬레이션을 위한 통합 펌웨어와 문서를 포함합니다.
+이 디렉토리는 Space Balloon Ver 2 프로젝트의 **HITL (Hardware-In-The-Loop)** 시뮬레이션을 위한 통합 펌웨어와 문서를 포함합니다.
 
 ## 🏗️ 5-Board 시스템 구성 (Dual-I2C 적용)
 
